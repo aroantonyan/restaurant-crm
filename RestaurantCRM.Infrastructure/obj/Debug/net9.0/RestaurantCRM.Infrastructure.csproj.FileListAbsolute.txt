@@ -1,0 +1,17 @@
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/bin/Debug/net9.0/RestaurantCRM.Infrastructure.deps.json
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/bin/Debug/net9.0/RestaurantCRM.Infrastructure.dll
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/bin/Debug/net9.0/RestaurantCRM.Infrastructure.pdb
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/bin/Debug/net9.0/RestaurantCRM.Application.dll
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/bin/Debug/net9.0/RestaurantCRM.Domain.dll
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/bin/Debug/net9.0/RestaurantCRM.Application.pdb
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/bin/Debug/net9.0/RestaurantCRM.Domain.pdb
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/obj/Debug/net9.0/RestaurantCRM.Infrastructure.csproj.AssemblyReference.cache
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/obj/Debug/net9.0/RestaurantCRM.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/obj/Debug/net9.0/RestaurantCRM.Infrastructure.AssemblyInfoInputs.cache
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/obj/Debug/net9.0/RestaurantCRM.Infrastructure.AssemblyInfo.cs
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/obj/Debug/net9.0/RestaurantCRM.Infrastructure.csproj.CoreCompileInputs.cache
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/obj/Debug/net9.0/Restaura.49C3B871.Up2Date
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/obj/Debug/net9.0/RestaurantCRM.Infrastructure.dll
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/obj/Debug/net9.0/refint/RestaurantCRM.Infrastructure.dll
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/obj/Debug/net9.0/RestaurantCRM.Infrastructure.pdb
+/Users/aroadmin/Desktop/Restaurant  CRM/Backend/src/RestaurantCRM.Infrastructure/obj/Debug/net9.0/ref/RestaurantCRM.Infrastructure.dll

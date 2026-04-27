@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "PxMMQoBTBjtxInNs3/FyCkp9Zad0c3eoe+ryekmSCs8=",
+  "Source": "RestaurantCRM.API",
+  "BasePath": "_content/RestaurantCRM.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
