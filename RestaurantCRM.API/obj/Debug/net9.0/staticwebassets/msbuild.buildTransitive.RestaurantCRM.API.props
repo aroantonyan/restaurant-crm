@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../buildMultiTargeting/RestaurantCRM.API.props" />
-</Project>
