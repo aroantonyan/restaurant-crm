@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "start": "npm run build && npm run preview",
     "tunnel": "ngrok http 5173",
     "gen:api": "openapi-typescript http://localhost:5000/openapi/v1.json -o src/lib/api-types.ts"
   },
