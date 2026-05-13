@@ -1,0 +1,11 @@
+{
+  "name": "restaurant-crm-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install-github-app": "node install-github-app.js"
+  },
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}

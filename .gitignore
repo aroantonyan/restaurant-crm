@@ -1,0 +1,21 @@
+# ── Frontend ──────────────────────────────────────────
+node_modules/
+dist/
+.env*.local
+*.local
+
+# ── Backend ───────────────────────────────────────────
+**/bin/
+**/obj/
+*.user
+*.suo
+.vs/
+**/appsettings.json
+**/appsettings.Development.json
+!**/appsettings.Example.json
+
+# ── OS / editors ──────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/settings.json

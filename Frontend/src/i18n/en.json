@@ -1,0 +1,113 @@
+{
+  "common": {
+    "language": "Language",
+    "submit": "Submit",
+    "loading": "Please wait…",
+    "logout": "Log out",
+    "settings": "Settings",
+    "accountMenu": "Account menu"
+  },
+  "settings": {
+    "subtitle": "Manage your restaurant profile",
+    "comingSoon": "Restaurant settings coming soon.",
+    "name": "Restaurant name",
+    "legalName": "Legal name",
+    "currency": "Currency",
+    "address": "Address (optional)",
+    "phone": "Phone (optional)",
+    "submit": "Save changes",
+    "saved": "Settings saved successfully",
+    "errors": {
+      "loadFailed": "Couldn't load restaurant info",
+      "saveFailed": "Couldn't save settings"
+    }
+  },
+  "dashboard": {
+    "greeting": "Hello, {{name}}",
+    "role": "Role",
+    "tabs": {
+      "staff": "Staff",
+      "schedule": "Schedule",
+      "restaurantSettings": "Restaurant Settings"
+    },
+    "schedule": {
+      "empty": "No schedule yet.",
+      "comingSoon": "Plan shifts and assign staff here."
+    }
+  },
+  "staff": {
+    "addButton": "Add member",
+    "memberCount_one": "{{count}} member",
+    "memberCount_other": "{{count}} members",
+    "empty": "No staff yet",
+    "emptyHint": "Tap + to add your first team member.",
+    "status": {
+      "Active": "Active",
+      "PendingPasswordChange": "Pending setup",
+      "Inactive": "Inactive"
+    },
+    "create": {
+      "title": "New staff member",
+      "tempPassword": "Temporary password",
+      "phone": "Phone (optional)",
+      "role": "Role",
+      "submit": "Create member"
+    },
+    "edit": {
+      "title": "Edit staff member",
+      "phone": "Phone (optional)",
+      "role": "Role",
+      "submit": "Save changes",
+      "deactivate": "Deactivate staff member",
+      "deactivateConfirm": "Confirm deactivation",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "loadFailed": "Couldn't load staff",
+      "saveFailed": "Couldn't save changes",
+      "deactivateFailed": "Couldn't deactivate staff member"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to your restaurant workspace",
+      "submit": "Sign in",
+      "noAccount": "No account?",
+      "createOne": "Create one"
+    },
+    "register": {
+      "title": "Create your restaurant",
+      "subtitle": "Register as the admin and set up your workspace",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "fatherName": "Father's name",
+      "email": "Email",
+      "password": "Password",
+      "restaurantName": "Restaurant name",
+      "submit": "Create account",
+      "haveAccount": "Have an account?",
+      "signIn": "Sign in"
+    },
+    "changePassword": {
+      "title": "Set your password",
+      "subtitle": "Choose a new password to activate your account",
+      "currentPassword": "Temporary password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "submit": "Set password",
+      "errors": {
+        "passwordMismatch": "Passwords don't match",
+        "failed": "Couldn't update password"
+      }
+    },
+    "errors": {
+      "required": "Required",
+      "invalidEmail": "Enter a valid email",
+      "passwordTooShort": "At least 6 characters",
+      "tooLong": "Too long",
+      "loginFailed": "Login failed",
+      "registerFailed": "Registration failed"
+    }
+  }
+}
