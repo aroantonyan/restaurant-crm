@@ -22,11 +22,81 @@
       "saveFailed": "Չհաջողվեց պահպանել կարգավորումները"
     }
   },
+  "menu": {
+    "title": "Ճաշացանկ",
+    "addCategory": "Ավելացնել բաժին",
+    "addItem": "Ավելացնել ուտեստ",
+    "editItem": "Խմբագրել ուտեստ",
+    "noCategories": "Բաժիններ դեռ չկան",
+    "noCategoriesHint": "Ավելացրեք առաջին բաժինը՝ ճաշացանկ կազմելու համար։",
+    "available": "Հասանելի",
+    "unavailable": "Անհասանելի",
+    "category": "Բաժին",
+    "itemName": "Ուտեստի անուն",
+    "description": "Նկարագրություն (ոչ պարտ.)",
+    "price": "Գին",
+    "categoryName": "Բաժնի անուն",
+    "sortOrder": "Դասավորություն",
+    "errors": {
+      "loadFailed": "Չհաջողվեց բեռնել ճաշացանկը",
+      "saveFailed": "Չհաջողվեց պահպանել"
+    }
+  },
+  "tables": {
+    "title": "Սեղաններ",
+    "add": "Ավելացնել սեղան",
+    "number": "Սեղանի համար",
+    "capacity": "Տեղերի քանակ",
+    "status": {
+      "Free": "Ազատ",
+      "Occupied": "Զբաղված",
+      "Reserved": "Ամրագրված"
+    }
+  },
+  "orders": {
+    "title": "Պատվերներ",
+    "new": "Նոր պատվեր",
+    "table": "Սեղան",
+    "total": "Ընդամենը",
+    "createdBy": "Ով",
+    "filter": {
+      "all": "Բոլորը",
+      "open": "Բաց",
+      "paid": "Վճարված",
+      "cancelled": "Չեղարկված"
+    },
+    "status": {
+      "Open": "Բաց",
+      "Paid": "Վճարված",
+      "Cancelled": "Չեղարկված"
+    },
+    "itemStatus": {
+      "Pending": "Ակնկալում",
+      "Preparing": "Պատրաստվում",
+      "Ready": "Պատրաստ",
+      "Served": "Մատուցված"
+    },
+    "close": "Փակել (Վճ.)",
+    "cancel": "Չեղարկել",
+    "cancelConfirm": "Հաստատել չեղարկումը",
+    "addItem": "Ավելացնել",
+    "selectTable": "Ընտրել սեղան",
+    "selectItems": "Ավելացնել ուտեստներ",
+    "quantity": "Քան.",
+    "notes": "Նշումներ (ոչ պարտ.)",
+    "noOrders": "Պատվերներ չկան",
+    "errors": {
+      "loadFailed": "Չհաջողվեց բեռնել պատվերները",
+      "saveFailed": "Չհաջողվեց պահպանել"
+    }
+  },
   "dashboard": {
     "greeting": "Բարև, {{name}}",
     "role": "Դեր",
     "tabs": {
       "staff": "Անձնակազմ",
+      "menu": "Ճաշացանկ",
+      "orders": "Պատվերներ",
       "schedule": "Ժամանակացույց",
       "restaurantSettings": "Ռեստորանի կարգավորումներ"
     },

@@ -13,4 +13,7 @@ public class Restaurant : BaseEntity
 
     public ICollection<User> Users { get; set; } = [];
     public ICollection<Role> Roles { get; set; } = [];
+    public ICollection<MenuCategory> MenuCategories { get; set; } = [];
+    public ICollection<Table> Tables { get; set; } = [];
+    public ICollection<Order> Orders { get; set; } = [];
 }

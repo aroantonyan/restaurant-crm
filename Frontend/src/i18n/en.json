@@ -22,11 +22,81 @@
       "saveFailed": "Couldn't save settings"
     }
   },
+  "menu": {
+    "title": "Menu",
+    "addCategory": "Add category",
+    "addItem": "Add item",
+    "editItem": "Edit item",
+    "noCategories": "No categories yet",
+    "noCategoriesHint": "Add your first category to start building your menu.",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "category": "Category",
+    "itemName": "Item name",
+    "description": "Description (optional)",
+    "price": "Price",
+    "categoryName": "Category name",
+    "sortOrder": "Sort order",
+    "errors": {
+      "loadFailed": "Couldn't load menu",
+      "saveFailed": "Couldn't save changes"
+    }
+  },
+  "tables": {
+    "title": "Tables",
+    "add": "Add table",
+    "number": "Table number",
+    "capacity": "Capacity",
+    "status": {
+      "Free": "Free",
+      "Occupied": "Occupied",
+      "Reserved": "Reserved"
+    }
+  },
+  "orders": {
+    "title": "Orders",
+    "new": "New order",
+    "table": "Table",
+    "total": "Total",
+    "createdBy": "By",
+    "filter": {
+      "all": "All",
+      "open": "Open",
+      "paid": "Paid",
+      "cancelled": "Cancelled"
+    },
+    "status": {
+      "Open": "Open",
+      "Paid": "Paid",
+      "Cancelled": "Cancelled"
+    },
+    "itemStatus": {
+      "Pending": "Pending",
+      "Preparing": "Preparing",
+      "Ready": "Ready",
+      "Served": "Served"
+    },
+    "close": "Close (Paid)",
+    "cancel": "Cancel order",
+    "cancelConfirm": "Confirm cancellation",
+    "addItem": "Add item",
+    "selectTable": "Select a table",
+    "selectItems": "Add items",
+    "quantity": "Qty",
+    "notes": "Notes (optional)",
+    "noOrders": "No orders",
+    "errors": {
+      "loadFailed": "Couldn't load orders",
+      "saveFailed": "Couldn't save order"
+    }
+  },
   "dashboard": {
     "greeting": "Hello, {{name}}",
     "role": "Role",
     "tabs": {
       "staff": "Staff",
+      "menu": "Menu",
+      "orders": "Orders",
       "schedule": "Schedule",
       "restaurantSettings": "Restaurant Settings"
     },

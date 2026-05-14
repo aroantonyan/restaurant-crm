@@ -6,6 +6,7 @@ export type UserStatus = 'Active' | 'Inactive' | 'PendingPasswordChange'
 export interface AuthSession {
   userId: string
   restaurantId: string
+  restaurantName: string
   firstName: string
   lastName: string
   roleName: string

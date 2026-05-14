@@ -37,6 +37,7 @@ export default function Login() {
       auth.set(res.token, {
         userId: res.userId,
         restaurantId: res.restaurantId,
+        restaurantName: res.restaurantName,
         firstName: res.firstName,
         lastName: res.lastName,
         roleName: res.roleName,

@@ -7,6 +7,8 @@ import { usePermissions, type Permission } from '../hooks/usePermissions'
 
 const NAV_CONFIG = [
   { key: 'staff',    permission: 'ViewStaff'               as Permission, labelKey: 'dashboard.tabs.staff',              path: '/staff'    },
+  { key: 'menu',    permission: 'ViewMenu'                 as Permission, labelKey: 'dashboard.tabs.menu',               path: '/menu'     },
+  { key: 'orders',  permission: 'ViewOrders'               as Permission, labelKey: 'dashboard.tabs.orders',             path: '/orders'   },
   { key: 'schedule', permission: 'ViewSchedules'            as Permission, labelKey: 'dashboard.tabs.schedule',           path: '/schedule' },
   { key: 'rsettings',permission: 'ManageRestaurantSettings' as Permission, labelKey: 'dashboard.tabs.restaurantSettings', path: '/settings' },
 ] as const
@@ -104,6 +106,7 @@ export default function Dashboard() {
           {t('dashboard.role')}:{' '}
           <span className="text-tg-text font-medium">{session.roleName}</span>
         </p>
+        <p className="text-tg-hint text-xs mt-0.5">{session.restaurantName}</p>
       </header>
 
       {/* nav */}

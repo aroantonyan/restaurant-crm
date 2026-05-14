@@ -8,6 +8,10 @@ import SettingsPage from './pages/SettingsPage'
 import StaffTab from './pages/staff/StaffTab'
 import StaffCreate from './pages/staff/StaffCreate'
 import StaffEdit from './pages/staff/StaffEdit'
+import MenuPage from './pages/menu/MenuPage'
+import OrdersPage from './pages/orders/OrdersPage'
+import OrderDetailPage from './pages/orders/OrderDetailPage'
+import CreateOrderPage from './pages/orders/CreateOrderPage'
 import RequireAuth, { RedirectIfAuthed } from './components/RequireAuth'
 
 export default function App() {
@@ -87,6 +91,39 @@ export default function App() {
         element={
           <RequireAuth>
             <StaffEdit />
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/menu"
+        element={
+          <RequireAuth>
+            <MenuPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/orders"
+        element={
+          <RequireAuth>
+            <OrdersPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/orders/new"
+        element={
+          <RequireAuth>
+            <CreateOrderPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/orders/:id"
+        element={
+          <RequireAuth>
+            <OrderDetailPage />
           </RequireAuth>
         }
       />

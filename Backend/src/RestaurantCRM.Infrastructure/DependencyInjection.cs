@@ -7,8 +7,11 @@ using Microsoft.IdentityModel.Tokens;
 using RestaurantCRM.Application.Auth;
 using RestaurantCRM.Application.Common.Interfaces;
 using RestaurantCRM.Application.Common.Settings;
+using RestaurantCRM.Application.Menu;
+using RestaurantCRM.Application.Orders;
 using RestaurantCRM.Application.Restaurants;
 using RestaurantCRM.Application.Staff;
+using RestaurantCRM.Application.Tables;
 using RestaurantCRM.Infrastructure.Persistence;
 using RestaurantCRM.Infrastructure.Services;
 
@@ -29,6 +32,9 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IRestaurantService, RestaurantService>();
         services.AddScoped<IStaffService, StaffService>();
+        services.AddScoped<IMenuService, MenuService>();
+        services.AddScoped<ITableService, TableService>();
+        services.AddScoped<IOrderService, OrderService>();
 
         services.AddDbContext<AppDbContext>((serviceProvider, options) =>
         {
