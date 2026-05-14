@@ -73,6 +73,13 @@ When backend DTOs change:
 - Telegram `initData` HMAC verification on the backend
 - SignalR real-time events (OrderHub is scaffolded but unused)
 
+## Test accounts (local DB)
+
+| Email | Password | Role |
+|---|---|---|
+| `aro@mail.ru` | `secret123` | Admin — full permissions |
+| `lili@mail.ru` | `lili123` | Waiter — limited permissions |
+
 ## Auth model
 
 - `POST /api/auth/register` — creates Restaurant + Admin user + **6 default roles** atomically
