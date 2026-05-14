@@ -25,60 +25,28 @@ public class StaffController(IStaffService staffService) : BaseController
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
-        try
-        {
-            var result = await staffService.GetByIdAsync(id, ct);
-            return Ok(result);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
+        var result = await staffService.GetByIdAsync(id, ct);
+        return Ok(result);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(CreateStaffRequest request, CancellationToken ct)
     {
-        try
-        {
-            var result = await staffService.CreateAsync(request, ct);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
+        var result = await staffService.CreateAsync(request, ct);
+        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, UpdateStaffRequest request, CancellationToken ct)
     {
-        try
-        {
-            var result = await staffService.UpdateAsync(id, request, ct);
-            return Ok(result);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
+        var result = await staffService.UpdateAsync(id, request, ct);
+        return Ok(result);
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
     {
-        try
-        {
-            await staffService.DeactivateAsync(id, ct);
-            return NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
+        await staffService.DeactivateAsync(id, ct);
+        return NoContent();
     }
 }

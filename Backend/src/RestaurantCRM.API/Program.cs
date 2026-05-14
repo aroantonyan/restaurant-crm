@@ -1,10 +1,12 @@
 using System.Text.Json.Serialization;
+using RestaurantCRM.API;
 using RestaurantCRM.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 const string CorsPolicy = "Frontend";
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddOpenApi();
 builder.Services.AddControllers()
     .AddJsonOptions(o =>
@@ -36,6 +38,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 
+app.UseExceptionHandler();
 app.UseCors(CorsPolicy);
 app.UseHttpsRedirection();
 app.UseAuthentication();

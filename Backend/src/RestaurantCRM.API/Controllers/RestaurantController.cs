@@ -11,28 +11,14 @@ public class RestaurantController(IRestaurantService restaurantService) : BaseCo
     [HttpGet("me")]
     public async Task<IActionResult> Get(CancellationToken ct)
     {
-        try
-        {
-            var result = await restaurantService.GetAsync(ct);
-            return Ok(result);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
+        var result = await restaurantService.GetAsync(ct);
+        return Ok(result);
     }
 
     [HttpPut("me")]
     public async Task<IActionResult> Update(UpdateRestaurantRequest request, CancellationToken ct)
     {
-        try
-        {
-            var result = await restaurantService.UpdateAsync(request, ct);
-            return Ok(result);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
+        var result = await restaurantService.UpdateAsync(request, ct);
+        return Ok(result);
     }
 }
