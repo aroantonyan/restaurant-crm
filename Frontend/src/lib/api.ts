@@ -117,6 +117,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers })
 
   if (!res.ok) {
+    if (res.status === 401) {
+      auth.clear()
+      window.location.replace('/login')
+    }
     const message = await extractError(res)
     throw new ApiError(res.status, message)
   }
