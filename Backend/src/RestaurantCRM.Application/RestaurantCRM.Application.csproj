@@ -3,6 +3,9 @@
   <ItemGroup>
     <ProjectReference Include="..\RestaurantCRM.Domain\RestaurantCRM.Domain.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+  </ItemGroup>
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>

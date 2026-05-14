@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using RestaurantCRM.Domain.Enums;
 
 namespace RestaurantCRM.Application.Staff;
@@ -24,19 +23,19 @@ public record RoleDto(
 );
 
 public record CreateStaffRequest(
-    [Required] string FirstName,
-    [Required] string LastName,
-    [Required] string FatherName,
-    [Required][EmailAddress] string Email,
-    [Required] string TemporaryPassword,
-    [Required] Guid RoleId,
+    string FirstName,
+    string LastName,
+    string FatherName,
+    string Email,
+    string TemporaryPassword,
+    Guid RoleId,
     string? Phone
 );
 
 public record UpdateStaffRequest(
-    [Required] string FirstName,
-    [Required] string LastName,
-    [Required] string FatherName,
+    string FirstName,
+    string LastName,
+    string FatherName,
     string? Phone,
     Guid? RoleId
 );

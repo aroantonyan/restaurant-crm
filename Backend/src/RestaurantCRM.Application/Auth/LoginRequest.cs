@@ -1,8 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace RestaurantCRM.Application.Auth;
 
-public record LoginRequest(
-    [Required][EmailAddress] string Email,
-    [Required] string Password
-);
+public record LoginRequest(string Email, string Password);
