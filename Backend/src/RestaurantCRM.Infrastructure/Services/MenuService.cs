@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using RestaurantCRM.Application.Common.Interfaces;
 using RestaurantCRM.Application.Menu;
 using RestaurantCRM.Domain.Entities;
 using RestaurantCRM.Infrastructure.Persistence;
 
 namespace RestaurantCRM.Infrastructure.Services;
 
-public class MenuService(AppDbContext db) : IMenuService
+public class MenuService(AppDbContext db, ITenantContext tenant) : IMenuService
 {
     public async Task<List<MenuCategoryDto>> GetAllAsync(CancellationToken ct = default)
     {
@@ -20,9 +21,7 @@ public class MenuService(AppDbContext db) : IMenuService
     {
         var category = new MenuCategory
         {
-            RestaurantId = db.MenuCategories.Local.FirstOrDefault()?.RestaurantId
-                           ?? (await db.MenuCategories.FirstOrDefaultAsync(ct))?.RestaurantId
-                           ?? await GetRestaurantIdAsync(ct),
+            RestaurantId = tenant.RestaurantId,
             Name = request.Name,
             SortOrder = request.SortOrder,
         };
@@ -116,15 +115,6 @@ public class MenuService(AppDbContext db) : IMenuService
     }
 
     // ---- helpers ----
-
-    private async Task<Guid> GetRestaurantIdAsync(CancellationToken ct)
-    {
-        // ITenantContext global filter ensures we only see our restaurant's data,
-        // but for inserts we need the RestaurantId — read it from any existing entity.
-        var restaurant = await db.Restaurants.FirstOrDefaultAsync(ct)
-            ?? throw new InvalidOperationException("Restaurant not found.");
-        return restaurant.Id;
-    }
 
     private static MenuCategoryDto ToDto(MenuCategory c) =>
         new(c.Id, c.Name, c.SortOrder, c.Items.Select(ToItemDto).ToList());

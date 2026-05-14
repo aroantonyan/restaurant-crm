@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using RestaurantCRM.Application.Common.Interfaces;
 using RestaurantCRM.Application.Tables;
 using RestaurantCRM.Domain.Entities;
 using RestaurantCRM.Infrastructure.Persistence;
 
 namespace RestaurantCRM.Infrastructure.Services;
 
-public class TableService(AppDbContext db) : ITableService
+public class TableService(AppDbContext db, ITenantContext tenant) : ITableService
 {
     public async Task<List<TableDto>> GetAllAsync(CancellationToken ct = default)
     {
@@ -20,12 +21,9 @@ public class TableService(AppDbContext db) : ITableService
         var exists = await db.Tables.AnyAsync(t => t.Number == request.Number, ct);
         if (exists) throw new InvalidOperationException($"Table {request.Number} already exists.");
 
-        var restaurant = await db.Restaurants.FirstOrDefaultAsync(ct)
-            ?? throw new InvalidOperationException("Restaurant not found.");
-
         var table = new Table
         {
-            RestaurantId = restaurant.Id,
+            RestaurantId = tenant.RestaurantId,
             Number = request.Number,
             Capacity = request.Capacity,
         };
