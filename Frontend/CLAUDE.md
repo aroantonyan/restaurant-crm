@@ -14,12 +14,16 @@ Telegram Mini App frontend for Restaurant CRM. Mobile-first, runs inside Telegra
 ## Commands
 
 ```bash
-npm run dev          # Vite dev server at http://localhost:5173
+npm run dev          # Vite dev server at http://localhost:5173 (HMR, but slow inside Telegram)
 npm run build        # tsc -b && vite build
+npm run start        # build + preview at http://localhost:5173 (fast — use this for Telegram testing)
+npm run preview      # serve dist/ (run after npm run build)
 npm run lint         # ESLint
 npm run tunnel       # ngrok http 5173 — public HTTPS for BotFather
 npm run gen:api      # regenerate src/lib/api-types.ts from backend OpenAPI doc
 ```
+
+**Use `npm run dev` for code editing**, `npm run start` for Telegram testing. Dev mode serves hundreds of unbundled modules over HTTP; preview serves one bundled file.
 
 ## Backend integration
 
@@ -39,46 +43,69 @@ Sibling project: `../Backend/src/` (ASP.NET Core 9, port 5293). Contract source 
 
 ```
 src/
-  main.tsx                  ← entry: initTelegram() → i18n init → router
-  App.tsx                   ← routes + guards (RequireAuth / RedirectIfAuthed)
-  index.css                 ← Tailwind + Telegram theme CSS vars
+  main.tsx                       ← entry: initTelegram() → i18n init → router
+  App.tsx                        ← routes + guards (RequireAuth / RedirectIfAuthed)
+  index.css                      ← Tailwind + Telegram theme CSS vars
   lib/
-    api.ts                  ← typed fetch wrapper + auth/initData header injection
-    auth.ts                 ← localStorage session (token + AuthSession)
-    telegram.ts             ← typed Telegram.WebApp wrapper, theme sync
+    api.ts                       ← typed fetch wrapper + auth/initData header injection + global 401 handler
+    auth.ts                      ← localStorage session (token + AuthSession with currency + restaurantName)
+    format.ts                    ← formatPrice(amount, currency?) — drops decimals for AMD/JPY/KRW etc.
+    telegram.ts                  ← typed Telegram.WebApp wrapper, theme sync
   i18n/
-    index.ts                ← i18next setup
-    en.json / hy.json       ← translations (always keep in sync)
+    index.ts, en.json, hy.json   ← i18next setup + translations (keep in sync)
   components/
-    Field.tsx               ← labeled input with error display (forwardRef)
-    SubmitButton.tsx        ← button with loading state
-    LanguageSwitcher.tsx    ← EN / ՀԱՅ toggle
+    Field.tsx, Select.tsx,
+    SubmitButton.tsx,
+    LanguageSwitcher.tsx,
+    RequireAuth.tsx
+  hooks/
+    usePermissions.ts            ← has(...) / hasAny(...) against session permissions
+    useBackButton.ts             ← wire Telegram BackButton → react-router navigate(-1)
   pages/
-    Login.tsx               ← email + password → JWT stored in localStorage
-    Register.tsx            ← restaurant owner self-signup (6 fields)
-    Dashboard.tsx           ← greeting + Staff/Schedule tabs (tabs are placeholder only)
+    Login.tsx, Register.tsx,
+    Dashboard.tsx,               ← avatar header, icon nav cards, gear dropdown
+    ChangePassword.tsx,
+    SettingsPage.tsx,            ← restaurant profile form
+    SchedulePage.tsx,            ← placeholder
+    staff/                       ← StaffTab, StaffCreate, StaffEdit
+    menu/                        ← MenuPage (category cards), MenuCategoryPage (items in category)
+    orders/                      ← OrdersPage, CreateOrderPage, OrderDetailPage
 ```
 
 ## Routes
 
-| Path | Guard | Component | Status |
-|---|---|---|---|
-| `/` | — | Redirect → `/dashboard` | done |
-| `/login` | RedirectIfAuthed | Login.tsx | done |
-| `/register` | RedirectIfAuthed | Register.tsx | done |
-| `/dashboard` | RequireAuth | Dashboard.tsx | shell done; tab content placeholder |
-| `*` | — | Redirect → `/dashboard` | done |
+| Path | Guard | Component |
+|---|---|---|
+| `/` | — | Redirect → `/dashboard` |
+| `/login` | RedirectIfAuthed | Login |
+| `/register` | RedirectIfAuthed | Register |
+| `/dashboard` | RequireAuth | Dashboard |
+| `/change-password` | RequireAuth | ChangePassword |
+| `/staff`, `/staff/new`, `/staff/:id/edit` | RequireAuth | StaffTab, StaffCreate, StaffEdit |
+| `/menu` | RequireAuth | MenuPage (category cards) |
+| `/menu/categories/:id` | RequireAuth | MenuCategoryPage (items in category) |
+| `/orders`, `/orders/new`, `/orders/:id` | RequireAuth | OrdersPage, CreateOrderPage, OrderDetailPage |
+| `/settings` | RequireAuth | SettingsPage |
+| `/schedule` | RequireAuth | SchedulePage (placeholder) |
+| `*` | — | Redirect → `/dashboard` |
 
-## Validation rules (mirror backend DataAnnotations)
+## Validation rules (mirror backend FluentValidation)
 
 | Field | Rule | Backend source |
 |---|---|---|
-| firstName / lastName / fatherName | required, max 100 | UserConfiguration.cs |
-| email | required, valid email, max 256, unique global | UserConfiguration.cs |
-| password | required, min 6 | RegisterRequest.cs `[MinLength(6)]` |
-| restaurantName | required, max 200 | RestaurantConfiguration.cs |
+| firstName / lastName / fatherName | required, max 100 | RegisterRequestValidator, CreateStaffRequestValidator |
+| email | required, valid email, max 256, unique global | RegisterRequestValidator |
+| password | required, min 6 | RegisterRequestValidator |
+| restaurantName | required, max 200 | RegisterRequestValidator |
+| menu item name | required, max 200 | CreateMenuItemRequestValidator |
+| menu item price | > 0 | CreateMenuItemRequestValidator |
+| order item quantity | 1..99 | AddOrderItemRequestValidator |
 
 When backend changes a constraint, update Zod schemas in the relevant page.
+
+## Currency
+
+`AuthResponse` includes the restaurant's `currency` (default `AMD`). It's stored in `AuthSession.currency` and read by `formatPrice(amount)` in `lib/format.ts`. Currencies that conventionally don't show decimals (AMD, JPY, KRW, HUF, CLP) drop trailing `.00`. The user's restaurant currency is the source of truth — when displaying any money amount on the frontend, use `formatPrice()`, never `.toFixed(2)`.
 
 ## Telegram Mini App notes
 

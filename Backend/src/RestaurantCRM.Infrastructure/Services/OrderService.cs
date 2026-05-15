@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RestaurantCRM.Application.Common.Interfaces;
 using RestaurantCRM.Application.Orders;
 using RestaurantCRM.Domain.Entities;
 using RestaurantCRM.Domain.Enums;
@@ -6,7 +7,7 @@ using RestaurantCRM.Infrastructure.Persistence;
 
 namespace RestaurantCRM.Infrastructure.Services;
 
-public class OrderService(AppDbContext db) : IOrderService
+public class OrderService(AppDbContext db, ITenantContext tenant) : IOrderService
 {
     public async Task<List<OrderDto>> GetAllAsync(CancellationToken ct = default)
     {
@@ -49,7 +50,7 @@ public class OrderService(AppDbContext db) : IOrderService
 
         var order = new Order
         {
-            RestaurantId = table.RestaurantId,
+            RestaurantId = tenant.RestaurantId,
             TableId = table.Id,
             CreatedById = createdById,
             Items = request.Items.Select(i =>
@@ -57,7 +58,7 @@ public class OrderService(AppDbContext db) : IOrderService
                 var menuItem = menuItems.First(m => m.Id == i.MenuItemId);
                 return new OrderItem
                 {
-                    RestaurantId = table.RestaurantId,
+                    RestaurantId = tenant.RestaurantId,
                     MenuItemId = menuItem.Id,
                     MenuItemName = menuItem.Name,
                     Price = menuItem.Price,
@@ -91,7 +92,7 @@ public class OrderService(AppDbContext db) : IOrderService
 
         var item = new OrderItem
         {
-            RestaurantId = order.RestaurantId,
+            RestaurantId = tenant.RestaurantId,
             OrderId = order.Id,
             MenuItemId = menuItem.Id,
             MenuItemName = menuItem.Name,

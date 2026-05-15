@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RestaurantCRM.API.Auth;
 using RestaurantCRM.Application.Menu;
+using RestaurantCRM.Domain.Enums;
 
 namespace RestaurantCRM.API.Controllers;
 
@@ -9,6 +11,7 @@ namespace RestaurantCRM.API.Controllers;
 public class MenuController(IMenuService menuService) : BaseController
 {
     [HttpGet]
+    [RequirePermission(PermissionType.ViewMenu)]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
         var result = await menuService.GetAllAsync(ct);
@@ -16,13 +19,16 @@ public class MenuController(IMenuService menuService) : BaseController
     }
 
     [HttpPost("categories")]
+    [RequirePermission(PermissionType.ManageMenu)]
     public async Task<IActionResult> CreateCategory(CreateCategoryRequest request, CancellationToken ct)
     {
         var result = await menuService.CreateCategoryAsync(request, ct);
-        return CreatedAtAction(nameof(GetAll), result);
+        // We don't expose a per-category GET, so just return 200 with the body
+        return Ok(result);
     }
 
     [HttpPut("categories/{id:guid}")]
+    [RequirePermission(PermissionType.ManageMenu)]
     public async Task<IActionResult> UpdateCategory(Guid id, UpdateCategoryRequest request, CancellationToken ct)
     {
         var result = await menuService.UpdateCategoryAsync(id, request, ct);
@@ -30,6 +36,7 @@ public class MenuController(IMenuService menuService) : BaseController
     }
 
     [HttpDelete("categories/{id:guid}")]
+    [RequirePermission(PermissionType.ManageMenu)]
     public async Task<IActionResult> DeleteCategory(Guid id, CancellationToken ct)
     {
         await menuService.DeleteCategoryAsync(id, ct);
@@ -37,13 +44,15 @@ public class MenuController(IMenuService menuService) : BaseController
     }
 
     [HttpPost("items")]
+    [RequirePermission(PermissionType.ManageMenu)]
     public async Task<IActionResult> CreateItem(CreateMenuItemRequest request, CancellationToken ct)
     {
         var result = await menuService.CreateItemAsync(request, ct);
-        return CreatedAtAction(nameof(GetAll), result);
+        return Ok(result);
     }
 
     [HttpPut("items/{id:guid}")]
+    [RequirePermission(PermissionType.ManageMenu)]
     public async Task<IActionResult> UpdateItem(Guid id, UpdateMenuItemRequest request, CancellationToken ct)
     {
         var result = await menuService.UpdateItemAsync(id, request, ct);
@@ -51,6 +60,7 @@ public class MenuController(IMenuService menuService) : BaseController
     }
 
     [HttpPatch("items/{id:guid}/toggle")]
+    [RequirePermission(PermissionType.ManageMenu)]
     public async Task<IActionResult> ToggleAvailability(Guid id, CancellationToken ct)
     {
         var result = await menuService.ToggleAvailabilityAsync(id, ct);
@@ -58,6 +68,7 @@ public class MenuController(IMenuService menuService) : BaseController
     }
 
     [HttpDelete("items/{id:guid}")]
+    [RequirePermission(PermissionType.ManageMenu)]
     public async Task<IActionResult> DeleteItem(Guid id, CancellationToken ct)
     {
         await menuService.DeleteItemAsync(id, ct);

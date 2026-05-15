@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace RestaurantCRM.Infrastructure.Migrations
+namespace RestaurantCRM.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class SplitUserFullName : Migration

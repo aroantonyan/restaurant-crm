@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api, type OrderDto } from '../../lib/api'
 import { useBackButton } from '../../hooks/useBackButton'
 import { usePermissions } from '../../hooks/usePermissions'
+import { formatPrice } from '../../lib/format'
 
 type Filter = 'all' | 'Open' | 'Paid' | 'Cancelled'
 
@@ -126,7 +127,7 @@ export default function OrdersPage() {
                 <span className={`text-sm font-semibold ${statusClass(order.status)}`}>
                   {t(`orders.status.${order.status}`)}
                 </span>
-                <span className="text-sm text-tg-text">{order.total.toFixed(2)}</span>
+                <span className="text-sm text-tg-text">{formatPrice(order.total)}</span>
               </div>
             </button>
           ))}

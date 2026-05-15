@@ -5,7 +5,9 @@
     "loading": "Please wait…",
     "logout": "Log out",
     "settings": "Settings",
-    "accountMenu": "Account menu"
+    "accountMenu": "Account menu",
+    "retry": "Retry",
+    "back": "Back"
   },
   "settings": {
     "subtitle": "Manage your restaurant profile",
@@ -25,10 +27,19 @@
   "menu": {
     "title": "Menu",
     "addCategory": "Add category",
+    "editCategory": "Edit category",
+    "deleteCategory": "Delete category",
+    "deleteCategoryConfirm": "Yes, delete category and all items",
     "addItem": "Add item",
     "editItem": "Edit item",
     "noCategories": "No categories yet",
     "noCategoriesHint": "Add your first category to start building your menu.",
+    "noItems": "No items in this category",
+    "noItemsHint": "Tap \"Add item\" to add the first one.",
+    "itemCount_one": "{{count}} item",
+    "itemCount_other": "{{count}} items",
+    "unavailableCount_one": "{{count}} unavailable",
+    "unavailableCount_other": "{{count}} unavailable",
     "available": "Available",
     "unavailable": "Unavailable",
     "category": "Category",
@@ -37,6 +48,8 @@
     "price": "Price",
     "categoryName": "Category name",
     "sortOrder": "Sort order",
+    "deleteItem": "Delete item",
+    "deleteConfirm": "Yes, delete this item",
     "errors": {
       "loadFailed": "Couldn't load menu",
       "saveFailed": "Couldn't save changes"
@@ -100,6 +113,13 @@
       "schedule": "Schedule",
       "restaurantSettings": "Restaurant Settings"
     },
+    "desc": {
+      "staff": "Team members and roles",
+      "menu": "Categories and items",
+      "orders": "Active and past orders",
+      "schedule": "Shifts and rotations",
+      "settings": "Restaurant profile and details"
+    },
     "schedule": {
       "empty": "No schedule yet.",
       "comingSoon": "Plan shifts and assign staff here."
@@ -141,23 +161,27 @@
   "auth": {
     "login": {
       "title": "Welcome back",
-      "subtitle": "Sign in to your restaurant workspace",
+      "subtitle": "Sign in to your restaurant",
       "submit": "Sign in",
-      "noAccount": "No account?",
-      "createOne": "Create one"
+      "noAccount": "Don't have a restaurant yet?",
+      "createOne": "Register your restaurant"
     },
     "register": {
-      "title": "Create your restaurant",
-      "subtitle": "Register as the admin and set up your workspace",
+      "title": "Register your restaurant",
+      "subtitle": "You'll be the admin — set up the team after",
       "firstName": "First name",
       "lastName": "Last name",
       "fatherName": "Father's name",
       "email": "Email",
       "password": "Password",
       "restaurantName": "Restaurant name",
-      "submit": "Create account",
-      "haveAccount": "Have an account?",
-      "signIn": "Sign in"
+      "submit": "Create restaurant",
+      "haveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "section": {
+        "restaurant": "Your restaurant",
+        "admin": "Admin account"
+      }
     },
     "changePassword": {
       "title": "Set your password",

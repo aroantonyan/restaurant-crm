@@ -54,6 +54,7 @@ export default function Register() {
         userId: res.userId,
         restaurantId: res.restaurantId,
         restaurantName: res.restaurantName,
+        currency: res.currency,
         firstName: res.firstName,
         lastName: res.lastName,
         roleName: res.roleName,
@@ -68,59 +69,74 @@ export default function Register() {
   }
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-6 pb-10 max-w-md mx-auto w-full min-h-full">
+    <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
       <LanguageSwitcher />
-      <header className="mb-8 mt-4">
+
+      <header className="mt-6 mb-7">
         <h1 className="text-2xl font-bold">{t('auth.register.title')}</h1>
-        <p className="text-tg-hint text-sm mt-1">{t('auth.register.subtitle')}</p>
+        <p className="text-tg-hint text-sm mt-1.5">{t('auth.register.subtitle')}</p>
       </header>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-        <Field
-          label={t('auth.register.firstName')}
-          autoComplete="given-name"
-          enterKeyHint="next"
-          {...register('firstName')}
-          error={errors.firstName?.message}
-        />
-        <Field
-          label={t('auth.register.lastName')}
-          autoComplete="family-name"
-          enterKeyHint="next"
-          {...register('lastName')}
-          error={errors.lastName?.message}
-        />
-        <Field
-          label={t('auth.register.fatherName')}
-          autoComplete="additional-name"
-          enterKeyHint="next"
-          {...register('fatherName')}
-          error={errors.fatherName?.message}
-        />
-        <Field
-          label={t('auth.register.email')}
-          type="email"
-          autoComplete="email"
-          inputMode="email"
-          enterKeyHint="next"
-          {...register('email')}
-          error={errors.email?.message}
-        />
-        <Field
-          label={t('auth.register.password')}
-          type="password"
-          autoComplete="new-password"
-          enterKeyHint="next"
-          {...register('password')}
-          error={errors.password?.message}
-        />
-        <Field
-          label={t('auth.register.restaurantName')}
-          autoComplete="organization"
-          enterKeyHint="done"
-          {...register('restaurantName')}
-          error={errors.restaurantName?.message}
-        />
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+        {/* Section 1: Restaurant */}
+        <section>
+          <p className="text-[11px] text-tg-hint uppercase tracking-wider font-medium mb-3 px-1">
+            {t('auth.register.section.restaurant')}
+          </p>
+          <Field
+            label={t('auth.register.restaurantName')}
+            autoComplete="organization"
+            enterKeyHint="next"
+            {...register('restaurantName')}
+            error={errors.restaurantName?.message}
+          />
+        </section>
+
+        {/* Section 2: Admin account */}
+        <section className="flex flex-col gap-4">
+          <p className="text-[11px] text-tg-hint uppercase tracking-wider font-medium px-1">
+            {t('auth.register.section.admin')}
+          </p>
+          <Field
+            label={t('auth.register.firstName')}
+            autoComplete="given-name"
+            enterKeyHint="next"
+            {...register('firstName')}
+            error={errors.firstName?.message}
+          />
+          <Field
+            label={t('auth.register.lastName')}
+            autoComplete="family-name"
+            enterKeyHint="next"
+            {...register('lastName')}
+            error={errors.lastName?.message}
+          />
+          <Field
+            label={t('auth.register.fatherName')}
+            autoComplete="additional-name"
+            enterKeyHint="next"
+            {...register('fatherName')}
+            error={errors.fatherName?.message}
+          />
+          <Field
+            label={t('auth.register.email')}
+            type="email"
+            autoComplete="email"
+            inputMode="email"
+            enterKeyHint="next"
+            {...register('email')}
+            error={errors.email?.message}
+          />
+          <Field
+            label={t('auth.register.password')}
+            type="password"
+            autoComplete="new-password"
+            enterKeyHint="done"
+            {...register('password')}
+            error={errors.password?.message}
+          />
+        </section>
+
         {serverError && <p className="text-tg-destructive text-sm text-center">{serverError}</p>}
         <SubmitButton loading={isSubmitting}>{t('auth.register.submit')}</SubmitButton>
       </form>

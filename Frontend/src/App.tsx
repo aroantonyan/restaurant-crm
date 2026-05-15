@@ -9,6 +9,7 @@ import StaffTab from './pages/staff/StaffTab'
 import StaffCreate from './pages/staff/StaffCreate'
 import StaffEdit from './pages/staff/StaffEdit'
 import MenuPage from './pages/menu/MenuPage'
+import MenuCategoryPage from './pages/menu/MenuCategoryPage'
 import OrdersPage from './pages/orders/OrdersPage'
 import OrderDetailPage from './pages/orders/OrderDetailPage'
 import CreateOrderPage from './pages/orders/CreateOrderPage'
@@ -100,6 +101,14 @@ export default function App() {
         element={
           <RequireAuth>
             <MenuPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/menu/categories/:id"
+        element={
+          <RequireAuth>
+            <MenuCategoryPage />
           </RequireAuth>
         }
       />

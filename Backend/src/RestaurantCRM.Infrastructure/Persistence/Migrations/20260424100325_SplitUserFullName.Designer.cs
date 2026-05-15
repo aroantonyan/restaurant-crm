@@ -9,11 +9,11 @@ using RestaurantCRM.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace RestaurantCRM.Infrastructure.Migrations
+namespace RestaurantCRM.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260424092844_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260424100325_SplitUserFullName")]
+    partial class SplitUserFullName
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -130,10 +130,20 @@ namespace RestaurantCRM.Infrastructure.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
-                    b.Property<string>("FullName")
+                    b.Property<string>("FatherName")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -162,10 +172,12 @@ namespace RestaurantCRM.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RoleId");
-
-                    b.HasIndex("RestaurantId", "Email")
+                    b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("RestaurantId");
+
+                    b.HasIndex("RoleId");
 
                     b.ToTable("Users");
                 });

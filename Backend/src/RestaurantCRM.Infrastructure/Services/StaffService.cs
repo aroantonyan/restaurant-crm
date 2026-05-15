@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using RestaurantCRM.Application.Common.Interfaces;
 using RestaurantCRM.Application.Staff;
 using RestaurantCRM.Domain.Entities;
 using RestaurantCRM.Domain.Enums;
@@ -7,7 +8,7 @@ using RestaurantCRM.Infrastructure.Persistence;
 
 namespace RestaurantCRM.Infrastructure.Services;
 
-public class StaffService(AppDbContext db) : IStaffService
+public class StaffService(AppDbContext db, ITenantContext tenant) : IStaffService
 {
     private readonly PasswordHasher<User> _hasher = new();
 
@@ -45,7 +46,7 @@ public class StaffService(AppDbContext db) : IStaffService
 
         var user = new User
         {
-            RestaurantId = role.RestaurantId,
+            RestaurantId = tenant.RestaurantId,
             RoleId = role.Id,
             FirstName = request.FirstName,
             LastName = request.LastName,

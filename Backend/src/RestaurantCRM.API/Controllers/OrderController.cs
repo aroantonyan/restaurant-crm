@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RestaurantCRM.API.Auth;
 using RestaurantCRM.Application.Orders;
+using RestaurantCRM.Domain.Enums;
 
 namespace RestaurantCRM.API.Controllers;
 
@@ -9,6 +11,7 @@ namespace RestaurantCRM.API.Controllers;
 public class OrderController(IOrderService orderService) : BaseController
 {
     [HttpGet]
+    [RequirePermission(PermissionType.ViewOrders)]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
         var result = await orderService.GetAllAsync(ct);
@@ -16,6 +19,7 @@ public class OrderController(IOrderService orderService) : BaseController
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission(PermissionType.ViewOrders)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var result = await orderService.GetByIdAsync(id, ct);
@@ -23,6 +27,7 @@ public class OrderController(IOrderService orderService) : BaseController
     }
 
     [HttpPost]
+    [RequirePermission(PermissionType.CreateOrder)]
     public async Task<IActionResult> Create(CreateOrderRequest request, CancellationToken ct)
     {
         var result = await orderService.CreateAsync(request, CurrentUserId, ct);
@@ -30,6 +35,7 @@ public class OrderController(IOrderService orderService) : BaseController
     }
 
     [HttpPost("{id:guid}/items")]
+    [RequirePermission(PermissionType.EditOrder)]
     public async Task<IActionResult> AddItem(Guid id, AddOrderItemRequest request, CancellationToken ct)
     {
         var result = await orderService.AddItemAsync(id, request, ct);
@@ -37,6 +43,7 @@ public class OrderController(IOrderService orderService) : BaseController
     }
 
     [HttpDelete("{id:guid}/items/{itemId:guid}")]
+    [RequirePermission(PermissionType.EditOrder)]
     public async Task<IActionResult> RemoveItem(Guid id, Guid itemId, CancellationToken ct)
     {
         var result = await orderService.RemoveItemAsync(id, itemId, ct);
@@ -44,6 +51,7 @@ public class OrderController(IOrderService orderService) : BaseController
     }
 
     [HttpPatch("{id:guid}/status")]
+    [RequirePermission(PermissionType.EditOrder)]
     public async Task<IActionResult> UpdateStatus(Guid id, UpdateOrderStatusRequest request, CancellationToken ct)
     {
         var result = await orderService.UpdateStatusAsync(id, request, ct);
@@ -51,6 +59,7 @@ public class OrderController(IOrderService orderService) : BaseController
     }
 
     [HttpPatch("{id:guid}/items/{itemId:guid}/status")]
+    [RequirePermission(PermissionType.MoveOrderItems)]
     public async Task<IActionResult> UpdateItemStatus(Guid id, Guid itemId, UpdateOrderItemStatusRequest request, CancellationToken ct)
     {
         var result = await orderService.UpdateItemStatusAsync(id, itemId, request, ct);

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { api, ApiError, type OrderDto, type OrderItemDto, type MenuCategoryDto } from '../../lib/api'
 import { useBackButton } from '../../hooks/useBackButton'
 import { usePermissions } from '../../hooks/usePermissions'
+import { formatPrice } from '../../lib/format'
 import Field from '../../components/Field'
 import Select from '../../components/Select'
 import SubmitButton from '../../components/SubmitButton'
@@ -80,7 +81,7 @@ function AddItemModal({ orderId, categories, onClose, onAdded }: AddItemModalPro
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <Select
             label={t('menu.itemName')}
-            options={allItems.map(i => ({ value: i.id, label: `${i.categoryName} — ${i.name} (${i.price.toFixed(2)})` }))}
+            options={allItems.map(i => ({ value: i.id, label: `${i.categoryName} — ${i.name} (${formatPrice(i.price)})` }))}
             {...register('menuItemId')}
             error={errors.menuItemId?.message}
           />
@@ -234,7 +235,7 @@ export default function OrderDetailPage() {
               <p className="text-base font-medium text-tg-text">{item.menuItemName}</p>
               {item.notes && <p className="text-xs text-tg-hint mt-0.5 truncate">{item.notes}</p>}
               <p className="text-sm text-tg-hint mt-0.5">
-                {item.price.toFixed(2)} × {item.quantity}
+                {formatPrice(item.price)} × {item.quantity}
               </p>
             </div>
             <div className="flex flex-col items-end gap-1 ml-3 shrink-0">
@@ -242,7 +243,7 @@ export default function OrderDetailPage() {
                 {t(`orders.itemStatus.${item.status}`)}
               </span>
               <span className="text-sm font-semibold text-tg-text">
-                {(item.price * item.quantity).toFixed(2)}
+                {formatPrice(item.price * item.quantity)}
               </span>
             </div>
           </button>
@@ -252,7 +253,7 @@ export default function OrderDetailPage() {
       {/* total */}
       <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-tg-secondary-bg mb-6">
         <span className="text-base font-semibold text-tg-text">{t('orders.total')}</span>
-        <span className="text-lg font-bold text-tg-text">{order.total.toFixed(2)}</span>
+        <span className="text-lg font-bold text-tg-text">{formatPrice(order.total)}</span>
       </div>
 
       {/* actions */}

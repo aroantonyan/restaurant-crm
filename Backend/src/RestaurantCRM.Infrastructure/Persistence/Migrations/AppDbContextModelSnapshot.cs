@@ -8,7 +8,7 @@ using RestaurantCRM.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace RestaurantCRM.Infrastructure.Migrations
+namespace RestaurantCRM.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     partial class AppDbContextModelSnapshot : ModelSnapshot

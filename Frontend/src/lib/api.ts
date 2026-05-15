@@ -10,6 +10,7 @@ export interface AuthResponse {
   userId: string
   restaurantId: string
   restaurantName: string
+  currency: string
   firstName: string
   lastName: string
   roleName: string

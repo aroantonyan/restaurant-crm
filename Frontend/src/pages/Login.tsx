@@ -38,6 +38,7 @@ export default function Login() {
         userId: res.userId,
         restaurantId: res.restaurantId,
         restaurantName: res.restaurantName,
+        currency: res.currency,
         firstName: res.firstName,
         lastName: res.lastName,
         roleName: res.roleName,
@@ -52,11 +53,19 @@ export default function Login() {
   }
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-6 pb-10 max-w-md mx-auto w-full min-h-full">
+    <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
       <LanguageSwitcher />
-      <header className="mb-8 mt-4">
+
+      {/* logo / icon */}
+      <div className="mt-6 mb-7 flex flex-col items-center">
+        <div className="w-14 h-14 rounded-2xl bg-tg-button text-tg-button-text flex items-center justify-center text-2xl shadow-md">
+          🍽️
+        </div>
+      </div>
+
+      <header className="mb-7 text-center">
         <h1 className="text-2xl font-bold">{t('auth.login.title')}</h1>
-        <p className="text-tg-hint text-sm mt-1">{t('auth.login.subtitle')}</p>
+        <p className="text-tg-hint text-sm mt-1.5">{t('auth.login.subtitle')}</p>
       </header>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -81,12 +90,15 @@ export default function Login() {
         <SubmitButton loading={isSubmitting}>{t('auth.login.submit')}</SubmitButton>
       </form>
 
-      <p className="text-center text-tg-hint text-sm mt-6">
-        {t('auth.login.noAccount')}{' '}
-        <Link to="/register" className="text-tg-link font-medium">
+      <div className="mt-8 pt-6 border-t border-tg-secondary-bg text-center">
+        <p className="text-tg-hint text-sm mb-3">{t('auth.login.noAccount')}</p>
+        <Link
+          to="/register"
+          className="inline-block w-full py-3 rounded-2xl bg-tg-secondary-bg text-tg-text font-medium active:scale-[0.98] transition"
+        >
           {t('auth.login.createOne')}
         </Link>
-      </p>
+      </div>
     </main>
   )
 }

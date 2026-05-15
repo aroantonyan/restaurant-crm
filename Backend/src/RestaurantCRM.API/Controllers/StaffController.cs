@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RestaurantCRM.API.Auth;
 using RestaurantCRM.Application.Staff;
+using RestaurantCRM.Domain.Enums;
 
 namespace RestaurantCRM.API.Controllers;
 
@@ -9,6 +11,7 @@ namespace RestaurantCRM.API.Controllers;
 public class StaffController(IStaffService staffService) : BaseController
 {
     [HttpGet]
+    [RequirePermission(PermissionType.ViewStaff)]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
         var result = await staffService.GetAllAsync(ct);
@@ -16,6 +19,7 @@ public class StaffController(IStaffService staffService) : BaseController
     }
 
     [HttpGet("roles")]
+    [RequirePermission(PermissionType.ViewStaff)]
     public async Task<IActionResult> GetRoles(CancellationToken ct)
     {
         var result = await staffService.GetRolesAsync(ct);
@@ -23,6 +27,7 @@ public class StaffController(IStaffService staffService) : BaseController
     }
 
     [HttpGet("{id:guid}")]
+    [RequirePermission(PermissionType.ViewStaff)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var result = await staffService.GetByIdAsync(id, ct);
@@ -30,6 +35,7 @@ public class StaffController(IStaffService staffService) : BaseController
     }
 
     [HttpPost]
+    [RequirePermission(PermissionType.ManageStaff)]
     public async Task<IActionResult> Create(CreateStaffRequest request, CancellationToken ct)
     {
         var result = await staffService.CreateAsync(request, ct);
@@ -37,6 +43,7 @@ public class StaffController(IStaffService staffService) : BaseController
     }
 
     [HttpPut("{id:guid}")]
+    [RequirePermission(PermissionType.ManageStaff)]
     public async Task<IActionResult> Update(Guid id, UpdateStaffRequest request, CancellationToken ct)
     {
         var result = await staffService.UpdateAsync(id, request, ct);
@@ -44,6 +51,7 @@ public class StaffController(IStaffService staffService) : BaseController
     }
 
     [HttpDelete("{id:guid}")]
+    [RequirePermission(PermissionType.ManageStaff)]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)
     {
         await staffService.DeactivateAsync(id, ct);

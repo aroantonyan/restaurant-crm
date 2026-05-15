@@ -71,13 +71,15 @@ public class AuthService(AppDbContext db, JwtService jwt) : IAuthService
 
         var permissions = adminRole.RolePermissions.Select(p => p.Permission.ToString()).ToList();
         var token = jwt.GenerateToken(user, adminRole.Name, permissions);
-        return new AuthResponse(token, user.Id, restaurant.Id, restaurant.Name, user.FirstName, user.LastName, adminRole.Name, permissions, user.Status.ToString());
+        return new AuthResponse(token, user.Id, restaurant.Id, restaurant.Name, restaurant.Currency, user.FirstName, user.LastName, adminRole.Name, permissions, user.Status.ToString());
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
+        // One query — Users (with Role+permissions) + Restaurant joined via Include
         var user = await db.Users
             .IgnoreQueryFilters()
+            .Include(u => u.Restaurant)
             .Include(u => u.Role)
                 .ThenInclude(r => r.RolePermissions)
             .FirstOrDefaultAsync(u => u.Email == request.Email, ct)
@@ -90,11 +92,8 @@ public class AuthService(AppDbContext db, JwtService jwt) : IAuthService
         if (user.Status == UserStatus.Inactive)
             throw new UnauthorizedAccessException("Account is inactive.");
 
-        var restaurant = await db.Restaurants.FindAsync([user.RestaurantId], ct)
-            ?? throw new KeyNotFoundException("Restaurant not found.");
-
         var permissions = user.Role.RolePermissions.Select(p => p.Permission.ToString()).ToList();
         var token = jwt.GenerateToken(user, user.Role.Name, permissions);
-        return new AuthResponse(token, user.Id, user.RestaurantId, restaurant.Name, user.FirstName, user.LastName, user.Role.Name, permissions, user.Status.ToString());
+        return new AuthResponse(token, user.Id, user.RestaurantId, user.Restaurant.Name, user.Restaurant.Currency, user.FirstName, user.LastName, user.Role.Name, permissions, user.Status.ToString());
     }
 }

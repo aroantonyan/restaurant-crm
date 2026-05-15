@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type TableDto, type MenuCategoryDto } from '../../lib/api'
 import { useBackButton } from '../../hooks/useBackButton'
+import { formatPrice } from '../../lib/format'
 
 type Step = 'table' | 'items'
 
@@ -172,7 +173,7 @@ export default function CreateOrderPage() {
                       >
                         <div className="flex-1 min-w-0">
                           <p className="text-base font-medium text-tg-text truncate">{item.name}</p>
-                          <p className="text-sm text-tg-hint">{item.price.toFixed(2)}</p>
+                          <p className="text-sm text-tg-hint">{formatPrice(item.price)}</p>
                         </div>
                         <div className="flex items-center gap-2 ml-3 shrink-0">
                           {qty > 0 && (
@@ -208,7 +209,7 @@ export default function CreateOrderPage() {
             <div className="sticky bottom-0 pt-4 mt-4 bg-tg-bg">
               <div className="flex items-center justify-between mb-3 px-1">
                 <span className="text-sm text-tg-hint">{t('orders.total')}</span>
-                <span className="text-lg font-bold text-tg-text">{total.toFixed(2)}</span>
+                <span className="text-lg font-bold text-tg-text">{formatPrice(total)}</span>
               </div>
               {serverError && <p className="text-tg-destructive text-sm text-center mb-2">{serverError}</p>}
               <button
