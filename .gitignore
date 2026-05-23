@@ -20,3 +20,9 @@ dist/
 Thumbs.db
 .idea/
 .vscode/settings.json
+
+# Build cache artifacts
+*.lscache
+
+# MS Office lock files (e.g. ~$Document.docx)
+~$*

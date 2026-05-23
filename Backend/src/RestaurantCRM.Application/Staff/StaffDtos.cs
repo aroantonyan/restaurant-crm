@@ -12,7 +12,8 @@ public record StaffMemberDto(
     string RoleName,
     Guid RoleId,
     UserStatus Status,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    List<string> Permissions
 );
 
 public record RoleDto(
@@ -29,7 +30,8 @@ public record CreateStaffRequest(
     string Email,
     string TemporaryPassword,
     Guid RoleId,
-    string? Phone
+    string? Phone,
+    List<string>? Permissions
 );
 
 public record UpdateStaffRequest(
@@ -39,3 +41,5 @@ public record UpdateStaffRequest(
     string? Phone,
     Guid? RoleId
 );
+
+public record SetPermissionsRequest(List<string> Permissions);

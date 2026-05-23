@@ -5,22 +5,45 @@ using RestaurantCRM.Domain.Common;
 
 namespace RestaurantCRM.Infrastructure.Persistence;
 
-internal static class TenantFilterExtension
+internal static class QueryFilterExtensions
 {
-    internal static void AddTenantFilter(this EntityTypeBuilder builder, ITenantContext tenantContext)
+    /// <summary>
+    /// Applies the entity's default query filters in one call:
+    ///   • tenant scope (every query is restricted to the caller's restaurant)
+    ///   • soft-delete (rows with IsDeleted=true are hidden by default)
+    ///
+    /// EF Core allows ONE HasQueryFilter per entity, so both predicates must be
+    /// combined into a single lambda. Use IgnoreQueryFilters() to opt out.
+    /// </summary>
+    internal static void ApplyDefaultFilters(this EntityTypeBuilder builder, ITenantContext tenantContext)
     {
         var clrType = builder.Metadata.ClrType;
+        var isTenant = typeof(ITenantEntity).IsAssignableFrom(clrType);
+        var isSoftDelete = typeof(ISoftDeleteEntity).IsAssignableFrom(clrType);
+        if (!isTenant && !isSoftDelete) return;
+
         var param = Expression.Parameter(clrType, "e");
-        var restaurantIdProp = Expression.Property(param, nameof(ITenantEntity.RestaurantId));
+        Expression? body = null;
 
-        // () => tenantContext.RestaurantId  — evaluated at query time via closure
-        var tenantIdExpr = Expression.Property(
-            Expression.Constant(tenantContext),
-            nameof(ITenantContext.RestaurantId));
+        if (isTenant)
+        {
+            // e.RestaurantId == tenantContext.RestaurantId   (re-evaluated per query)
+            var restaurantIdProp = Expression.Property(param, nameof(ITenantEntity.RestaurantId));
+            var tenantIdExpr = Expression.Property(
+                Expression.Constant(tenantContext),
+                nameof(ITenantContext.RestaurantId));
+            body = Expression.Equal(restaurantIdProp, tenantIdExpr);
+        }
 
-        var body = Expression.Equal(restaurantIdProp, tenantIdExpr);
-        var lambda = Expression.Lambda(body, param);
+        if (isSoftDelete)
+        {
+            // !e.IsDeleted
+            var isDeletedProp = Expression.Property(param, nameof(ISoftDeleteEntity.IsDeleted));
+            var notDeleted = Expression.Not(isDeletedProp);
+            body = body is null ? notDeleted : Expression.AndAlso(body, notDeleted);
+        }
 
-        builder.HasQueryFilter(lambda);
+        if (body is null) return;
+        builder.HasQueryFilter(Expression.Lambda(body, param));
     }
 }

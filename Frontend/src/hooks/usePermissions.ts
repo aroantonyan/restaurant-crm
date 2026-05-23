@@ -13,6 +13,7 @@ export type Permission =
   | 'ViewClients' | 'ManageClients'
   | 'ManageRoles'
   | 'ManageRestaurantSettings'
+  | 'ViewActivityLog'
 
 export function usePermissions() {
   const set = new Set(auth.getSession()?.permissions ?? [])

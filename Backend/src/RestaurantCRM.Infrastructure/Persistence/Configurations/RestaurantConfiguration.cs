@@ -16,6 +16,7 @@ public class RestaurantConfiguration : IEntityTypeConfiguration<Restaurant>
         builder.Property(r => r.Address).HasMaxLength(500);
         builder.Property(r => r.Phone).HasMaxLength(30);
         builder.Property(r => r.LogoUrl).HasMaxLength(1000);
+        builder.Property(r => r.CashBalance).HasPrecision(18, 2).HasDefaultValue(0m);
 
         builder.HasMany(r => r.Users)
             .WithOne(u => u.Restaurant)

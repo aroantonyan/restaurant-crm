@@ -2,6 +2,16 @@
 
 Monorepo for a Telegram Mini App restaurant management system targeting the Armenian market.
 
+## Working principle — research before implementing
+
+Before writing code for any non-trivial feature, do a short research pass:
+
+1. **Identify the canonical / industry-standard approach** for this class of problem (real-time messaging, soft delete, RBAC, payment flows, etc.). What do mature systems in the same domain do?
+2. **Compare 2–3 alternatives** and pick the one that fits this project's constraints (mobile-first, tenant isolation, .NET 9 + PostgreSQL + React 19).
+3. **Name the trade-off in one line** — what's being optimized for (latency, maintainability, scale, dev-velocity) and what's being given up.
+
+Apply this even to features that look familiar. "How the industry does this" beats "how I always do this." Skipping the research step is how you end up with a stale pattern or a third-best solution. State the chosen approach and the rejected alternatives briefly before writing the first file — one line each.
+
 ## Layout
 
 ```

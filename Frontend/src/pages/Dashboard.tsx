@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { auth } from '../lib/auth'
+import { disconnectRealtime } from '../lib/realtime'
 import { getTelegram } from '../lib/telegram'
 import { usePermissions, type Permission } from '../hooks/usePermissions'
 
@@ -17,8 +18,15 @@ interface NavItem {
 const NAV_CONFIG: readonly NavItem[] = [
   { key: 'orders',    permission: 'ViewOrders'                as Permission, labelKey: 'dashboard.tabs.orders',             descKey: 'dashboard.desc.orders',    path: '/orders',   icon: '📝' },
   { key: 'menu',      permission: 'ViewMenu'                  as Permission, labelKey: 'dashboard.tabs.menu',               descKey: 'dashboard.desc.menu',      path: '/menu',     icon: '🍽️' },
+  { key: 'tables',    permission: 'ViewTables'                as Permission, labelKey: 'dashboard.tabs.tables',             descKey: 'dashboard.desc.tables',    path: '/tables',   icon: '🪑' },
+  { key: 'reserv',    permission: 'ViewReservations'          as Permission, labelKey: 'dashboard.tabs.reservations',       descKey: 'dashboard.desc.reservations', path: '/reservations', icon: '📅' },
+  { key: 'reports',   permission: 'ViewReports'               as Permission, labelKey: 'dashboard.tabs.reports',            descKey: 'dashboard.desc.reports',   path: '/reports',  icon: '📊' },
+  { key: 'warehouse', permission: 'ViewWarehouse'             as Permission, labelKey: 'dashboard.tabs.warehouse',          descKey: 'dashboard.desc.warehouse', path: '/warehouse', icon: '📦' },
+  { key: 'cash',      permission: 'ViewCashRegister'          as Permission, labelKey: 'dashboard.tabs.cash',               descKey: 'dashboard.desc.cash',      path: '/cash-register', icon: '💵' },
+  { key: 'clients',   permission: 'ViewClients'               as Permission, labelKey: 'dashboard.tabs.clients',            descKey: 'dashboard.desc.clients',   path: '/clients', icon: '👤' },
+  { key: 'audit',     permission: 'ViewActivityLog'           as Permission, labelKey: 'dashboard.tabs.activityLog',        descKey: 'dashboard.desc.activityLog', path: '/activity-log', icon: '🔍' },
   { key: 'staff',     permission: 'ViewStaff'                 as Permission, labelKey: 'dashboard.tabs.staff',              descKey: 'dashboard.desc.staff',     path: '/staff',    icon: '👥' },
-  { key: 'schedule',  permission: 'ViewSchedules'             as Permission, labelKey: 'dashboard.tabs.schedule',           descKey: 'dashboard.desc.schedule',  path: '/schedule', icon: '📅' },
+  { key: 'schedule',  permission: 'ViewSchedules'             as Permission, labelKey: 'dashboard.tabs.schedule',           descKey: 'dashboard.desc.schedule',  path: '/schedule', icon: '🗓️' },
   { key: 'rsettings', permission: 'ManageRestaurantSettings'  as Permission, labelKey: 'dashboard.tabs.restaurantSettings', descKey: 'dashboard.desc.settings',  path: '/settings', icon: '⚙️' },
 ]
 
@@ -38,6 +46,7 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     auth.clear()
+    disconnectRealtime()
     getTelegram()?.HapticFeedback?.impactOccurred('light')
     navigate('/login', { replace: true })
   }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using RestaurantCRM.Application.Auth;
 using RestaurantCRM.Domain.Entities;
 using RestaurantCRM.Domain.Enums;
@@ -7,7 +8,7 @@ using RestaurantCRM.Infrastructure.Persistence;
 
 namespace RestaurantCRM.Infrastructure.Services;
 
-public class AuthService(AppDbContext db, JwtService jwt) : IAuthService
+public class AuthService(AppDbContext db, JwtService jwt, ILogger<AuthService> logger) : IAuthService
 {
     private readonly PasswordHasher<User> _hasher = new();
 
@@ -71,17 +72,19 @@ public class AuthService(AppDbContext db, JwtService jwt) : IAuthService
 
         var permissions = adminRole.RolePermissions.Select(p => p.Permission.ToString()).ToList();
         var token = jwt.GenerateToken(user, adminRole.Name, permissions);
-        return new AuthResponse(token, user.Id, restaurant.Id, restaurant.Name, restaurant.Currency, user.FirstName, user.LastName, adminRole.Name, permissions, user.Status.ToString());
+        return new AuthResponse(token, user.Id, restaurant.Id, restaurant.Name, restaurant.Currency,
+            user.FirstName, user.LastName, adminRole.Name, permissions, user.Status.ToString());
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
     {
-        // One query — Users (with Role+permissions) + Restaurant joined via Include
+        // One query — User + Restaurant + Role + role permissions + user-level overrides
         var user = await db.Users
             .IgnoreQueryFilters()
             .Include(u => u.Restaurant)
             .Include(u => u.Role)
                 .ThenInclude(r => r.RolePermissions)
+            .Include(u => u.UserPermissions)
             .FirstOrDefaultAsync(u => u.Email == request.Email, ct)
             ?? throw new UnauthorizedAccessException("Invalid email or password.");
 
@@ -92,8 +95,37 @@ public class AuthService(AppDbContext db, JwtService jwt) : IAuthService
         if (user.Status == UserStatus.Inactive)
             throw new UnauthorizedAccessException("Account is inactive.");
 
-        var permissions = user.Role.RolePermissions.Select(p => p.Permission.ToString()).ToList();
+        // User-level permissions override the role when present (custom permission set).
+        var permissions = user.UserPermissions.Count > 0
+            ? user.UserPermissions.Select(p => p.Permission.ToString()).ToList()
+            : user.Role.RolePermissions.Select(p => p.Permission.ToString()).ToList();
+
         var token = jwt.GenerateToken(user, user.Role.Name, permissions);
-        return new AuthResponse(token, user.Id, user.RestaurantId, user.Restaurant.Name, user.Restaurant.Currency, user.FirstName, user.LastName, user.Role.Name, permissions, user.Status.ToString());
+
+        // Write the audit row directly — at this point we know RestaurantId, but the
+        // request's TenantContext is still empty (JWT not yet applied), so ActivityLogService
+        // would short-circuit. Best-effort: swallow errors so login never fails over logging.
+        try
+        {
+            db.ActivityLogEntries.Add(new ActivityLogEntry
+            {
+                RestaurantId = user.RestaurantId,
+                UserId = user.Id,
+                UserName = user.FullName,
+                Category = ActivityCategory.Auth,
+                Action = "Login",
+                EntityType = nameof(User),
+                EntityId = user.Id,
+                Description = $"{user.Email} signed in",
+            });
+            await db.SaveChangesAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to write Auth/Login activity-log entry for {Email}", request.Email);
+        }
+
+        return new AuthResponse(token, user.Id, user.RestaurantId, user.Restaurant.Name, user.Restaurant.Currency,
+            user.FirstName, user.LastName, user.Role.Name, permissions, user.Status.ToString());
     }
 }

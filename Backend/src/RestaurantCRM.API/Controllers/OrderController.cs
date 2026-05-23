@@ -50,11 +50,20 @@ public class OrderController(IOrderService orderService) : BaseController
         return Ok(result);
     }
 
+    // Marks the order Paid. Cancel uses its own endpoint with its own permission.
     [HttpPatch("{id:guid}/status")]
     [RequirePermission(PermissionType.EditOrder)]
     public async Task<IActionResult> UpdateStatus(Guid id, UpdateOrderStatusRequest request, CancellationToken ct)
     {
-        var result = await orderService.UpdateStatusAsync(id, request, ct);
+        var result = await orderService.UpdateStatusAsync(id, request, CurrentUserId, ct);
+        return Ok(result);
+    }
+
+    [HttpPatch("{id:guid}/cancel")]
+    [RequirePermission(PermissionType.CancelOrder)]
+    public async Task<IActionResult> Cancel(Guid id, CancellationToken ct)
+    {
+        var result = await orderService.CancelAsync(id, CurrentUserId, ct);
         return Ok(result);
     }
 
@@ -63,6 +72,16 @@ public class OrderController(IOrderService orderService) : BaseController
     public async Task<IActionResult> UpdateItemStatus(Guid id, Guid itemId, UpdateOrderItemStatusRequest request, CancellationToken ct)
     {
         var result = await orderService.UpdateItemStatusAsync(id, itemId, request, ct);
+        return Ok(result);
+    }
+
+    public record AssignClientRequest(Guid? ClientId);
+
+    [HttpPatch("{id:guid}/client")]
+    [RequirePermission(PermissionType.EditOrder)]
+    public async Task<IActionResult> AssignClient(Guid id, AssignClientRequest request, CancellationToken ct)
+    {
+        var result = await orderService.AssignClientAsync(id, request.ClientId, ct);
         return Ok(result);
     }
 }

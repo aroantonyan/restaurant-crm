@@ -1,4 +1,5 @@
 import { auth } from './auth'
+import { disconnectRealtime } from './realtime'
 import { getTelegram } from './telegram'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
@@ -47,6 +48,7 @@ export interface StaffMember {
   roleId: string
   status: UserStatus
   createdAt: string
+  permissions: string[]
 }
 
 export interface Role {
@@ -64,6 +66,7 @@ export interface CreateStaffRequest {
   temporaryPassword: string
   roleId: string
   phone?: string
+  permissions?: string[]
 }
 
 export interface UpdateStaffRequest {
@@ -76,6 +79,23 @@ export interface UpdateStaffRequest {
 
 // ---- Menu ----
 
+export interface RecipeIngredientDto {
+  productId: string
+  productName: string
+  productUnit: string
+  quantity: number
+}
+
+export interface RecipeDto {
+  menuItemId: string
+  menuItemName: string
+  ingredients: RecipeIngredientDto[]
+}
+
+export interface SetRecipeRequest {
+  ingredients: Array<{ productId: string; quantity: number }>
+}
+
 export interface MenuItemDto {
   id: string
   categoryId: string
@@ -85,6 +105,9 @@ export interface MenuItemDto {
   price: number
   photoUrl: string | null
   isAvailable: boolean
+  // True when every recipe ingredient has enough stock for at least one portion.
+  // Items without a recipe always report true.
+  canFulfill: boolean
 }
 
 export interface MenuCategoryDto {
@@ -108,9 +131,80 @@ export interface UpdateTableRequest { number: number; capacity: number }
 // ---- Orders ----
 
 export interface OrderItemDto { id: string; menuItemId: string; menuItemName: string; price: number; quantity: number; status: string; notes: string | null }
-export interface OrderDto { id: string; tableId: string; tableNumber: number; status: string; createdBy: string; createdAt: string; items: OrderItemDto[]; total: number }
+export interface OrderDto { id: string; tableId: string; tableNumber: number; status: string; createdBy: string; createdAt: string; items: OrderItemDto[]; total: number; paymentMethod: string | null; clientId: string | null; clientName: string | null }
 export interface CreateOrderRequest { tableId: string; items: Array<{ menuItemId: string; quantity: number; notes?: string }> }
 export interface AddOrderItemRequest { menuItemId: string; quantity: number; notes?: string }
+
+// ---- Reservations ----
+
+export type ReservationStatus = 'Confirmed' | 'Seated' | 'Completed' | 'Cancelled' | 'NoShow'
+
+export interface ReservationDto {
+  id: string
+  tableId: string
+  tableNumber: number
+  guestName: string
+  guestPhone: string | null
+  guestCount: number
+  startAt: string        // ISO UTC
+  durationMinutes: number
+  endAt: string          // ISO UTC
+  status: ReservationStatus
+  notes: string | null
+  createdByName: string
+  createdAt: string
+  // Optional CRM link. Null for one-off walk-ins.
+  clientId: string | null
+  clientName: string | null
+}
+
+export interface CreateReservationRequest {
+  tableId: string
+  guestName: string
+  guestPhone?: string
+  guestCount: number
+  startAt: string        // ISO UTC
+  durationMinutes: number
+  notes?: string
+  clientId?: string | null
+}
+
+export interface UpdateReservationRequest extends CreateReservationRequest {}
+
+// ---- Schedule ----
+
+export type ShiftStatus = 'Scheduled' | 'Cancelled'
+
+export interface ShiftDto {
+  id: string
+  userId: string
+  userName: string
+  userRoleName: string
+  startAt: string
+  endAt: string
+  durationMinutes: number
+  roleForShift: string | null
+  notes: string | null
+  status: ShiftStatus
+  createdAt: string
+}
+
+export interface CreateShiftRequest {
+  userId: string
+  startAt: string
+  endAt: string
+  roleForShift?: string | null
+  notes?: string | null
+}
+
+export interface UpdateShiftRequest {
+  userId: string
+  startAt: string
+  endAt: string
+  roleForShift?: string | null
+  notes?: string | null
+  status: ShiftStatus
+}
 
 // ---- Restaurant ----
 
@@ -130,6 +224,206 @@ export interface UpdateRestaurantRequest {
   currency: string
   address?: string
   phone?: string
+}
+
+// ---- Reports ----
+
+export interface ReportSummaryDto {
+  revenue: number
+  orderCount: number
+  averageTicket: number
+  itemsSold: number
+}
+
+export interface TopItemDto {
+  menuItemId: string
+  name: string
+  quantity: number
+  revenue: number
+}
+
+export interface TopServerDto {
+  userId: string
+  name: string
+  orderCount: number
+  revenue: number
+}
+
+export interface RevenuePointDto {
+  date: string            // YYYY-MM-DD (DateOnly serialized)
+  revenue: number
+  orderCount: number
+}
+
+// ---- Cash Register ----
+
+export type PaymentMethod = 'Cash' | 'Card' | 'BankTransfer' | 'Deposit' | 'Other'
+export type CashTransactionType = 'OrderPayment' | 'Refund' | 'ManualIncome' | 'ManualExpense'
+
+export interface CashRegisterTransactionDto {
+  id: string
+  type: CashTransactionType
+  method: PaymentMethod
+  amount: number
+  balanceAfter: number
+  reason: string | null
+  orderId: string | null
+  createdByName: string
+  createdAt: string
+}
+
+export interface CashRegisterSummaryDto {
+  cashBalance: number
+  incomeCash: number
+  incomeCard: number
+  incomeBankTransfer: number
+  incomeOther: number
+  refunds: number
+  manualIncome: number
+  manualExpense: number
+  net: number
+  transactionCount: number
+}
+
+export interface RecordManualOpRequest {
+  type: 'ManualIncome' | 'ManualExpense'
+  amount: number
+  reason: string
+}
+
+// ---- Clients (CRM) ----
+
+export type LoyaltyType = 'None' | 'Cashback' | 'Discount'
+export type ClientTransactionType = 'Deposit' | 'Withdrawal' | 'OrderPayment' | 'CashbackEarned'
+
+export interface ClientDto {
+  id: string
+  fullName: string
+  phone: string | null
+  email: string | null
+  birthday: string | null      // ISO date "YYYY-MM-DD" or null
+  notes: string | null
+  depositBalance: number
+  loyaltyType: LoyaltyType
+  loyaltyRate: number
+  isArchived: boolean
+  createdAt: string
+  updatedAt: string | null
+}
+
+export interface ClientTransactionDto {
+  id: string
+  clientId: string
+  type: ClientTransactionType
+  amount: number
+  balanceAfter: number
+  reason: string | null
+  orderId: string | null
+  createdByName: string
+  createdAt: string
+}
+
+export interface CreateClientRequest {
+  fullName: string
+  phone?: string | null
+  email?: string | null
+  birthday?: string | null
+  notes?: string | null
+  loyaltyType?: LoyaltyType
+  loyaltyRate?: number
+}
+
+export interface UpdateClientRequest {
+  fullName: string
+  phone?: string | null
+  email?: string | null
+  birthday?: string | null
+  notes?: string | null
+  loyaltyType: LoyaltyType
+  loyaltyRate: number
+}
+
+export interface ClientDepositRequest {
+  amount: number
+  method: 'Cash' | 'Card' | 'BankTransfer'
+  reason?: string | null
+}
+
+export interface ClientWithdrawalRequest {
+  amount: number
+  method: 'Cash' | 'Card' | 'BankTransfer'
+  reason?: string | null
+}
+
+// ---- Activity Log ----
+
+export type ActivityCategory =
+  | 'Auth' | 'Order' | 'Menu' | 'Inventory' | 'Table' | 'Reservation'
+  | 'Staff' | 'Role' | 'Client' | 'CashRegister' | 'Settings' | 'Security'
+
+export interface ActivityLogEntryDto {
+  id: string
+  userId: string | null
+  userName: string
+  category: ActivityCategory
+  action: string
+  entityType: string
+  entityId: string | null
+  description: string
+  createdAt: string
+}
+
+// ---- Inventory ----
+
+export type ProductUnit = 'Kg' | 'Gram' | 'Liter' | 'Milliliter' | 'Piece'
+export type StockMovementType = 'Initial' | 'Purchase' | 'Adjustment' | 'Wastage' | 'Sale'
+
+export interface ProductDto {
+  id: string
+  name: string
+  category: string | null
+  unit: ProductUnit
+  currentStock: number
+  lowStockThreshold: number
+  isLowStock: boolean
+  notes: string | null
+  isArchived: boolean
+  createdAt: string
+  updatedAt: string | null
+}
+
+export interface StockMovementDto {
+  id: string
+  productId: string
+  type: StockMovementType
+  quantityChange: number
+  quantityAfter: number
+  reason: string | null
+  createdByName: string
+  createdAt: string
+}
+
+export interface CreateProductRequest {
+  name: string
+  category?: string | null
+  unit: ProductUnit
+  initialStock: number
+  lowStockThreshold: number
+  notes?: string | null
+}
+
+export interface UpdateProductRequest {
+  name: string
+  category?: string | null
+  unit: ProductUnit
+  lowStockThreshold: number
+  notes?: string | null
+}
+
+export interface AddStockMovementRequest {
+  type: Exclude<StockMovementType, 'Initial' | 'Sale'>
+  quantityChange: number
+  reason?: string | null
 }
 
 // ---- Error ----
@@ -159,6 +453,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     if (res.status === 401 && auth.getToken()) {
       auth.clear()
+      disconnectRealtime()
       window.location.replace('/login')
     }
     const message = await extractError(res)
@@ -209,6 +504,9 @@ export const api = {
 
     deactivate: (id: string) =>
       request<void>(`/api/staff/${id}`, { method: 'DELETE' }),
+
+    setPermissions: (id: string, permissions: string[]) =>
+      request<StaffMember>(`/api/staff/${id}/permissions`, { method: 'PUT', body: JSON.stringify({ permissions }) }),
   },
 
   restaurant: {
@@ -228,6 +526,9 @@ export const api = {
     updateItem: (id: string, data: UpdateMenuItemRequest) => request<MenuItemDto>(`/api/menu/items/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     toggleItem: (id: string) => request<MenuItemDto>(`/api/menu/items/${id}/toggle`, { method: 'PATCH' }),
     deleteItem: (id: string) => request<void>(`/api/menu/items/${id}`, { method: 'DELETE' }),
+    getRecipe: (itemId: string) => request<RecipeDto>(`/api/menu/items/${itemId}/recipe`),
+    setRecipe: (itemId: string, data: SetRecipeRequest) =>
+      request<RecipeDto>(`/api/menu/items/${itemId}/recipe`, { method: 'PUT', body: JSON.stringify(data) }),
   },
 
   tables: {
@@ -237,13 +538,142 @@ export const api = {
     delete: (id: string) => request<void>(`/api/tables/${id}`, { method: 'DELETE' }),
   },
 
+  reservations: {
+    getAll: (params?: { from?: string; to?: string; status?: ReservationStatus }) => {
+      const q = new URLSearchParams()
+      if (params?.from) q.set('from', params.from)
+      if (params?.to) q.set('to', params.to)
+      if (params?.status) q.set('status', params.status)
+      const qs = q.toString()
+      return request<ReservationDto[]>(`/api/reservations${qs ? `?${qs}` : ''}`)
+    },
+    getById: (id: string) => request<ReservationDto>(`/api/reservations/${id}`),
+    create: (data: CreateReservationRequest) =>
+      request<ReservationDto>('/api/reservations', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: UpdateReservationRequest) =>
+      request<ReservationDto>(`/api/reservations/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    setStatus: (id: string, status: ReservationStatus) =>
+      request<ReservationDto>(`/api/reservations/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+    delete: (id: string) =>
+      request<void>(`/api/reservations/${id}`, { method: 'DELETE' }),
+  },
+
   orders: {
     getAll: () => request<OrderDto[]>('/api/orders'),
     getById: (id: string) => request<OrderDto>(`/api/orders/${id}`),
     create: (data: CreateOrderRequest) => request<OrderDto>('/api/orders', { method: 'POST', body: JSON.stringify(data) }),
     addItem: (orderId: string, data: AddOrderItemRequest) => request<OrderDto>(`/api/orders/${orderId}/items`, { method: 'POST', body: JSON.stringify(data) }),
     removeItem: (orderId: string, itemId: string) => request<OrderDto>(`/api/orders/${orderId}/items/${itemId}`, { method: 'DELETE' }),
-    updateStatus: (id: string, status: string) => request<OrderDto>(`/api/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+    markPaid: (id: string, paymentMethod: PaymentMethod) =>
+      request<OrderDto>(`/api/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'Paid', paymentMethod }) }),
+    assignClient: (id: string, clientId: string | null) =>
+      request<OrderDto>(`/api/orders/${id}/client`, { method: 'PATCH', body: JSON.stringify({ clientId }) }),
+    cancel: (id: string) => request<OrderDto>(`/api/orders/${id}/cancel`, { method: 'PATCH' }),
     updateItemStatus: (orderId: string, itemId: string, status: string) => request<OrderDto>(`/api/orders/${orderId}/items/${itemId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  },
+
+  reports: {
+    // Bounds are half-open [from, to). Caller passes ISO datetime strings.
+    summary: (from: string, to: string) =>
+      request<ReportSummaryDto>(`/api/reports/summary?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+    topItems: (from: string, to: string, limit = 5) =>
+      request<TopItemDto[]>(`/api/reports/top-items?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&limit=${limit}`),
+    topServers: (from: string, to: string, limit = 5) =>
+      request<TopServerDto[]>(`/api/reports/top-servers?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&limit=${limit}`),
+    revenueTrend: (from: string, to: string) =>
+      request<RevenuePointDto[]>(`/api/reports/revenue-trend?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+  },
+
+  products: {
+    getAll: (params?: { category?: string; lowStockOnly?: boolean; includeArchived?: boolean }) => {
+      const q = new URLSearchParams()
+      if (params?.category) q.set('category', params.category)
+      if (params?.lowStockOnly) q.set('lowStockOnly', 'true')
+      if (params?.includeArchived) q.set('includeArchived', 'true')
+      const qs = q.toString()
+      return request<ProductDto[]>(`/api/products${qs ? `?${qs}` : ''}`)
+    },
+    getCategories: () => request<string[]>('/api/products/categories'),
+    getById: (id: string) => request<ProductDto>(`/api/products/${id}`),
+    create: (data: CreateProductRequest) =>
+      request<ProductDto>('/api/products', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: UpdateProductRequest) =>
+      request<ProductDto>(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    archive: (id: string) =>
+      request<void>(`/api/products/${id}`, { method: 'DELETE' }),
+    getMovements: (id: string, limit = 50) =>
+      request<StockMovementDto[]>(`/api/products/${id}/movements?limit=${limit}`),
+    addMovement: (id: string, data: AddStockMovementRequest) =>
+      request<ProductDto>(`/api/products/${id}/movements`, { method: 'POST', body: JSON.stringify(data) }),
+  },
+
+  cashRegister: {
+    summary: (from: string, to: string) =>
+      request<CashRegisterSummaryDto>(`/api/cash-register/summary?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+    transactions: (params: { from: string; to: string; type?: CashTransactionType; method?: PaymentMethod; limit?: number }) => {
+      const q = new URLSearchParams()
+      q.set('from', params.from)
+      q.set('to', params.to)
+      if (params.type) q.set('type', params.type)
+      if (params.method) q.set('method', params.method)
+      if (params.limit) q.set('limit', String(params.limit))
+      return request<CashRegisterTransactionDto[]>(`/api/cash-register/transactions?${q.toString()}`)
+    },
+    recordManual: (data: RecordManualOpRequest) =>
+      request<CashRegisterTransactionDto>('/api/cash-register/manual', { method: 'POST', body: JSON.stringify(data) }),
+  },
+
+  clients: {
+    getAll: (params?: { search?: string; includeArchived?: boolean }) => {
+      const q = new URLSearchParams()
+      if (params?.search) q.set('search', params.search)
+      if (params?.includeArchived) q.set('includeArchived', 'true')
+      const qs = q.toString()
+      return request<ClientDto[]>(`/api/clients${qs ? `?${qs}` : ''}`)
+    },
+    getById: (id: string) => request<ClientDto>(`/api/clients/${id}`),
+    create: (data: CreateClientRequest) =>
+      request<ClientDto>('/api/clients', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: UpdateClientRequest) =>
+      request<ClientDto>(`/api/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    archive: (id: string) => request<void>(`/api/clients/${id}`, { method: 'DELETE' }),
+    getTransactions: (id: string, limit = 50) =>
+      request<ClientTransactionDto[]>(`/api/clients/${id}/transactions?limit=${limit}`),
+    deposit: (id: string, data: ClientDepositRequest) =>
+      request<ClientDto>(`/api/clients/${id}/deposit`, { method: 'POST', body: JSON.stringify(data) }),
+    withdraw: (id: string, data: ClientWithdrawalRequest) =>
+      request<ClientDto>(`/api/clients/${id}/withdraw`, { method: 'POST', body: JSON.stringify(data) }),
+  },
+
+  activityLog: {
+    get: (params: { from: string; to: string; category?: ActivityCategory; userId?: string; entityType?: string; limit?: number }) => {
+      const q = new URLSearchParams()
+      q.set('from', params.from)
+      q.set('to', params.to)
+      if (params.category) q.set('category', params.category)
+      if (params.userId) q.set('userId', params.userId)
+      if (params.entityType) q.set('entityType', params.entityType)
+      if (params.limit) q.set('limit', String(params.limit))
+      return request<ActivityLogEntryDto[]>(`/api/activity-log?${q.toString()}`)
+    },
+  },
+
+  schedule: {
+    // Server-side enforces: callers without ManageSchedules see only their own shifts
+    // regardless of the userId param. So passing nothing = "everyone I'm allowed to see".
+    get: (params: { from: string; to: string; userId?: string }) => {
+      const q = new URLSearchParams()
+      q.set('from', params.from)
+      q.set('to', params.to)
+      if (params.userId) q.set('userId', params.userId)
+      return request<ShiftDto[]>(`/api/schedule?${q.toString()}`)
+    },
+    getById: (id: string) => request<ShiftDto>(`/api/schedule/${id}`),
+    create: (data: CreateShiftRequest) =>
+      request<ShiftDto>('/api/schedule', { method: 'POST', body: JSON.stringify(data) }),
+    update: (id: string, data: UpdateShiftRequest) =>
+      request<ShiftDto>(`/api/schedule/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id: string) =>
+      request<void>(`/api/schedule/${id}`, { method: 'DELETE' }),
   },
 }

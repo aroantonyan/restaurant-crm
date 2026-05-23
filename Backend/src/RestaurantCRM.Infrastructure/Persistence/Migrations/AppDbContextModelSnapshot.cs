@@ -22,6 +22,235 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.ActivityLogEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid?>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RestaurantId", "CreatedAt");
+
+                    b.HasIndex("RestaurantId", "Category", "CreatedAt");
+
+                    b.HasIndex("RestaurantId", "UserId", "CreatedAt");
+
+                    b.ToTable("ActivityLogEntries");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.CashRegisterTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("BalanceAfter")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("RestaurantId", "CreatedAt");
+
+                    b.ToTable("CashRegisterTransactions");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.Client", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly?>("Birthday")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("DepositBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<decimal>("LoyaltyRate")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<string>("LoyaltyType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RestaurantId", "FullName");
+
+                    b.HasIndex("RestaurantId", "Phone");
+
+                    b.ToTable("Clients");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.ClientTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("BalanceAfter")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ClientId", "CreatedAt");
+
+                    b.ToTable("ClientTransactions");
+                });
+
             modelBuilder.Entity("RestaurantCRM.Domain.Entities.MenuCategory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -99,7 +328,7 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
                     b.ToTable("MenuItems");
                 });
 
-            modelBuilder.Entity("RestaurantCRM.Domain.Entities.Order", b =>
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.MenuItemRecipe", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -108,8 +337,50 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("MenuItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("MenuItemId", "ProductId")
+                        .IsUnique();
+
+                    b.ToTable("MenuItemRecipes");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.Order", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("CreatedById")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("PaymentMethod")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<Guid>("RestaurantId")
                         .HasColumnType("uuid");
@@ -126,6 +397,8 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
 
                     b.HasIndex("CreatedById");
 
@@ -187,6 +460,133 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
                     b.ToTable("OrderItems");
                 });
 
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.Product", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("CurrentStock")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<decimal>("LowStockThreshold")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RestaurantId", "Category");
+
+                    b.HasIndex("RestaurantId", "Name");
+
+                    b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.Reservation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GuestCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("GuestName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("GuestPhone")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("StartAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("TableId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("RestaurantId", "StartAt");
+
+                    b.HasIndex("TableId", "StartAt");
+
+                    b.ToTable("Reservations");
+                });
+
             modelBuilder.Entity("RestaurantCRM.Domain.Entities.Restaurant", b =>
                 {
                     b.Property<Guid>("Id")
@@ -196,6 +596,12 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
                     b.Property<string>("Address")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("CashBalance")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -276,6 +682,104 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
                     b.HasKey("RoleId", "Permission");
 
                     b.ToTable("RolePermissions");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.Shift", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EndAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RoleForShift")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("StartAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("RestaurantId", "StartAt");
+
+                    b.HasIndex("UserId", "StartAt");
+
+                    b.ToTable("Shifts");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.StockMovement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("QuantityAfter")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<decimal>("QuantityChange")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("numeric(18,3)");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ProductId", "CreatedAt");
+
+                    b.ToTable("StockMovements");
                 });
 
             modelBuilder.Entity("RestaurantCRM.Domain.Entities.Table", b =>
@@ -378,6 +882,75 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.UserPermission", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Permission")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("UserId", "Permission");
+
+                    b.ToTable("UserPermissions");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.CashRegisterTransaction", b =>
+                {
+                    b.HasOne("RestaurantCRM.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RestaurantCRM.Domain.Entities.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.Client", b =>
+                {
+                    b.HasOne("RestaurantCRM.Domain.Entities.Restaurant", "Restaurant")
+                        .WithMany()
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Restaurant");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.ClientTransaction", b =>
+                {
+                    b.HasOne("RestaurantCRM.Domain.Entities.Client", "Client")
+                        .WithMany("Transactions")
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RestaurantCRM.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RestaurantCRM.Domain.Entities.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Client");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Order");
+                });
+
             modelBuilder.Entity("RestaurantCRM.Domain.Entities.MenuCategory", b =>
                 {
                     b.HasOne("RestaurantCRM.Domain.Entities.Restaurant", "Restaurant")
@@ -408,8 +981,32 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
                     b.Navigation("Restaurant");
                 });
 
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.MenuItemRecipe", b =>
+                {
+                    b.HasOne("RestaurantCRM.Domain.Entities.MenuItem", "MenuItem")
+                        .WithMany()
+                        .HasForeignKey("MenuItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RestaurantCRM.Domain.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("MenuItem");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("RestaurantCRM.Domain.Entities.Order", b =>
                 {
+                    b.HasOne("RestaurantCRM.Domain.Entities.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("RestaurantCRM.Domain.Entities.User", "CreatedBy")
                         .WithMany()
                         .HasForeignKey("CreatedById")
@@ -427,6 +1024,8 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
                         .HasForeignKey("TableId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Client");
 
                     b.Navigation("CreatedBy");
 
@@ -454,6 +1053,43 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.Product", b =>
+                {
+                    b.HasOne("RestaurantCRM.Domain.Entities.Restaurant", "Restaurant")
+                        .WithMany()
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Restaurant");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.Reservation", b =>
+                {
+                    b.HasOne("RestaurantCRM.Domain.Entities.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("RestaurantCRM.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RestaurantCRM.Domain.Entities.Table", "Table")
+                        .WithMany()
+                        .HasForeignKey("TableId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Table");
+                });
+
             modelBuilder.Entity("RestaurantCRM.Domain.Entities.Role", b =>
                 {
                     b.HasOne("RestaurantCRM.Domain.Entities.Restaurant", "Restaurant")
@@ -473,6 +1109,44 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.Shift", b =>
+                {
+                    b.HasOne("RestaurantCRM.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RestaurantCRM.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.StockMovement", b =>
+                {
+                    b.HasOne("RestaurantCRM.Domain.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("RestaurantCRM.Domain.Entities.Product", "Product")
+                        .WithMany("Movements")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("RestaurantCRM.Domain.Entities.Table", b =>
@@ -505,6 +1179,22 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.UserPermission", b =>
+                {
+                    b.HasOne("RestaurantCRM.Domain.Entities.User", "User")
+                        .WithMany("UserPermissions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.Client", b =>
+                {
+                    b.Navigation("Transactions");
+                });
+
             modelBuilder.Entity("RestaurantCRM.Domain.Entities.MenuCategory", b =>
                 {
                     b.Navigation("Items");
@@ -513,6 +1203,11 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("RestaurantCRM.Domain.Entities.Order", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.Product", b =>
+                {
+                    b.Navigation("Movements");
                 });
 
             modelBuilder.Entity("RestaurantCRM.Domain.Entities.Restaurant", b =>
@@ -538,6 +1233,11 @@ namespace RestaurantCRM.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("RestaurantCRM.Domain.Entities.Table", b =>
                 {
                     b.Navigation("Orders");
+                });
+
+            modelBuilder.Entity("RestaurantCRM.Domain.Entities.User", b =>
+                {
+                    b.Navigation("UserPermissions");
                 });
 #pragma warning restore 612, 618
         }

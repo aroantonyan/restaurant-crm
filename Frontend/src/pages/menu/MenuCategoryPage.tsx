@@ -25,6 +25,8 @@ interface ItemFormProps {
 
 function ItemFormModal({ categoryId, item, onClose, onSaved, onDeleted }: ItemFormProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
+  const perm = usePermissions()
   const [serverError, setServerError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -125,6 +127,17 @@ function ItemFormModal({ categoryId, item, onClose, onSaved, onDeleted }: ItemFo
           <SubmitButton loading={isSubmitting}>
             {isNew ? t('menu.addItem') : t('common.submit')}
           </SubmitButton>
+
+          {!isNew && perm.has('ViewWarehouse') && (
+            <button
+              type="button"
+              onClick={() => navigate(`/menu/items/${item.id}/recipe`)}
+              className="w-full py-3 rounded-2xl bg-tg-secondary-bg text-tg-text font-medium active:scale-[0.98] transition flex items-center justify-center gap-2"
+            >
+              <span>📋</span>
+              {t('recipe.openEditor')}
+            </button>
+          )}
 
           {!isNew && !confirmDelete && (
             <button
@@ -243,7 +256,7 @@ export default function MenuCategoryPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton()
+  useBackButton('/menu')
 
   const [category, setCategory] = useState<MenuCategoryDto | null>(null)
   const [loading, setLoading] = useState(true)

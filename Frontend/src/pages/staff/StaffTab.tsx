@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '../../lib/api'
 import type { StaffMember, UserStatus } from '../../lib/api'
 import { useBackButton } from '../../hooks/useBackButton'
+import { usePermissions } from '../../hooks/usePermissions'
 
 const STATUS_CONFIG: Record<UserStatus, { color: string }> = {
   Active: { color: 'text-green-500' },
@@ -14,11 +15,13 @@ const STATUS_CONFIG: Record<UserStatus, { color: string }> = {
 export default function StaffTab() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const perm = usePermissions()
+  const canManage = perm.has('ManageStaff')
   const [staff, setStaff] = useState<StaffMember[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useBackButton()
+  useBackButton('/dashboard')
 
   useEffect(() => {
     api.staff
@@ -46,14 +49,16 @@ export default function StaffTab() {
             <span className="text-xs text-tg-hint uppercase tracking-wide font-medium">
               {t('staff.memberCount', { count: staff.length })}
             </span>
-            <button
-              type="button"
-              onClick={() => navigate('/staff/new')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tg-button text-tg-button-text text-sm font-medium"
-            >
-              <span className="text-base leading-none">+</span>
-              {t('staff.addButton')}
-            </button>
+            {canManage && (
+              <button
+                type="button"
+                onClick={() => navigate('/staff/new')}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-tg-button text-tg-button-text text-sm font-medium"
+              >
+                <span className="text-base leading-none">+</span>
+                {t('staff.addButton')}
+              </button>
+            )}
           </div>
 
           {staff.length === 0 ? (
@@ -69,7 +74,8 @@ export default function StaffTab() {
                   member={member}
                   statusLabel={t(`staff.status.${member.status}`)}
                   statusColor={STATUS_CONFIG[member.status].color}
-                  onClick={() => navigate(`/staff/${member.id}/edit`)}
+                  // Tap-to-edit only when the user can actually edit.
+                  onClick={canManage ? () => navigate(`/staff/${member.id}/edit`) : undefined}
                 />
               ))}
             </ul>
@@ -84,16 +90,21 @@ interface StaffCardProps {
   member: StaffMember
   statusLabel: string
   statusColor: string
-  onClick: () => void
+  onClick?: () => void
 }
 
 function StaffCard({ member, statusLabel, statusColor, onClick }: StaffCardProps) {
+  const interactive = typeof onClick === 'function'
   return (
     <li>
       <button
         type="button"
         onClick={onClick}
-        className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-tg-secondary-bg text-left"
+        disabled={!interactive}
+        className={[
+          'w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-tg-secondary-bg text-left',
+          interactive ? 'active:scale-[0.99] transition' : 'cursor-default',
+        ].join(' ')}
       >
         <div className="flex flex-col gap-0.5 min-w-0">
           <span className="text-sm font-semibold text-tg-text truncate">
@@ -103,7 +114,7 @@ function StaffCard({ member, statusLabel, statusColor, onClick }: StaffCardProps
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-3">
           <span className={`text-xs font-medium ${statusColor}`}>{statusLabel}</span>
-          <span className="text-tg-hint text-base leading-none">›</span>
+          {interactive && <span className="text-tg-hint text-base leading-none">›</span>}
         </div>
       </button>
     </li>

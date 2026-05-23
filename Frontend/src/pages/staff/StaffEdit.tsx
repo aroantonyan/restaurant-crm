@@ -2,24 +2,32 @@ import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '../../lib/api'
 import type { Role, StaffMember } from '../../lib/api'
 import { getTelegram } from '../../lib/telegram'
 import { useBackButton } from '../../hooks/useBackButton'
+import { usePermissions } from '../../hooks/usePermissions'
 import Field from '../../components/Field'
 import Select from '../../components/Select'
 import SubmitButton from '../../components/SubmitButton'
+import PermissionGrid from '../../components/PermissionGrid'
 
 export default function StaffEdit() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
-  useBackButton()
+  const perm = usePermissions()
+  useBackButton('/staff')
+
+  // Two tiers: ManageStaff for profile/role, ManageRoles for the permission grid.
+  const canManageProfile = perm.has('ManageStaff')
+  const canSetPermissions = perm.has('ManageRoles')
 
   const [member, setMember] = useState<StaffMember | null>(null)
   const [roles, setRoles] = useState<Role[]>([])
+  const [permissions, setPermissions] = useState<string[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
@@ -56,6 +64,7 @@ export default function StaffEdit() {
       .then(([m, r]) => {
         setMember(m)
         setRoles(r)
+        setPermissions(m.permissions ?? [])
         reset({
           firstName: m.firstName,
           lastName: m.lastName,
@@ -71,7 +80,16 @@ export default function StaffEdit() {
     if (!id) return
     setServerError(null)
     try {
-      await api.staff.update(id, { ...data, phone: data.phone?.trim() || undefined })
+      // Profile update + (conditional) permission update run in parallel.
+      // Skip setPermissions when the caller lacks ManageRoles to avoid a guaranteed 403.
+      const calls: Promise<unknown>[] = []
+      if (canManageProfile) {
+        calls.push(api.staff.update(id, { ...data, phone: data.phone?.trim() || undefined }))
+      }
+      if (canSetPermissions) {
+        calls.push(api.staff.setPermissions(id, permissions))
+      }
+      await Promise.all(calls)
       getTelegram()?.HapticFeedback?.impactOccurred('light')
       navigate(-1)
     } catch (e) {
@@ -93,6 +111,9 @@ export default function StaffEdit() {
       setDeactivating(false)
     }
   }
+
+  // Need at least one of the two permissions to be useful on this page.
+  if (!canManageProfile && !canSetPermissions) return <Navigate to="/staff" replace />
 
   if (loadError) {
     return (
@@ -129,6 +150,7 @@ export default function StaffEdit() {
           label={t('auth.register.firstName')}
           autoComplete="given-name"
           enterKeyHint="next"
+          disabled={!canManageProfile}
           {...register('firstName')}
           error={errors.firstName?.message}
         />
@@ -136,6 +158,7 @@ export default function StaffEdit() {
           label={t('auth.register.lastName')}
           autoComplete="family-name"
           enterKeyHint="next"
+          disabled={!canManageProfile}
           {...register('lastName')}
           error={errors.lastName?.message}
         />
@@ -143,12 +166,14 @@ export default function StaffEdit() {
           label={t('auth.register.fatherName')}
           autoComplete="additional-name"
           enterKeyHint="next"
+          disabled={!canManageProfile}
           {...register('fatherName')}
           error={errors.fatherName?.message}
         />
         <Select
           label={t('staff.edit.role')}
           options={roles.map((r) => ({ value: r.id, label: r.name }))}
+          disabled={!canManageProfile}
           {...register('roleId')}
           error={errors.roleId?.message}
         />
@@ -158,16 +183,26 @@ export default function StaffEdit() {
           autoComplete="tel"
           inputMode="tel"
           enterKeyHint="done"
+          disabled={!canManageProfile}
           {...register('phone')}
           error={errors.phone?.message}
         />
 
+        {canSetPermissions && (
+          <div className="border-t border-tg-secondary-bg pt-4">
+            <PermissionGrid value={permissions} onChange={setPermissions} />
+          </div>
+        )}
+
         {serverError && (
           <p className="text-tg-destructive text-sm text-center">{serverError}</p>
         )}
-        <SubmitButton loading={isSubmitting}>{t('staff.edit.submit')}</SubmitButton>
+        {(canManageProfile || canSetPermissions) && (
+          <SubmitButton loading={isSubmitting}>{t('staff.edit.submit')}</SubmitButton>
+        )}
       </form>
 
+      {canManageProfile && (
       <div className="mt-8 pt-6 border-t border-tg-secondary-bg">
         {!confirming ? (
           <button
@@ -200,6 +235,7 @@ export default function StaffEdit() {
           </div>
         )}
       </div>
+      )}
     </main>
   )
 }

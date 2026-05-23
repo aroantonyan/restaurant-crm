@@ -50,6 +50,14 @@ public class StaffController(IStaffService staffService) : BaseController
         return Ok(result);
     }
 
+    [HttpPut("{id:guid}/permissions")]
+    [RequirePermission(PermissionType.ManageRoles)]
+    public async Task<IActionResult> SetPermissions(Guid id, SetPermissionsRequest request, CancellationToken ct)
+    {
+        var result = await staffService.SetPermissionsAsync(id, request, ct);
+        return Ok(result);
+    }
+
     [HttpDelete("{id:guid}")]
     [RequirePermission(PermissionType.ManageStaff)]
     public async Task<IActionResult> Deactivate(Guid id, CancellationToken ct)

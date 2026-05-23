@@ -21,4 +21,5 @@ public class User : BaseEntity, ITenantEntity
 
     public Restaurant Restaurant { get; set; } = null!;
     public Role Role { get; set; } = null!;
+    public ICollection<UserPermission> UserPermissions { get; set; } = [];
 }

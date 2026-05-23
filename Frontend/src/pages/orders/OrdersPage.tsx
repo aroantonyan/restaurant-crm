@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api, type OrderDto } from '../../lib/api'
 import { useBackButton } from '../../hooks/useBackButton'
 import { usePermissions } from '../../hooks/usePermissions'
+import { useRealtimeEvent } from '../../hooks/useRealtimeEvent'
 import { formatPrice } from '../../lib/format'
 
 type Filter = 'all' | 'Open' | 'Paid' | 'Cancelled'
@@ -22,7 +23,7 @@ export default function OrdersPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton()
+  useBackButton('/dashboard')
 
   const [orders, setOrders] = useState<OrderDto[]>([])
   const [loading, setLoading] = useState(true)
@@ -45,6 +46,9 @@ export default function OrdersPage() {
   }
 
   useEffect(() => { load() }, [])
+
+  // Any order change anywhere in the restaurant → refresh the list.
+  useRealtimeEvent('orderChanged', () => { load() })
 
   const visible = filter === 'all' ? orders : orders.filter(o => o.status === filter)
 

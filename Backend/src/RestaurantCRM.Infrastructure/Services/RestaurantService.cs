@@ -1,11 +1,13 @@
 using Microsoft.EntityFrameworkCore;
+using RestaurantCRM.Application.ActivityLog;
 using RestaurantCRM.Application.Common.Interfaces;
 using RestaurantCRM.Application.Restaurants;
+using RestaurantCRM.Domain.Enums;
 using RestaurantCRM.Infrastructure.Persistence;
 
 namespace RestaurantCRM.Infrastructure.Services;
 
-public class RestaurantService(AppDbContext db, ITenantContext tenant) : IRestaurantService
+public class RestaurantService(AppDbContext db, ITenantContext tenant, IActivityLogService activityLog) : IRestaurantService
 {
     public async Task<RestaurantDto> GetAsync(CancellationToken ct = default)
     {
@@ -29,6 +31,11 @@ public class RestaurantService(AppDbContext db, ITenantContext tenant) : IRestau
         restaurant.Phone = request.Phone;
 
         await db.SaveChangesAsync(ct);
+
+        await activityLog.LogAsync(tenant.UserId, ActivityCategory.Settings, "Updated",
+            nameof(Domain.Entities.Restaurant), restaurant.Id,
+            $"Restaurant profile updated", ct);
+
         return ToDto(restaurant);
     }
 

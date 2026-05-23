@@ -43,3 +43,23 @@ public class UpdateMenuItemRequestValidator : AbstractValidator<UpdateMenuItemRe
         RuleFor(x => x.PhotoUrl).MaximumLength(1000).When(x => x.PhotoUrl is not null);
     }
 }
+
+public class SetRecipeRequestValidator : AbstractValidator<SetRecipeRequest>
+{
+    public SetRecipeRequestValidator()
+    {
+        RuleFor(x => x.Ingredients).NotNull();
+        RuleForEach(x => x.Ingredients).ChildRules(ingredient =>
+        {
+            ingredient.RuleFor(i => i.ProductId).NotEmpty();
+            ingredient.RuleFor(i => i.Quantity)
+                .GreaterThan(0).WithMessage("Recipe quantity must be greater than zero.");
+        });
+
+        // Reject duplicate product IDs in the same payload — the unique index would also
+        // catch this, but rejecting client-side gives a friendlier error message.
+        RuleFor(x => x.Ingredients)
+            .Must(list => list.Select(i => i.ProductId).Distinct().Count() == list.Count)
+            .WithMessage("A product can appear in a recipe only once.");
+    }
+}

@@ -15,7 +15,10 @@ public record MenuItemDto(
     string? Description,
     decimal Price,
     string? PhotoUrl,
-    bool IsAvailable
+    bool IsAvailable,
+    // True when every recipe ingredient has enough stock for at least one portion.
+    // Items without a recipe default to true (we don't track their consumption).
+    bool CanFulfill = true
 );
 
 public record CreateCategoryRequest(string Name, int SortOrder = 0);
@@ -39,3 +42,29 @@ public record UpdateMenuItemRequest(
     string? PhotoUrl,
     bool IsAvailable
 );
+
+// ---- Recipe (BOM) ----
+
+/// <summary>
+/// One ingredient row of a menu item's recipe. ProductUnit is included for UI display only —
+/// recipe quantities are always expressed in the product's own unit.
+/// </summary>
+public record RecipeIngredientDto(
+    Guid ProductId,
+    string ProductName,
+    string ProductUnit,
+    decimal Quantity);
+
+public record RecipeDto(
+    Guid MenuItemId,
+    string MenuItemName,
+    List<RecipeIngredientDto> Ingredients);
+
+/// <summary>
+/// Whole-recipe replace semantics — the request carries the full list of ingredients
+/// and the server reconciles add/update/remove against the existing rows. Simpler for
+/// clients than emitting per-row CRUD calls.
+/// </summary>
+public record SetRecipeRequest(List<SetRecipeIngredient> Ingredients);
+
+public record SetRecipeIngredient(Guid ProductId, decimal Quantity);

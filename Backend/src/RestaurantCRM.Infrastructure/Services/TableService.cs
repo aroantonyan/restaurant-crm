@@ -6,7 +6,7 @@ using RestaurantCRM.Infrastructure.Persistence;
 
 namespace RestaurantCRM.Infrastructure.Services;
 
-public class TableService(AppDbContext db, ITenantContext tenant) : ITableService
+public class TableService(AppDbContext db, ITenantContext tenant, IRealtimeNotifier notifier) : ITableService
 {
     public async Task<List<TableDto>> GetAllAsync(CancellationToken ct = default)
     {
@@ -29,6 +29,9 @@ public class TableService(AppDbContext db, ITenantContext tenant) : ITableServic
         };
         db.Tables.Add(table);
         await db.SaveChangesAsync(ct);
+
+        await notifier.TableChanged(table.Id, ct);
+
         return new TableDto(table.Id, table.Number, table.Capacity, table.Status.ToString());
     }
 
@@ -43,6 +46,9 @@ public class TableService(AppDbContext db, ITenantContext tenant) : ITableServic
         table.Number = request.Number;
         table.Capacity = request.Capacity;
         await db.SaveChangesAsync(ct);
+
+        await notifier.TableChanged(table.Id, ct);
+
         return new TableDto(table.Id, table.Number, table.Capacity, table.Status.ToString());
     }
 
@@ -56,5 +62,7 @@ public class TableService(AppDbContext db, ITenantContext tenant) : ITableServic
 
         db.Tables.Remove(table);
         await db.SaveChangesAsync(ct);
+
+        await notifier.TableChanged(id, ct);
     }
 }

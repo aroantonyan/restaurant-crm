@@ -19,13 +19,17 @@ public static class DefaultRolePermissions
             PermissionType.ViewStaff, PermissionType.ManageStaff,
             PermissionType.ViewSchedules, PermissionType.ManageSchedules,
             PermissionType.ViewClients, PermissionType.ManageClients,
+            PermissionType.ViewActivityLog,
         ],
 
         ["Waiter"] =
         [
             PermissionType.ViewMenu,
             PermissionType.ViewTables,
-            PermissionType.CreateOrder, PermissionType.EditOrder,
+            // Waiters need to see their own orders after creating them and update
+            // item statuses as they're delivered (Pending → Ready → Served).
+            PermissionType.ViewOrders, PermissionType.CreateOrder, PermissionType.EditOrder,
+            PermissionType.MoveOrderItems,
             PermissionType.ViewReservations, PermissionType.ManageReservations,
             PermissionType.ViewClients,
             PermissionType.ViewSchedules,

@@ -47,4 +47,7 @@ public enum PermissionType
 
     // Restaurant settings
     ManageRestaurantSettings,
+
+    // Activity log / audit trail
+    ViewActivityLog,
 }

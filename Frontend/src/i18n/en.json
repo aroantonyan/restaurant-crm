@@ -42,6 +42,8 @@
     "unavailableCount_other": "{{count}} unavailable",
     "available": "Available",
     "unavailable": "Unavailable",
+    "lowIngredients": "Low",
+    "lowIngredientsTitle": "Some ingredients are running out — selling may push stock negative.",
     "category": "Category",
     "itemName": "Item name",
     "description": "Description (optional)",
@@ -58,12 +60,24 @@
   "tables": {
     "title": "Tables",
     "add": "Add table",
+    "editTitle": "Edit table",
     "number": "Table number",
-    "capacity": "Capacity",
+    "capacity": "Capacity (seats)",
+    "seats_one": "{{count}} seat",
+    "seats_other": "{{count}} seats",
+    "delete": "Delete table",
+    "deleteConfirm": "Yes, delete this table",
+    "noTables": "No tables yet",
+    "noTablesHint": "Add your first table to start taking orders.",
     "status": {
       "Free": "Free",
       "Occupied": "Occupied",
       "Reserved": "Reserved"
+    },
+    "errors": {
+      "loadFailed": "Couldn't load tables",
+      "saveFailed": "Couldn't save changes",
+      "deleteFailed": "Couldn't delete table"
     }
   },
   "orders": {
@@ -90,17 +104,372 @@
       "Served": "Served"
     },
     "close": "Close (Paid)",
+    "payment": {
+      "title": "Payment method",
+      "subtitle": "Total due:",
+      "methods": {
+        "Cash": "Cash",
+        "Card": "Card",
+        "BankTransfer": "Bank transfer",
+        "Deposit": "Deposit",
+        "Other": "Other"
+      }
+    },
+    "client": {
+      "title": "Assign customer",
+      "assign": "Assign customer",
+      "change": "Change",
+      "unassign": "Unassign customer"
+    },
     "cancel": "Cancel order",
     "cancelConfirm": "Confirm cancellation",
     "addItem": "Add item",
     "selectTable": "Select a table",
-    "selectItems": "Add items",
+    "selectItems": "Choose a category to add items",
+    "reviewCart": "Review",
+    "cartEmpty": "Cart is empty",
+    "confirmOrder": "Place order",
+    "reviewBeforeAdding": "Review before adding",
+    "addToOrder": "Add to order",
+    "updateItem": "Update item",
+    "removeFromOrder": "Remove from order",
+    "lineTotal": "Line total",
+    "notesPlaceholder": "e.g. no onions, extra spicy",
+    "changeStatus": "Change status",
+    "deleteItem": "Delete item",
+    "deleteItemConfirm": "Yes, delete item",
     "quantity": "Qty",
     "notes": "Notes (optional)",
     "noOrders": "No orders",
     "errors": {
       "loadFailed": "Couldn't load orders",
-      "saveFailed": "Couldn't save order"
+      "saveFailed": "Couldn't save order",
+      "deleteItemFailed": "Couldn't delete item"
+    }
+  },
+  "reservations": {
+    "title": "Reservations",
+    "add": "Add reservation",
+    "editTitle": "Edit reservation",
+    "newTitle": "New reservation",
+    "pickClient": "Link a customer (optional)",
+    "changeClient": "Change",
+    "unlinkClient": "Unlink customer",
+    "filter": {
+      "upcoming": "Upcoming",
+      "today": "Today",
+      "past": "Past",
+      "all": "All"
+    },
+    "status": {
+      "Confirmed": "Confirmed",
+      "Seated": "Seated",
+      "Completed": "Completed",
+      "Cancelled": "Cancelled",
+      "NoShow": "No-show"
+    },
+    "actions": {
+      "seat": "Mark seated",
+      "complete": "Mark completed",
+      "cancel": "Cancel reservation",
+      "noShow": "Mark no-show (guest didn't arrive)",
+      "restore": "Restore (mark confirmed)",
+      "delete": "Delete",
+      "deleteConfirm": "Yes, delete reservation"
+    },
+    "fields": {
+      "guestName": "Guest name",
+      "guestPhone": "Phone (optional)",
+      "guestCount": "Party size",
+      "table": "Table",
+      "startAt": "Date & time",
+      "duration": "Duration",
+      "notes": "Notes (optional)"
+    },
+    "duration": {
+      "min30": "30 min",
+      "h1":   "1 hour",
+      "h1_5": "1 h 30 min",
+      "h2":   "2 hours",
+      "h2_5": "2 h 30 min",
+      "h3":   "3 hours",
+      "h4":   "4 hours"
+    },
+    "guestsCount_one": "{{count}} guest",
+    "guestsCount_other": "{{count}} guests",
+    "noResults": "No reservations",
+    "noResultsHint": "Tap \"Add reservation\" to book the first table.",
+    "createdBy": "By",
+    "errors": {
+      "loadFailed": "Couldn't load reservations",
+      "saveFailed": "Couldn't save reservation",
+      "deleteFailed": "Couldn't delete reservation",
+      "statusFailed": "Couldn't update status"
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "subtitle": "Revenue, top sellers, and trends",
+    "range": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days"
+    },
+    "kpi": {
+      "revenue": "Revenue",
+      "orders": "Orders",
+      "avgTicket": "Avg. ticket",
+      "itemsSold": "Items sold"
+    },
+    "section": {
+      "trend": "Revenue trend",
+      "topItems": "Top items",
+      "topServers": "Top servers"
+    },
+    "qty_one": "{{count}} sold",
+    "qty_other": "{{count}} sold",
+    "orderCount_one": "{{count}} order",
+    "orderCount_other": "{{count}} orders",
+    "empty": "No data for this period",
+    "errors": {
+      "loadFailed": "Couldn't load reports"
+    }
+  },
+  "activityLog": {
+    "title": "Activity log",
+    "subtitle": "Audit trail of every important action",
+    "allCategories": "All",
+    "empty": "No activity in this period",
+    "emptyHint": "Events appear here as they happen.",
+    "category": {
+      "Auth": "Auth",
+      "Order": "Order",
+      "Menu": "Menu",
+      "Inventory": "Inventory",
+      "Table": "Table",
+      "Reservation": "Reservation",
+      "Staff": "Staff",
+      "Role": "Role",
+      "Client": "Customer",
+      "CashRegister": "Cash",
+      "Settings": "Settings",
+      "Security": "Security"
+    },
+    "errors": {
+      "loadFailed": "Couldn't load activity log"
+    }
+  },
+  "clients": {
+    "title": "Customers",
+    "subtitle": "Loyalty, deposits, and credit accounts",
+    "add": "Add",
+    "newClient": "New customer",
+    "editClient": "Edit customer",
+    "edit": "Edit",
+    "create": "Create customer",
+    "save": "Save changes",
+    "cancel": "Cancel",
+    "archive": "Archive customer",
+    "archiveConfirm": "Yes, archive",
+    "archiveHint": "Only customers with a zero balance can be archived.",
+    "empty": "No customers yet",
+    "emptyHint": "Tap Add to create the first one.",
+    "searchPlaceholder": "Search by name or phone…",
+    "balance": "Balance",
+    "balanceCredit": "Credit on the customer's account.",
+    "balanceOwed": "Customer owes the restaurant this amount.",
+    "noPhone": "(no phone)",
+    "cashbackOn": "cashback on every payment",
+    "deposit": "Top up",
+    "withdraw": "Refund",
+    "amount": "Amount",
+    "history": "Transaction history",
+    "noTransactions": "No transactions yet",
+    "fields": {
+      "fullName": "Full name",
+      "phone": "Phone",
+      "email": "Email",
+      "birthday": "Birthday",
+      "notes": "Notes",
+      "reason": "Reason (optional)",
+      "loyalty": "Loyalty program",
+      "loyaltyRate": "Cashback rate (%)"
+    },
+    "loyalty": {
+      "None": "None",
+      "Cashback": "Cashback",
+      "Discount": "Discount"
+    },
+    "txType": {
+      "Deposit": "Top-up",
+      "Withdrawal": "Refund",
+      "OrderPayment": "Order payment",
+      "CashbackEarned": "Cashback earned"
+    },
+    "errors": {
+      "loadFailed": "Couldn't load customers",
+      "saveFailed": "Couldn't save changes",
+      "positive": "Amount must be greater than zero"
+    }
+  },
+  "cash": {
+    "title": "Cash Register",
+    "subtitle": "Cash flow and drawer balance",
+    "balance": "Cash balance",
+    "balanceHint": "Physical money in the drawer. Card payments don't appear here.",
+    "history": "Transaction history",
+    "noTransactions": "No transactions in this period",
+    "recordOp": "Record cash operation",
+    "record": "Record",
+    "amount": "Amount",
+    "reason": "Reason",
+    "reasonPlaceholderIn": "e.g. Opening change float",
+    "reasonPlaceholderOut": "e.g. Supplier paid in cash",
+    "kpi": {
+      "cashIn": "Cash income",
+      "cardIn": "Card income",
+      "manualIn": "Manual in",
+      "manualOut": "Manual out"
+    },
+    "txType": {
+      "OrderPayment": "Order payment",
+      "Refund": "Refund",
+      "ManualIncome": "Cash in",
+      "ManualExpense": "Cash out"
+    },
+    "method": {
+      "Cash": "Cash",
+      "Card": "Card",
+      "BankTransfer": "Bank",
+      "Other": "Other"
+    },
+    "errors": {
+      "loadFailed": "Couldn't load cash register",
+      "saveFailed": "Couldn't save operation",
+      "positive": "Amount must be greater than zero",
+      "reasonRequired": "Reason is required"
+    }
+  },
+  "schedule": {
+    "title": "Schedule",
+    "subtitleManager": "Plan and manage staff shifts",
+    "subtitleEmployee": "Your upcoming shifts",
+    "prevWeek": "Previous week",
+    "nextWeek": "Next week",
+    "thisWeek": "Today",
+    "viewAll": "All staff",
+    "viewMine": "My shifts",
+    "weekSummary_one": "{{count}} shift · {{hours}}h",
+    "weekSummary_other": "{{count}} shifts · {{hours}}h",
+    "noShifts": "No shifts",
+    "dayShifts_one": "{{count}} shift · {{hours}}h",
+    "dayShifts_other": "{{count}} shifts · {{hours}}h",
+    "addShift": "Add shift",
+    "editShift": "Edit shift",
+    "save": "Save changes",
+    "create": "Create shift",
+    "cancelShift": "Cancel shift",
+    "deleteShift": "Delete shift",
+    "deleteConfirm": "Yes, delete",
+    "employee": "Employee",
+    "pickEmployee": "Pick an employee…",
+    "startAt": "Start",
+    "endAt": "End",
+    "roleForShift": "Role for this shift (optional)",
+    "roleForShiftPlaceholder": "Leave empty to use main role",
+    "notes": "Notes (optional)",
+    "you": "you",
+    "errors": {
+      "loadFailed": "Couldn't load schedule",
+      "saveFailed": "Couldn't save shift"
+    }
+  },
+  "recipe": {
+    "title": "Recipe",
+    "hint": "Ingredients deducted from stock when the order is paid.",
+    "empty": "No ingredients yet",
+    "emptyHint": "Add products to track inventory consumption.",
+    "addIngredient": "Add ingredient",
+    "pickProduct": "Pick a product",
+    "searchPlaceholder": "Search products…",
+    "noResults": "No products found",
+    "inStock": "in stock",
+    "remove": "Remove",
+    "save": "Save recipe",
+    "openEditor": "Manage recipe",
+    "errors": {
+      "positiveQty": "Quantity must be greater than zero"
+    }
+  },
+  "warehouse": {
+    "title": "Warehouse",
+    "addProduct": "Add product",
+    "newProduct": "New product",
+    "editProduct": "Edit product",
+    "editHint": "Stock isn't edited here — record a movement instead so the audit trail stays accurate.",
+    "name": "Product name",
+    "category": "Category",
+    "categoryPlaceholder": "e.g. Meat, Bread, Pantry",
+    "unit": "Unit of measure",
+    "initialStock": "Initial stock",
+    "lowStockThreshold": "Low-stock threshold",
+    "notes": "Notes (optional)",
+    "create": "Create product",
+    "save": "Save changes",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "archive": "Archive product",
+    "archiveConfirm": "Yes, archive product",
+    "archiveHint": "Archived products are hidden but their movement history is kept.",
+    "currentStock": "Current stock",
+    "minLabel": "min.",
+    "low": "Low",
+    "uncategorized": "Uncategorized",
+    "allCategories": "All",
+    "empty": "No products yet",
+    "emptyHint": "Tap \"Add product\" to build your catalog.",
+    "productCount_one": "{{count}} product",
+    "productCount_other": "{{count}} products",
+    "lowStockCount_one": "{{count}} low",
+    "lowStockCount_other": "{{count}} low",
+    "filter": {
+      "all": "All",
+      "low": "Low stock"
+    },
+    "units": {
+      "Kg": "Kilograms",
+      "Gram": "Grams",
+      "Liter": "Liters",
+      "Milliliter": "Milliliters",
+      "Piece": "Pieces"
+    },
+    "history": "Movement history",
+    "noMovements": "No movements yet",
+    "addMovement": "Add stock movement",
+    "recordMovement": "Record movement",
+    "quantity": "Quantity",
+    "reason": "Reason (optional)",
+    "movementType": {
+      "Initial": "Opening balance",
+      "Purchase": "Purchase",
+      "Adjustment": "Adjustment",
+      "Wastage": "Wastage",
+      "Sale": "Sale"
+    },
+    "direction": {
+      "add": "Add stock",
+      "remove": "Remove stock"
+    },
+    "reasonPlaceholder": {
+      "Purchase": "e.g. Weekly delivery from supplier",
+      "Adjustment": "e.g. Stocktake correction",
+      "Wastage": "e.g. Spoiled, expired, broken"
+    },
+    "errors": {
+      "loadFailed": "Couldn't load warehouse",
+      "saveFailed": "Couldn't save changes",
+      "positiveQty": "Quantity must be greater than zero"
     }
   },
   "dashboard": {
@@ -109,20 +478,77 @@
     "tabs": {
       "staff": "Staff",
       "menu": "Menu",
+      "tables": "Tables",
       "orders": "Orders",
+      "reservations": "Reservations",
+      "reports": "Reports",
       "schedule": "Schedule",
+      "warehouse": "Warehouse",
+      "cash": "Cash Register",
+      "clients": "Customers",
+      "activityLog": "Activity log",
       "restaurantSettings": "Restaurant Settings"
     },
     "desc": {
       "staff": "Team members and roles",
       "menu": "Categories and items",
+      "tables": "Floor plan and table status",
       "orders": "Active and past orders",
+      "reservations": "Upcoming bookings",
+      "reports": "Revenue, top items, busy hours",
       "schedule": "Shifts and rotations",
+      "warehouse": "Stock, products, deliveries",
+      "cash": "Cash flow and drawer balance",
+      "clients": "Loyalty, deposits, credit",
+      "activityLog": "Who did what, and when",
       "settings": "Restaurant profile and details"
     },
     "schedule": {
       "empty": "No schedule yet.",
       "comingSoon": "Plan shifts and assign staff here."
+    }
+  },
+  "permissions": {
+    "title": "Permissions",
+    "hint": "Select a role above to pre-fill, then adjust individually.",
+    "groups": {
+      "orders": "Orders",
+      "menu": "Menu",
+      "tables": "Tables",
+      "reservations": "Reservations",
+      "warehouse": "Warehouse",
+      "cashRegister": "Cash Register",
+      "reports": "Reports",
+      "staff": "Staff",
+      "schedule": "Schedule",
+      "clients": "Clients",
+      "administration": "Administration"
+    },
+    "items": {
+      "ViewOrders": "View orders",
+      "CreateOrder": "Create order",
+      "EditOrder": "Edit order",
+      "CancelOrder": "Cancel order",
+      "MoveOrderItems": "Move item status",
+      "ViewMenu": "View menu",
+      "ManageMenu": "Manage menu",
+      "ViewTables": "View tables",
+      "ManageTables": "Manage tables",
+      "ViewReservations": "View reservations",
+      "ManageReservations": "Manage reservations",
+      "ViewWarehouse": "View warehouse",
+      "ManageWarehouse": "Manage warehouse",
+      "ViewCashRegister": "View cash register",
+      "ManageCashRegister": "Manage cash register",
+      "ViewReports": "View reports",
+      "ViewStaff": "View staff",
+      "ManageStaff": "Manage staff",
+      "ViewSchedules": "View schedules",
+      "ManageSchedules": "Manage schedules",
+      "ViewClients": "View clients",
+      "ManageClients": "Manage clients",
+      "ManageRoles": "Manage roles",
+      "ManageRestaurantSettings": "Restaurant settings"
     }
   },
   "staff": {

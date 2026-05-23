@@ -72,7 +72,7 @@ export default function MenuPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton()
+  useBackButton('/dashboard')
 
   const [categories, setCategories] = useState<MenuCategoryDto[]>([])
   const [loading, setLoading] = useState(true)

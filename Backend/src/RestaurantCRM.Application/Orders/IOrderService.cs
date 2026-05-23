@@ -7,6 +7,8 @@ public interface IOrderService
     Task<OrderDto> CreateAsync(CreateOrderRequest request, Guid createdById, CancellationToken ct = default);
     Task<OrderDto> AddItemAsync(Guid orderId, AddOrderItemRequest request, CancellationToken ct = default);
     Task<OrderDto> RemoveItemAsync(Guid orderId, Guid itemId, CancellationToken ct = default);
-    Task<OrderDto> UpdateStatusAsync(Guid id, UpdateOrderStatusRequest request, CancellationToken ct = default);
+    Task<OrderDto> UpdateStatusAsync(Guid id, UpdateOrderStatusRequest request, Guid actingUserId, CancellationToken ct = default);
+    Task<OrderDto> CancelAsync(Guid id, Guid actingUserId, CancellationToken ct = default);
     Task<OrderDto> UpdateItemStatusAsync(Guid orderId, Guid itemId, UpdateOrderItemStatusRequest request, CancellationToken ct = default);
+    Task<OrderDto> AssignClientAsync(Guid orderId, Guid? clientId, CancellationToken ct = default);
 }

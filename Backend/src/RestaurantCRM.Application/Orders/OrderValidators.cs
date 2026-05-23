@@ -24,12 +24,18 @@ public class AddOrderItemRequestValidator : AbstractValidator<AddOrderItemReques
 
 public class UpdateOrderStatusRequestValidator : AbstractValidator<UpdateOrderStatusRequest>
 {
-    private static readonly string[] Valid = ["Open", "Paid", "Cancelled"];
+    private static readonly string[] ValidMethods = ["Cash", "Card", "BankTransfer", "Deposit", "Other"];
 
+    // Only "Paid" — cancellation has its own endpoint with its own permission.
     public UpdateOrderStatusRequestValidator()
     {
-        RuleFor(x => x.Status).NotEmpty().Must(s => Valid.Contains(s))
-            .WithMessage("Status must be Open, Paid, or Cancelled.");
+        RuleFor(x => x.Status).NotEmpty().Equal("Paid")
+            .WithMessage("Status must be Paid. To cancel, call /cancel.");
+
+        RuleFor(x => x.PaymentMethod)
+            .NotEmpty().WithMessage("Payment method is required.")
+            .Must(m => m is not null && ValidMethods.Contains(m))
+            .WithMessage("Payment method must be Cash, Card, BankTransfer, Deposit, or Other.");
     }
 }
 

@@ -12,30 +12,36 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ITenantContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<UserPermission> UserPermissions => Set<UserPermission>();
     public DbSet<MenuCategory> MenuCategories => Set<MenuCategory>();
     public DbSet<MenuItem> MenuItems => Set<MenuItem>();
     public DbSet<Table> Tables => Set<Table>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<Reservation> Reservations => Set<Reservation>();
+    public DbSet<Product> Products => Set<Product>();
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+    public DbSet<MenuItemRecipe> MenuItemRecipes => Set<MenuItemRecipe>();
+    public DbSet<CashRegisterTransaction> CashRegisterTransactions => Set<CashRegisterTransaction>();
+    public DbSet<Client> Clients => Set<Client>();
+    public DbSet<ClientTransaction> ClientTransactions => Set<ClientTransaction>();
+    public DbSet<ActivityLogEntry> ActivityLogEntries => Set<ActivityLogEntry>();
+    public DbSet<Shift> Shifts => Set<Shift>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
-        ApplyTenantFilters(modelBuilder);
+        ApplyDefaultFilters(modelBuilder);
     }
 
-    private void ApplyTenantFilters(ModelBuilder modelBuilder)
+    private void ApplyDefaultFilters(ModelBuilder modelBuilder)
     {
+        // Applies tenant scoping + soft-delete in a single composed filter per entity.
+        // Re-evaluated per query, so tenantContext.RestaurantId reflects the current request.
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
-            if (!typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
-                continue;
-
-            // EF Core evaluates this lambda at query time, so tenantContext.RestaurantId
-            // is read on each query — not captured once at startup.
-            modelBuilder.Entity(entityType.ClrType)
-                .AddTenantFilter(tenantContext);
+            modelBuilder.Entity(entityType.ClrType).ApplyDefaultFilters(tenantContext);
         }
     }
 

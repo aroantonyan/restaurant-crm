@@ -10,9 +10,26 @@ import StaffCreate from './pages/staff/StaffCreate'
 import StaffEdit from './pages/staff/StaffEdit'
 import MenuPage from './pages/menu/MenuPage'
 import MenuCategoryPage from './pages/menu/MenuCategoryPage'
+import MenuItemRecipePage from './pages/menu/MenuItemRecipePage'
+import TablesPage from './pages/TablesPage'
+import ReportsPage from './pages/ReportsPage'
+import ReservationsPage from './pages/reservations/ReservationsPage'
 import OrdersPage from './pages/orders/OrdersPage'
 import OrderDetailPage from './pages/orders/OrderDetailPage'
-import CreateOrderPage from './pages/orders/CreateOrderPage'
+import CreateOrderLayout from './pages/orders/create/CreateOrderLayout'
+import SelectTablePage from './pages/orders/create/SelectTablePage'
+import OrderCategoriesPage from './pages/orders/create/OrderCategoriesPage'
+import OrderCategoryItemsPage from './pages/orders/create/OrderCategoryItemsPage'
+import OrderReviewPage from './pages/orders/create/OrderReviewPage'
+import CashRegisterPage from './pages/CashRegisterPage'
+import ActivityLogPage from './pages/ActivityLogPage'
+import ClientsPage from './pages/clients/ClientsPage'
+import ClientForm from './pages/clients/ClientForm'
+import ClientDetailPage from './pages/clients/ClientDetailPage'
+import WarehousePage from './pages/warehouse/WarehousePage'
+import WarehouseCreate from './pages/warehouse/WarehouseCreate'
+import WarehouseEdit from './pages/warehouse/WarehouseEdit'
+import WarehouseProductDetail from './pages/warehouse/WarehouseProductDetail'
 import RequireAuth, { RedirectIfAuthed } from './components/RequireAuth'
 
 export default function App() {
@@ -113,6 +130,38 @@ export default function App() {
         }
       />
       <Route
+        path="/menu/items/:id/recipe"
+        element={
+          <RequireAuth>
+            <MenuItemRecipePage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/tables"
+        element={
+          <RequireAuth>
+            <TablesPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/reservations"
+        element={
+          <RequireAuth>
+            <ReservationsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <RequireAuth>
+            <ReportsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
         path="/orders"
         element={
           <RequireAuth>
@@ -124,15 +173,113 @@ export default function App() {
         path="/orders/new"
         element={
           <RequireAuth>
-            <CreateOrderPage />
+            <CreateOrderLayout />
           </RequireAuth>
         }
-      />
+      >
+        <Route index element={<SelectTablePage />} />
+        <Route path="menu" element={<OrderCategoriesPage />} />
+        <Route path="menu/:categoryId" element={<OrderCategoryItemsPage />} />
+        <Route path="review" element={<OrderReviewPage />} />
+      </Route>
+      <Route
+        path="/orders/:id/add-items"
+        element={
+          <RequireAuth>
+            <CreateOrderLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<OrderCategoriesPage />} />
+        <Route path="menu/:categoryId" element={<OrderCategoryItemsPage />} />
+        <Route path="review" element={<OrderReviewPage />} />
+      </Route>
       <Route
         path="/orders/:id"
         element={
           <RequireAuth>
             <OrderDetailPage />
+          </RequireAuth>
+        }
+      />
+
+      <Route
+        path="/cash-register"
+        element={
+          <RequireAuth>
+            <CashRegisterPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/activity-log"
+        element={
+          <RequireAuth>
+            <ActivityLogPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/clients"
+        element={
+          <RequireAuth>
+            <ClientsPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/clients/new"
+        element={
+          <RequireAuth>
+            <ClientForm mode="create" />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/clients/:id"
+        element={
+          <RequireAuth>
+            <ClientDetailPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/clients/:id/edit"
+        element={
+          <RequireAuth>
+            <ClientForm mode="edit" />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/warehouse"
+        element={
+          <RequireAuth>
+            <WarehousePage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/warehouse/new"
+        element={
+          <RequireAuth>
+            <WarehouseCreate />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/warehouse/:id"
+        element={
+          <RequireAuth>
+            <WarehouseProductDetail />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/warehouse/:id/edit"
+        element={
+          <RequireAuth>
+            <WarehouseEdit />
           </RequireAuth>
         }
       />

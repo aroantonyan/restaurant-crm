@@ -74,4 +74,22 @@ public class MenuController(IMenuService menuService) : BaseController
         await menuService.DeleteItemAsync(id, ct);
         return NoContent();
     }
+
+    // ---- Recipe (BOM) ----
+
+    [HttpGet("items/{id:guid}/recipe")]
+    [RequirePermission(PermissionType.ViewMenu)]
+    public async Task<IActionResult> GetRecipe(Guid id, CancellationToken ct)
+    {
+        var result = await menuService.GetRecipeAsync(id, ct);
+        return Ok(result);
+    }
+
+    [HttpPut("items/{id:guid}/recipe")]
+    [RequirePermission(PermissionType.ManageMenu)]
+    public async Task<IActionResult> SetRecipe(Guid id, SetRecipeRequest request, CancellationToken ct)
+    {
+        var result = await menuService.SetRecipeAsync(id, request, ct);
+        return Ok(result);
+    }
 }

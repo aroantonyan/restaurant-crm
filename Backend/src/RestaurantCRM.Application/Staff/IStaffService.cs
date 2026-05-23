@@ -8,4 +8,5 @@ public interface IStaffService
     Task<StaffMemberDto> UpdateAsync(Guid userId, UpdateStaffRequest request, CancellationToken ct = default);
     Task DeactivateAsync(Guid userId, CancellationToken ct = default);
     Task<List<RoleDto>> GetRolesAsync(CancellationToken ct = default);
+    Task<StaffMemberDto> SetPermissionsAsync(Guid userId, SetPermissionsRequest request, CancellationToken ct = default);
 }

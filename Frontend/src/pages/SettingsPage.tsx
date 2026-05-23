@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '../lib/api'
 import { getTelegram } from '../lib/telegram'
 import { useBackButton } from '../hooks/useBackButton'
+import { usePermissions } from '../hooks/usePermissions'
 import Field from '../components/Field'
 import Select from '../components/Select'
 import SubmitButton from '../components/SubmitButton'
@@ -20,7 +21,9 @@ const CURRENCIES = [
 
 export default function SettingsPage() {
   const { t } = useTranslation()
-  useBackButton()
+  const perm = usePermissions()
+  const canEdit = perm.has('ManageRestaurantSettings')
+  useBackButton('/dashboard')
 
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -107,22 +110,26 @@ export default function SettingsPage() {
 
       {!loading && !loadError && (
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          {/* Inputs disabled in read-only mode so the user can still see values. */}
           <Field
             label={t('settings.name')}
             autoComplete="organization"
             enterKeyHint="next"
+            disabled={!canEdit}
             {...register('name')}
             error={errors.name?.message}
           />
           <Field
             label={t('settings.legalName')}
             enterKeyHint="next"
+            disabled={!canEdit}
             {...register('legalName')}
             error={errors.legalName?.message}
           />
           <Select
             label={t('settings.currency')}
             options={CURRENCIES}
+            disabled={!canEdit}
             {...register('currency')}
             error={errors.currency?.message}
           />
@@ -130,6 +137,7 @@ export default function SettingsPage() {
             label={t('settings.address')}
             autoComplete="street-address"
             enterKeyHint="next"
+            disabled={!canEdit}
             {...register('address')}
             error={errors.address?.message}
           />
@@ -139,6 +147,7 @@ export default function SettingsPage() {
             autoComplete="tel"
             inputMode="tel"
             enterKeyHint="done"
+            disabled={!canEdit}
             {...register('phone')}
             error={errors.phone?.message}
           />
@@ -150,7 +159,9 @@ export default function SettingsPage() {
             <p className="text-tg-button text-sm text-center">{t('settings.saved')}</p>
           )}
 
-          <SubmitButton loading={isSubmitting}>{t('settings.submit')}</SubmitButton>
+          {canEdit && (
+            <SubmitButton loading={isSubmitting}>{t('settings.submit')}</SubmitButton>
+          )}
         </form>
       )}
     </main>

@@ -45,6 +45,8 @@ try
         .AddJsonOptions(o =>
             o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
+    builder.Services.AddSignalR();
+
     // Must come after AddControllers — it overrides the default ValidationProblemDetails factory
     builder.Services.Configure<ApiBehaviorOptions>(options =>
     {
@@ -92,6 +94,7 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
+    app.MapHub<RestaurantCRM.Infrastructure.Realtime.OrderHub>("/hubs/orders");
 
     app.Run();
 }
