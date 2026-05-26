@@ -1,0 +1,109 @@
+name: restaurant-crm
+
+services:
+
+  postgres:
+
+    image: postgres:17-alpine
+
+    container_name: crm-postgres
+
+    restart: unless-stopped
+
+    environment:
+
+      POSTGRES_DB:       ${POSTGRES_DB:-RestaurantDB}
+
+      POSTGRES_USER:     ${POSTGRES_USER:-postgres}
+
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+
+      LANG: C.UTF-8
+
+    volumes:
+
+      - pgdata:/var/lib/postgresql/data
+
+    healthcheck:
+
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} -q"]
+
+      interval: 10s
+
+      timeout: 5s
+
+      retries: 5
+
+      start_period: 10s
+
+    networks: [crm]
+
+  api:
+
+    image: aronaa/restaurantcrm-api:latest
+
+    container_name: crm-api
+
+    restart: unless-stopped
+
+    depends_on:
+
+      postgres:
+
+        condition: service_healthy
+
+    environment:
+
+      ASPNETCORE_ENVIRONMENT: Production
+
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-RestaurantDB};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD};Include Error Detail=false"
+
+      JwtSettings__Secret:      ${JWT_SECRET:?Set JWT_SECRET in .env}
+
+      JwtSettings__Issuer:      ${JWT_ISSUER:-RestaurantCRM}
+
+      JwtSettings__Audience:    ${JWT_AUDIENCE:-RestaurantCRM}
+
+      JwtSettings__ExpiryHours: ${JWT_EXPIRY_HOURS:-12}
+
+    volumes:
+
+      - api-logs:/app/logs
+
+    networks: [crm]
+
+  web:
+
+    image: aroantonyan/restaurantcrm-web:latest
+
+    container_name: crm-web
+
+    restart: unless-stopped
+
+    depends_on:
+
+      - api
+
+    ports:
+
+      - "${WEB_PORT:-8080}:8080"
+
+    networks: [crm]
+
+volumes:
+
+  pgdata:
+
+    name: crm-pgdata
+
+  api-logs:
+
+    name: crm-api-logs
+
+networks:
+
+  crm:
+
+    name: crm-net
+
+    driver: bridge
