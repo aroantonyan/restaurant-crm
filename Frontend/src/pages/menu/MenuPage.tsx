@@ -9,8 +9,9 @@ import { usePermissions } from '../../hooks/usePermissions'
 import { useBackButton } from '../../hooks/useBackButton'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
-
-// ---- Category modal ----
+import AppHeader from '../../components/AppHeader'
+import Sheet from '../../components/Sheet'
+import { SkeletonRow } from '../../components/Skeleton'
 
 interface CategoryFormProps {
   onClose: () => void
@@ -18,7 +19,7 @@ interface CategoryFormProps {
   nextSortOrder: number
 }
 
-function CategoryFormModal({ onClose, onSaved, nextSortOrder }: CategoryFormProps) {
+function CategoryFormSheet({ onClose, onSaved, nextSortOrder }: CategoryFormProps) {
   const { t } = useTranslation()
   const [serverError, setServerError] = useState<string | null>(null)
 
@@ -43,30 +44,21 @@ function CategoryFormModal({ onClose, onSaved, nextSortOrder }: CategoryFormProp
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
-      <div className="bg-tg-bg rounded-t-3xl px-5 pt-6 pb-10" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold">{t('menu.addCategory')}</h2>
-          <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-tg-secondary-bg text-tg-hint text-xl leading-none">×</button>
-        </div>
-
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <Field
-            label={t('menu.categoryName')}
-            enterKeyHint="done"
-            autoFocus
-            {...register('name')}
-            error={errors.name?.message}
-          />
-          {serverError && <p className="text-tg-destructive text-sm text-center">{serverError}</p>}
-          <SubmitButton loading={isSubmitting}>{t('menu.addCategory')}</SubmitButton>
-        </form>
-      </div>
-    </div>
+    <Sheet open onClose={onClose} title={t('menu.addCategory')}>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <Field
+          label={t('menu.categoryName')}
+          enterKeyHint="done"
+          autoFocus
+          {...register('name')}
+          error={errors.name?.message}
+        />
+        {serverError && <p className="m-0 text-sm text-danger text-center">{serverError}</p>}
+        <SubmitButton loading={isSubmitting}>{t('menu.addCategory')}</SubmitButton>
+      </form>
+    </Sheet>
   )
 }
-
-// ---- Main page ----
 
 export default function MenuPage() {
   const { t } = useTranslation()
@@ -96,43 +88,34 @@ export default function MenuPage() {
 
   useEffect(() => { load() }, [])
 
+  const totalItems = categories.reduce((s, c) => s + c.items.length, 0)
+
   return (
-    <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
-      <header className="mb-5 flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">{t('menu.title')}</h1>
-        {canManage && (
+    <main className="page-enter h-full overflow-y-auto pb-7">
+      <AppHeader
+        title={t('menu.title')}
+        subtitle={`${categories.length} ${t('menu.categoriesWord', { defaultValue: 'categories' })} · ${t('menu.itemCount', { count: totalItems })}`}
+        trailing={canManage ? (
           <button
             type="button"
             onClick={() => setAddingCategory(true)}
-            className="px-3 py-2 rounded-xl bg-tg-button text-tg-button-text text-sm font-medium active:scale-[0.98] transition"
+            aria-label={t('menu.addCategory')}
+            className="w-9 h-9 rounded-full bg-accent text-white border-0 flex items-center justify-center tappable"
           >
-            + {t('menu.addCategory')}
+            <PlusIcon />
           </button>
-        )}
-      </header>
+        ) : undefined}
+      />
 
-      {loading ? (
-        <div className="flex flex-col gap-3">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-20 rounded-2xl bg-tg-secondary-bg animate-pulse" />
-          ))}
-        </div>
-      ) : error ? (
-        <div className="flex flex-col items-center gap-3 mt-16 text-center">
-          <p className="text-tg-destructive">{error}</p>
-          <button type="button" onClick={load} className="px-4 py-2 rounded-xl bg-tg-secondary-bg text-tg-hint text-sm">
-            {t('common.retry')}
-          </button>
-        </div>
-      ) : categories.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 mt-16 text-center px-4">
-          <div className="w-16 h-16 rounded-2xl bg-tg-secondary-bg flex items-center justify-center text-3xl mb-2">📋</div>
-          <p className="text-tg-text font-medium">{t('menu.noCategories')}</p>
-          <p className="text-tg-hint text-sm">{t('menu.noCategoriesHint')}</p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2.5">
-          {categories.map(cat => {
+      <div className="px-5 flex flex-col gap-2">
+        {loading ? (
+          <>{[0, 1, 2, 3].map(i => <SkeletonRow key={i} />)}</>
+        ) : error ? (
+          <ErrorState message={error} onRetry={load} />
+        ) : categories.length === 0 ? (
+          <EmptyState />
+        ) : (
+          categories.map((cat, idx) => {
             const total = cat.items.length
             const unavailable = cat.items.filter(i => !i.isAvailable).length
             return (
@@ -140,31 +123,36 @@ export default function MenuPage() {
                 key={cat.id}
                 type="button"
                 onClick={() => navigate(`/menu/categories/${cat.id}`)}
-                className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-tg-secondary-bg text-left active:scale-[0.98] transition"
+                className="tappable item-enter w-full bg-card border-0 rounded-[18px] py-3.5 px-3.5 flex items-center gap-3 text-left"
+                style={{
+                  animationDelay: `${idx * 35}ms`,
+                  boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
+                }}
               >
-                <div className="w-11 h-11 shrink-0 rounded-xl bg-tg-bg flex items-center justify-center text-xl">
+                <div className="w-[46px] h-[46px] rounded-[14px] bg-bg flex items-center justify-center text-[22px] shrink-0">
                   {pickEmoji(cat.name)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-tg-text truncate">{cat.name}</p>
-                  <p className="text-xs text-tg-hint mt-0.5">
+                  <p className="m-0 text-[15.5px] font-semibold truncate"
+                     style={{ letterSpacing: '-0.005em' }}>
+                    {cat.name}
+                  </p>
+                  <p className="m-0 mt-0.5 text-[12.5px] text-fg-3">
                     {t('menu.itemCount', { count: total })}
                     {unavailable > 0 && (
-                      <span className="ml-2 text-tg-destructive">
-                        · {t('menu.unavailableCount', { count: unavailable })}
-                      </span>
+                      <span className="text-warn ml-1.5">· {t('menu.unavailableCount', { count: unavailable })}</span>
                     )}
                   </p>
                 </div>
-                <span className="text-tg-hint text-xl shrink-0">›</span>
+                <span className="text-fg-4 shrink-0"><ChevronIcon /></span>
               </button>
             )
-          })}
-        </div>
-      )}
+          })
+        )}
+      </div>
 
       {addingCategory && (
-        <CategoryFormModal
+        <CategoryFormSheet
           onClose={() => setAddingCategory(false)}
           onSaved={() => { setAddingCategory(false); load() }}
           nextSortOrder={categories.length + 1}
@@ -174,7 +162,49 @@ export default function MenuPage() {
   )
 }
 
-// Heuristic — guesses a fitting emoji from a category name. Falls back to generic plate.
+function EmptyState() {
+  const { t } = useTranslation()
+  return (
+    <div className="flex flex-col items-center text-center pt-12 px-4 gap-2">
+      <div className="text-[40px] mb-2" aria-hidden>📋</div>
+      <p className="m-0 text-base font-semibold text-fg">{t('menu.noCategories')}</p>
+      <p className="m-0 text-sm text-fg-3">{t('menu.noCategoriesHint')}</p>
+    </div>
+  )
+}
+
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { t } = useTranslation()
+  return (
+    <div className="flex flex-col items-center text-center px-6 py-16 gap-3">
+      <p className="m-0 text-sm text-danger">{message}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="px-4 py-2 rounded-xl bg-muted text-fg-2 text-sm font-semibold tappable border-0"
+      >
+        {t('common.retry')}
+      </button>
+    </div>
+  )
+}
+
+function PlusIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  )
+}
+function ChevronIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  )
+}
+
 function pickEmoji(name: string): string {
   const n = name.toLowerCase()
   if (n.includes('appet') || n.includes('starter')) return '🥗'

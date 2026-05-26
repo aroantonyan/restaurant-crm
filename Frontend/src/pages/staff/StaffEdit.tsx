@@ -117,19 +117,19 @@ export default function StaffEdit() {
 
   if (loadError) {
     return (
-      <main className="page-enter flex flex-col items-center justify-center px-5 min-h-full">
-        <p className="text-sm text-tg-destructive">{loadError}</p>
+      <main className="page-enter h-full overflow-y-auto flex items-center justify-center px-5">
+        <p className="text-sm text-danger">{loadError}</p>
       </main>
     )
   }
 
   if (!member) {
     return (
-      <main className="page-enter flex flex-col px-5 pt-6 pb-10 max-w-md mx-auto w-full min-h-full">
-        <div className="h-8 w-48 rounded-lg bg-tg-secondary-bg animate-pulse mb-6" />
+      <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
+        <div className="h-8 w-48 rounded-lg bg-card animate-pulse mb-6" />
         <div className="flex flex-col gap-4">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-14 rounded-xl bg-tg-secondary-bg animate-pulse" />
+            <div key={i} className="h-14 rounded-xl bg-card animate-pulse" />
           ))}
         </div>
       </main>
@@ -137,10 +137,10 @@ export default function StaffEdit() {
   }
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-6 pb-10 max-w-md mx-auto w-full min-h-full">
+    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
       <header className="mb-6">
         <h1 className="text-2xl font-bold">{t('staff.edit.title')}</h1>
-        <p className="text-tg-hint text-sm mt-1">
+        <p className="text-fg-3 text-sm mt-1">
           {member.lastName} {member.firstName} {member.fatherName}
         </p>
       </header>
@@ -189,13 +189,13 @@ export default function StaffEdit() {
         />
 
         {canSetPermissions && (
-          <div className="border-t border-tg-secondary-bg pt-4">
+          <div className="border-t border-line pt-4">
             <PermissionGrid value={permissions} onChange={setPermissions} />
           </div>
         )}
 
         {serverError && (
-          <p className="text-tg-destructive text-sm text-center">{serverError}</p>
+          <p className="text-danger text-sm text-center">{serverError}</p>
         )}
         {(canManageProfile || canSetPermissions) && (
           <SubmitButton loading={isSubmitting}>{t('staff.edit.submit')}</SubmitButton>
@@ -203,23 +203,23 @@ export default function StaffEdit() {
       </form>
 
       {canManageProfile && (
-      <div className="mt-8 pt-6 border-t border-tg-secondary-bg">
+      <div className="mt-8 pt-6 border-t border-line">
         {!confirming ? (
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="w-full py-3.5 rounded-xl text-sm font-medium text-tg-destructive bg-tg-secondary-bg"
+            className="w-full py-3.5 rounded-xl text-sm font-medium text-danger bg-card"
           >
             {t('staff.edit.deactivate')}
           </button>
         ) : (
           <div className="flex flex-col gap-3">
-            <p className="text-sm text-center text-tg-hint">{t('staff.edit.deactivateConfirm')}</p>
+            <p className="text-sm text-center text-fg-3">{t('staff.edit.deactivateConfirm')}</p>
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setConfirming(false)}
-                className="flex-1 py-3.5 rounded-xl text-sm font-medium bg-tg-secondary-bg text-tg-text"
+                className="flex-1 py-3.5 rounded-xl text-sm font-medium bg-card text-fg"
               >
                 {t('staff.edit.cancel')}
               </button>
@@ -227,7 +227,7 @@ export default function StaffEdit() {
                 type="button"
                 onClick={handleDeactivate}
                 disabled={deactivating}
-                className="flex-1 py-3.5 rounded-xl text-sm font-medium bg-tg-destructive text-white disabled:opacity-50"
+                className="flex-1 py-3.5 rounded-xl text-sm font-medium bg-danger text-white disabled:opacity-50"
               >
                 {deactivating ? t('common.loading') : t('staff.edit.deactivateConfirm')}
               </button>

@@ -6,6 +6,7 @@ import { usePermissions } from '../../hooks/usePermissions'
 import { useBackButton } from '../../hooks/useBackButton'
 import { getTelegram } from '../../lib/telegram'
 import { formatQuantity } from '../../lib/format'
+import Portal from '../../components/Portal'
 
 // Local working row — what the user sees & edits before pressing Save.
 // Includes display fields the server would otherwise have to be re-fetched for.
@@ -101,35 +102,35 @@ export default function MenuItemRecipePage() {
 
   if (loading) {
     return (
-      <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
-        <div className="h-7 w-40 bg-tg-secondary-bg rounded animate-pulse mb-4" />
+      <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
+        <div className="h-7 w-40 bg-card rounded animate-pulse mb-4" />
         <div className="flex flex-col gap-2">
-          {[1, 2, 3].map(i => <div key={i} className="h-14 rounded-2xl bg-tg-secondary-bg animate-pulse" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-14 rounded-2xl bg-card animate-pulse" />)}
         </div>
       </main>
     )
   }
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
+    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
       <header className="mb-2">
         <h1 className="text-2xl font-bold">{t('recipe.title')}</h1>
-        <p className="text-tg-hint text-sm mt-0.5 truncate">{recipe?.menuItemName}</p>
+        <p className="text-fg-3 text-sm mt-0.5 truncate">{recipe?.menuItemName}</p>
       </header>
-      <p className="text-tg-hint text-xs mb-5">{t('recipe.hint')}</p>
+      <p className="text-fg-3 text-xs mb-5">{t('recipe.hint')}</p>
 
       {rows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 px-6 text-center rounded-2xl bg-tg-secondary-bg">
-          <p className="text-tg-text font-medium">{t('recipe.empty')}</p>
-          <p className="text-tg-hint text-sm mt-1">{t('recipe.emptyHint')}</p>
+        <div className="flex flex-col items-center justify-center py-10 px-6 text-center rounded-2xl bg-card">
+          <p className="text-fg font-medium">{t('recipe.empty')}</p>
+          <p className="text-fg-3 text-sm mt-1">{t('recipe.emptyHint')}</p>
         </div>
       ) : (
         <ul className="flex flex-col gap-2">
           {rows.map(r => (
-            <li key={r.productId} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-tg-secondary-bg">
+            <li key={r.productId} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-card">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{r.productName}</p>
-                <p className="text-[11px] text-tg-hint mt-0.5">{t(`warehouse.units.${r.productUnit}`)}</p>
+                <p className="text-[11px] text-fg-3 mt-0.5">{t(`warehouse.units.${r.productUnit}`)}</p>
               </div>
               <input
                 type="number"
@@ -138,13 +139,13 @@ export default function MenuItemRecipePage() {
                 value={r.quantity}
                 onChange={e => updateQty(r.productId, parseFloat(e.target.value) || 0)}
                 disabled={!canManage}
-                className="w-20 bg-tg-bg text-tg-text rounded-xl px-3 py-2 text-base text-right tabular-nums outline-none focus:ring-2 focus:ring-tg-button"
+                className="w-20 bg-bg text-fg rounded-xl px-3 py-2 text-base text-right tabular-nums outline-none focus:ring-2 focus:ring-accent"
               />
               {canManage && (
                 <button
                   type="button"
                   onClick={() => removeRow(r.productId)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-tg-bg text-tg-destructive text-lg leading-none shrink-0 active:scale-95 transition"
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-bg text-danger text-lg leading-none shrink-0 active:scale-95 transition"
                   aria-label={t('recipe.remove')}
                 >×</button>
               )}
@@ -158,20 +159,20 @@ export default function MenuItemRecipePage() {
           type="button"
           onClick={() => setPickerOpen(true)}
           disabled={pickable.length === 0}
-          className="mt-3 py-3 rounded-xl bg-tg-secondary-bg text-tg-text font-medium active:scale-[0.98] transition disabled:opacity-50"
+          className="mt-3 py-3 rounded-xl bg-card text-fg font-medium active:scale-[0.98] transition disabled:opacity-50"
         >
           + {t('recipe.addIngredient')}
         </button>
       )}
 
-      {error && <p className="text-tg-destructive text-sm text-center mt-3">{error}</p>}
+      {error && <p className="text-danger text-sm text-center mt-3">{error}</p>}
 
       {canManage && (
         <button
           type="button"
           onClick={save}
           disabled={saving}
-          className="mt-5 py-3.5 rounded-xl bg-tg-button text-tg-button-text font-semibold active:scale-[0.98] transition disabled:opacity-50"
+          className="mt-5 py-3.5 rounded-xl bg-accent text-white font-semibold active:scale-[0.98] transition disabled:opacity-50"
         >
           {saving ? t('common.loading') : t('recipe.save')}
         </button>
@@ -208,11 +209,12 @@ function ProductPicker({ products, onPick, onClose }: PickerProps) {
   }, [products, query])
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
-      <div className="bg-tg-bg rounded-t-3xl px-5 pt-6 pb-10 max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+    <Portal>
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40 backdrop-in" onClick={onClose} style={{ paddingBottom: 'var(--keyboard-offset, 0px)', transition: 'padding-bottom 180ms cubic-bezier(0.16,1,0.3,1)' }}>
+      <div className="bg-bg rounded-t-3xl px-5 pt-6 pb-10 max-h-[85dvh] flex flex-col sheet-in" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold">{t('recipe.pickProduct')}</h2>
-          <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-tg-secondary-bg text-tg-hint text-xl leading-none">×</button>
+          <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-card text-fg-3 text-xl leading-none">×</button>
         </div>
 
         <input
@@ -220,33 +222,34 @@ function ProductPicker({ products, onPick, onClose }: PickerProps) {
           placeholder={t('recipe.searchPlaceholder')}
           value={query}
           onChange={e => setQuery(e.target.value)}
-          className="bg-tg-secondary-bg text-tg-text rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-tg-button transition mb-3"
+          className="bg-card text-fg rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-accent transition mb-3"
         />
 
         <ul className="overflow-y-auto flex flex-col gap-2">
           {visible.length === 0 ? (
-            <li className="text-tg-hint text-sm text-center py-6">{t('recipe.noResults')}</li>
+            <li className="text-fg-3 text-sm text-center py-6">{t('recipe.noResults')}</li>
           ) : visible.map(p => (
             <li key={p.id}>
               <button
                 type="button"
                 onClick={() => onPick(p)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-tg-secondary-bg active:scale-[0.98] transition text-left"
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-card active:scale-[0.98] transition text-left"
               >
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{p.name}</p>
-                  <p className="text-[11px] text-tg-hint mt-0.5">
+                  <p className="text-[11px] text-fg-3 mt-0.5">
                     {p.category ?? t('warehouse.uncategorized')}
                     <span className="mx-1.5">·</span>
                     {formatQuantity(p.currentStock, p.unit)} {t('recipe.inStock')}
                   </p>
                 </div>
-                <span className="text-tg-button text-xl shrink-0">+</span>
+                <span className="text-accent text-xl shrink-0">+</span>
               </button>
             </li>
           ))}
         </ul>
       </div>
     </div>
+    </Portal>
   )
 }

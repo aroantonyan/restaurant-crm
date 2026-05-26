@@ -4,7 +4,15 @@ import { useTranslation } from 'react-i18next'
 import { api, ApiError, type TableDto } from '../../../lib/api'
 import { useBackButton } from '../../../hooks/useBackButton'
 import { useOrderDraft } from './OrderDraftContext'
+import StatusPill from '../../../components/StatusPill'
 import StepHeader from './StepHeader'
+
+function tableKind(status: string): 'ok' | 'warn' | 'info' | 'muted' {
+  if (status === 'Free')     return 'ok'
+  if (status === 'Occupied') return 'warn'
+  if (status === 'Reserved') return 'info'
+  return 'muted'
+}
 
 export default function SelectTablePage() {
   const { t } = useTranslation()
@@ -30,51 +38,68 @@ export default function SelectTablePage() {
   }
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-6 pb-10 max-w-md mx-auto w-full min-h-full">
-      <StepHeader step={1} />
-      <p className="text-tg-hint text-sm mb-4">{t('orders.selectTable')}</p>
+    <main className="page-enter h-full overflow-y-auto pb-8">
+      <StepHeader step={1} subtitle={t('orders.step.pickTable')} backTo="/orders" />
 
-      {loading ? (
-        <div className="grid grid-cols-3 gap-3">
-          {[1,2,3,4,5,6].map(i => (
-            <div key={i} className="h-20 rounded-2xl bg-tg-secondary-bg animate-pulse" />
-          ))}
-        </div>
-      ) : error ? (
-        <p className="text-tg-destructive text-sm">{error}</p>
-      ) : tables.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 mt-12 text-center px-4">
-          <div className="w-16 h-16 rounded-2xl bg-tg-secondary-bg flex items-center justify-center text-3xl mb-2">🪑</div>
-          <p className="text-tg-text font-medium">{t('tables.noTables')}</p>
-          <p className="text-tg-hint text-sm">{t('tables.noTablesHint')}</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-3 gap-3">
-          {tables.map(table => {
-            const free = table.status === 'Free'
-            const active = draft.table?.id === table.id
-            return (
-              <button
-                key={table.id}
-                type="button"
-                disabled={!free}
-                onClick={() => onPick(table)}
-                className={[
-                  'flex flex-col items-center justify-center h-20 rounded-2xl font-semibold transition active:scale-[0.98]',
-                  active
-                    ? 'bg-tg-button text-tg-button-text ring-2 ring-tg-button-text/30'
-                    : free
-                      ? 'bg-tg-button text-tg-button-text'
-                      : 'bg-tg-secondary-bg text-tg-hint opacity-50 cursor-not-allowed',
-                ].join(' ')}
-              >
-                <span className="text-lg">{table.number}</span>
-                <span className="text-xs mt-0.5">{t(`tables.status.${table.status}`)}</span>
-              </button>
-            )
-          })}
-        </div>
-      )}
+      <div className="px-5">
+        {loading ? (
+          <div className="grid grid-cols-2 gap-2.5">
+            {[0, 1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="h-[110px] rounded-2xl bg-card animate-pulse"
+                   style={{ boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)' }} />
+            ))}
+          </div>
+        ) : error ? (
+          <p className="m-0 text-sm text-danger">{error}</p>
+        ) : tables.length === 0 ? (
+          <div className="flex flex-col items-center text-center px-4 pt-12 gap-2">
+            <div className="text-[40px] mb-2" aria-hidden>🪑</div>
+            <p className="m-0 text-base font-semibold text-fg">{t('tables.noTables')}</p>
+            <p className="m-0 text-sm text-fg-3">{t('tables.noTablesHint')}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2.5">
+            {tables.map((table, idx) => {
+              const free   = table.status === 'Free'
+              const active = draft.table?.id === table.id
+              return (
+                <button
+                  key={table.id}
+                  type="button"
+                  disabled={!free}
+                  onClick={() => onPick(table)}
+                  className={`item-enter tappable border-0 rounded-2xl px-3.5 py-3.5 flex flex-col gap-1.5 text-left
+                    ${active ? 'bg-accent text-white' : 'bg-card'}
+                    ${!free ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  style={{
+                    animationDelay: `${idx * 30}ms`,
+                    boxShadow: active
+                      ? '0 10px 24px -8px rgba(217,99,63,.35), 0 1px 3px rgba(15,15,16,.06)'
+                      : '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[10px] font-bold uppercase ${active ? 'text-white/70' : 'text-fg-3'}`}
+                          style={{ letterSpacing: '0.06em' }}>
+                      {t('tables.label', { defaultValue: 'Table' })}
+                    </span>
+                    <StatusPill kind={tableKind(table.status)} size="sm">
+                      {t(`tables.status.${table.status}`)}
+                    </StatusPill>
+                  </div>
+                  <p className={`m-0 text-[32px] font-bold tabular-nums ${active ? 'text-white' : 'text-fg'}`}
+                     style={{ letterSpacing: '-0.02em' }}>
+                    {table.number}
+                  </p>
+                  <p className={`m-0 text-xs ${active ? 'text-white/70' : 'text-fg-3'}`}>
+                    {t('orders.seatsCount', { count: table.capacity })}
+                  </p>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </main>
   )
 }

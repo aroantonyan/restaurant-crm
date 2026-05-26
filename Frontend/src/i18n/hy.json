@@ -141,6 +141,31 @@
     "quantity": "Քան.",
     "notes": "Նշումներ (ոչ պարտ.)",
     "noOrders": "Պատվերներ չկան",
+    "noOrdersHint": "Սեղմեք + առաջինը ստեղծելու համար։",
+    "subtitle_one": "{{count}} ակտիվ հիմա",
+    "subtitle_other": "{{count}} ակտիվ հիմա",
+    "subtitleEmpty": "Այս պահին բաց պատվեր չկա",
+    "items_one": "{{count}} ուտեստ",
+    "items_other": "{{count}} ուտեստ",
+    "elapsedJustNow": "հենց հիմա",
+    "elapsedMin": "{{n}} ր առաջ",
+    "elapsedHour": "{{n}} ժ առաջ",
+    "elapsedDay": "{{n}} օր առաջ",
+    "ready": "Պատրաստ է",
+    "closeAndPay": "Փակել և վճարել",
+    "addAction": "Ավելացնել",
+    "kitchen": {
+      "title": "Ուղարկել խոհանոց"
+    },
+    "step": {
+      "of": "Քայլ {{n}} 3-ից",
+      "pickTable": "Ընտրեք սեղան",
+      "pickItems": "Ընտրեք ուտեստներ",
+      "review": "Վերանայել և ուղարկել",
+      "addMore": "Ավելացնել ևս"
+    },
+    "seatsCount_one": "{{count}} տեղ",
+    "seatsCount_other": "{{count}} տեղ",
     "errors": {
       "loadFailed": "Չհաջողվեց բեռնել պատվերները",
       "saveFailed": "Չհաջողվեց պահպանել",
@@ -506,6 +531,15 @@
     "schedule": {
       "empty": "Ժամանակացույց դեռ չկա։",
       "comingSoon": "Պլանավորեք հերթափոխեր և նշանակեք անձնակազմ այստեղ։"
+    },
+    "sections": {
+      "today": "Այսօր",
+      "more": "Ավելին"
+    },
+    "snapshot": {
+      "openOrders": "Բաց պատվերներ",
+      "todayRevenue": "Այսօրվա հասույթ",
+      "tablesFree": "Ազատ սեղաններ"
     }
   },
   "permissions": {

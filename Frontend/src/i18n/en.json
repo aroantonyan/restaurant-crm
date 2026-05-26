@@ -141,6 +141,31 @@
     "quantity": "Qty",
     "notes": "Notes (optional)",
     "noOrders": "No orders",
+    "noOrdersHint": "Tap + to create the first one.",
+    "subtitle_one": "{{count}} active right now",
+    "subtitle_other": "{{count}} active right now",
+    "subtitleEmpty": "Nothing open right now",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items",
+    "elapsedJustNow": "just now",
+    "elapsedMin": "{{n}}m ago",
+    "elapsedHour": "{{n}}h ago",
+    "elapsedDay": "{{n}}d ago",
+    "ready": "Ready",
+    "closeAndPay": "Close & pay",
+    "addAction": "Add",
+    "kitchen": {
+      "title": "Send to kitchen"
+    },
+    "step": {
+      "of": "Step {{n}} of 3",
+      "pickTable": "Pick a table",
+      "pickItems": "Choose items",
+      "review": "Review & send",
+      "addMore": "Add more items"
+    },
+    "seatsCount_one": "{{count}} seat",
+    "seatsCount_other": "{{count}} seats",
     "errors": {
       "loadFailed": "Couldn't load orders",
       "saveFailed": "Couldn't save order",
@@ -506,6 +531,15 @@
     "schedule": {
       "empty": "No schedule yet.",
       "comingSoon": "Plan shifts and assign staff here."
+    },
+    "sections": {
+      "today": "Today",
+      "more": "More"
+    },
+    "snapshot": {
+      "openOrders": "Open orders",
+      "todayRevenue": "Today rev.",
+      "tablesFree": "Tables free"
     }
   },
   "permissions": {

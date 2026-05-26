@@ -5,6 +5,8 @@ import { api, type ClientDto } from '../../lib/api'
 import { usePermissions } from '../../hooks/usePermissions'
 import { useBackButton } from '../../hooks/useBackButton'
 import { formatPrice } from '../../lib/format'
+import AppHeader from '../../components/AppHeader'
+import { SkeletonRow } from '../../components/Skeleton'
 
 export default function ClientsPage() {
   const { t } = useTranslation()
@@ -32,9 +34,6 @@ export default function ClientsPage() {
     }
   }
 
-  // One effect handles both the initial load and search changes. Initial mount
-  // (search === '') loads immediately; subsequent typing is debounced.
-  // Previous version had two effects firing on mount → page flashed twice.
   useEffect(() => {
     if (search === '') {
       load()
@@ -46,77 +45,97 @@ export default function ClientsPage() {
   }, [search])
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
-      <header className="mb-4 flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold">{t('clients.title')}</h1>
-          <p className="text-tg-hint text-sm mt-0.5">{t('clients.subtitle')}</p>
-        </div>
-        {canManage && (
+    <main className="page-enter h-full overflow-y-auto pb-7">
+      <AppHeader
+        onBack={() => navigate('/dashboard')}
+        title={t('clients.title')}
+        subtitle={t('clients.subtitle')}
+        trailing={canManage ? (
           <button
             type="button"
             onClick={() => navigate('/clients/new')}
-            className="px-3 py-2 rounded-xl bg-tg-button text-tg-button-text text-sm font-medium active:scale-[0.98] transition shrink-0"
+            aria-label={t('clients.add')}
+            className="w-9 h-9 rounded-full bg-accent text-white border-0 flex items-center justify-center tappable"
           >
-            + {t('clients.add')}
+            <PlusIcon />
           </button>
-        )}
-      </header>
-
-      <input
-        type="search"
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        placeholder={t('clients.searchPlaceholder')}
-        className="bg-tg-secondary-bg text-tg-text rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-tg-button transition mb-4"
+        ) : undefined}
       />
 
-      {loading ? (
-        <div className="flex flex-col gap-2">
-          {[1, 2, 3].map(i => <div key={i} className="h-16 rounded-2xl bg-tg-secondary-bg animate-pulse" />)}
-        </div>
-      ) : error ? (
-        <div className="flex flex-col items-center gap-3 mt-12 text-center">
-          <p className="text-tg-destructive text-sm">{error}</p>
-          <button type="button" onClick={() => load(search.trim() || undefined)} className="px-4 py-2 rounded-xl bg-tg-secondary-bg text-tg-hint text-sm">
-            {t('common.retry')}
-          </button>
-        </div>
-      ) : clients.length === 0 ? (
-        <div className="flex flex-col items-center justify-center mt-12 px-6 text-center">
-          <p className="text-tg-text font-medium">{t('clients.empty')}</p>
-          <p className="text-tg-hint text-sm mt-1">{t('clients.emptyHint')}</p>
-        </div>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {clients.map(c => {
+      <div className="px-5 pb-3">
+        <input
+          type="search"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder={t('clients.searchPlaceholder')}
+          className="w-full bg-card text-fg rounded-2xl px-4 py-3.5 text-base outline-none border border-line focus:border-accent transition"
+          style={{ boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)' }}
+        />
+      </div>
+
+      <div className="px-5 flex flex-col gap-2">
+        {loading ? (
+          <>{[0, 1, 2].map(i => <SkeletonRow key={i} />)}</>
+        ) : error ? (
+          <div className="rounded-[18px] bg-card py-8 text-center"
+               style={{ boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)' }}>
+            <p className="m-0 text-sm text-danger mb-3">{error}</p>
+            <button onClick={() => load(search.trim() || undefined)}
+                    className="px-4 py-2 rounded-xl bg-muted text-fg-2 text-sm font-semibold tappable border-0">
+              {t('common.retry')}
+            </button>
+          </div>
+        ) : clients.length === 0 ? (
+          <div className="flex flex-col items-center text-center pt-12 px-4 gap-2">
+            <div className="text-[40px] mb-2" aria-hidden>👤</div>
+            <p className="m-0 text-base font-semibold text-fg">{t('clients.empty')}</p>
+            <p className="m-0 text-sm text-fg-3">{t('clients.emptyHint')}</p>
+          </div>
+        ) : (
+          clients.map((c, idx) => {
             const negative = c.depositBalance < 0
             return (
-              <li key={c.id}>
-                <button
-                  type="button"
-                  onClick={() => navigate(`/clients/${c.id}`)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-tg-secondary-bg text-left active:scale-[0.98] transition"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{c.fullName}</p>
-                    <p className="text-[11px] text-tg-hint mt-0.5 truncate">
-                      {c.phone ?? t('clients.noPhone')}
-                      {c.loyaltyType === 'Cashback' && (
-                        <span className="ml-1.5 text-tg-text">· {c.loyaltyRate}% cashback</span>
-                      )}
-                    </p>
-                  </div>
-                  <span className={`shrink-0 text-sm font-semibold tabular-nums ${negative ? 'text-tg-destructive' : 'text-tg-text'}`}>
-                    {formatPrice(c.depositBalance)}
-                  </span>
-                  <span className="text-tg-hint text-xl leading-none shrink-0">›</span>
-                </button>
-              </li>
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => navigate(`/clients/${c.id}`)}
+                className="tappable item-enter w-full bg-card border-0 rounded-[18px] py-3 px-3.5 flex items-center gap-3 text-left"
+                style={{
+                  animationDelay: `${idx * 30}ms`,
+                  boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
+                }}
+              >
+                <div className="w-10 h-10 rounded-full bg-muted text-fg-2 font-bold flex items-center justify-center shrink-0">
+                  {(c.fullName?.[0] ?? '?').toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="m-0 text-[15px] font-semibold truncate" style={{ letterSpacing: '-0.005em' }}>
+                    {c.fullName}
+                  </p>
+                  <p className="m-0 mt-0.5 text-[12.5px] text-fg-3 truncate">
+                    {c.phone ?? t('clients.noPhone')}
+                    {c.loyaltyType === 'Cashback' && (
+                      <span className="ml-1.5 text-fg-2">· {c.loyaltyRate}% cashback</span>
+                    )}
+                  </p>
+                </div>
+                <span className={`shrink-0 text-[14px] font-bold tabular-nums ${negative ? 'text-danger' : 'text-fg'}`}>
+                  {formatPrice(c.depositBalance)}
+                </span>
+              </button>
             )
-          })}
-        </ul>
-      )}
+          })
+        )}
+      </div>
     </main>
+  )
+}
+
+function PlusIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
   )
 }

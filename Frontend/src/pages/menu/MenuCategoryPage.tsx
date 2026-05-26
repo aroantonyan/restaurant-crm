@@ -10,8 +10,11 @@ import { useBackButton } from '../../hooks/useBackButton'
 import { formatPrice } from '../../lib/format'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
-
-// ---- Item form modal ----
+import AppHeader from '../../components/AppHeader'
+import Sheet from '../../components/Sheet'
+import StickyActions from '../../components/StickyActions'
+import PrimaryButton from '../../components/PrimaryButton'
+import { SkeletonRow } from '../../components/Skeleton'
 
 type EditingItem = MenuItemDto | 'new' | null
 
@@ -23,7 +26,7 @@ interface ItemFormProps {
   onDeleted: () => void
 }
 
-function ItemFormModal({ categoryId, item, onClose, onSaved, onDeleted }: ItemFormProps) {
+function ItemFormSheet({ categoryId, item, onClose, onSaved, onDeleted }: ItemFormProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
@@ -31,9 +34,9 @@ function ItemFormModal({ categoryId, item, onClose, onSaved, onDeleted }: ItemFo
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const schema = z.object({
-    name: z.string().min(1, { error: t('auth.errors.required') }).max(200, { error: t('auth.errors.tooLong') }),
+    name:        z.string().min(1, { error: t('auth.errors.required') }).max(200, { error: t('auth.errors.tooLong') }),
     description: z.string().max(1000, { error: t('auth.errors.tooLong') }).optional(),
-    price: z.number({ error: t('auth.errors.required') }).positive(),
+    price:       z.number({ error: t('auth.errors.required') }).positive(),
     isAvailable: z.boolean(),
   })
   type FormData = z.infer<typeof schema>
@@ -53,17 +56,17 @@ function ItemFormModal({ categoryId, item, onClose, onSaved, onDeleted }: ItemFo
       if (isNew) {
         await api.menu.createItem({
           categoryId,
-          name: data.name,
+          name:        data.name,
           description: data.description || undefined,
-          price: data.price,
+          price:       data.price,
           isAvailable: data.isAvailable,
         })
       } else {
         await api.menu.updateItem(item.id, {
-          categoryId: item.categoryId,
-          name: data.name,
+          categoryId:  item.categoryId,
+          name:        data.name,
           description: data.description || undefined,
-          price: data.price,
+          price:       data.price,
           isAvailable: data.isAvailable,
         })
       }
@@ -84,86 +87,65 @@ function ItemFormModal({ categoryId, item, onClose, onSaved, onDeleted }: ItemFo
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
-      <div
-        className="bg-tg-bg rounded-t-3xl px-5 pt-6 pb-10 max-h-[88vh] overflow-y-auto"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold">{isNew ? t('menu.addItem') : t('menu.editItem')}</h2>
-          <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-tg-secondary-bg text-tg-hint text-xl leading-none">×</button>
-        </div>
+    <Sheet open onClose={onClose} title={isNew ? t('menu.addItem') : t('menu.editItem')} height="tall">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <Field
+          label={t('menu.itemName')}
+          enterKeyHint="next"
+          autoFocus={isNew}
+          {...register('name')}
+          error={errors.name?.message}
+        />
+        <Field
+          label={t('menu.description')}
+          enterKeyHint="next"
+          {...register('description')}
+          error={errors.description?.message}
+        />
+        <Field
+          label={t('menu.price')}
+          type="number"
+          inputMode="decimal"
+          enterKeyHint="done"
+          step="0.01"
+          min="0"
+          {...register('price', { valueAsNumber: true })}
+          error={errors.price?.message}
+        />
+        <label className="flex items-center justify-between px-1 py-2 cursor-pointer">
+          <span className="text-base text-fg">{t('menu.available')}</span>
+          <input type="checkbox" className="w-5 h-5 rounded accent-[color:var(--color-accent)]" {...register('isAvailable')} />
+        </label>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <Field
-            label={t('menu.itemName')}
-            enterKeyHint="next"
-            autoFocus={isNew}
-            {...register('name')}
-            error={errors.name?.message}
-          />
-          <Field
-            label={t('menu.description')}
-            enterKeyHint="next"
-            {...register('description')}
-            error={errors.description?.message}
-          />
-          <Field
-            label={t('menu.price')}
-            type="number"
-            inputMode="decimal"
-            enterKeyHint="done"
-            step="0.01"
-            min="0"
-            {...register('price', { valueAsNumber: true })}
-            error={errors.price?.message}
-          />
-          <label className="flex items-center gap-3 px-1 py-2 cursor-pointer">
-            <input type="checkbox" className="w-5 h-5 rounded accent-tg-button" {...register('isAvailable')} />
-            <span className="text-base text-tg-text">{t('menu.available')}</span>
-          </label>
+        {serverError && <p className="m-0 text-sm text-danger text-center">{serverError}</p>}
+        <SubmitButton loading={isSubmitting}>
+          {isNew ? t('menu.addItem') : t('common.submit')}
+        </SubmitButton>
 
-          {serverError && <p className="text-tg-destructive text-sm text-center">{serverError}</p>}
-          <SubmitButton loading={isSubmitting}>
-            {isNew ? t('menu.addItem') : t('common.submit')}
-          </SubmitButton>
+        {!isNew && perm.has('ViewWarehouse') && (
+          <PrimaryButton
+            kind="neutral"
+            type="button"
+            onClick={() => navigate(`/menu/items/${item.id}/recipe`)}
+          >
+            📋 {t('recipe.openEditor')}
+          </PrimaryButton>
+        )}
 
-          {!isNew && perm.has('ViewWarehouse') && (
-            <button
-              type="button"
-              onClick={() => navigate(`/menu/items/${item.id}/recipe`)}
-              className="w-full py-3 rounded-2xl bg-tg-secondary-bg text-tg-text font-medium active:scale-[0.98] transition flex items-center justify-center gap-2"
-            >
-              <span>📋</span>
-              {t('recipe.openEditor')}
-            </button>
-          )}
-
-          {!isNew && !confirmDelete && (
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              className="w-full py-3 rounded-2xl bg-tg-secondary-bg text-tg-destructive font-medium active:scale-[0.98] transition"
-            >
-              {t('menu.deleteItem')}
-            </button>
-          )}
-          {!isNew && confirmDelete && (
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="w-full py-3 rounded-2xl bg-tg-destructive text-white font-medium active:scale-[0.98] transition"
-            >
-              {t('menu.deleteConfirm')}
-            </button>
-          )}
-        </form>
-      </div>
-    </div>
+        {!isNew && !confirmDelete && (
+          <PrimaryButton kind="dangerSoft" type="button" onClick={() => setConfirmDelete(true)}>
+            {t('menu.deleteItem')}
+          </PrimaryButton>
+        )}
+        {!isNew && confirmDelete && (
+          <PrimaryButton kind="danger" type="button" onClick={handleDelete}>
+            {t('menu.deleteConfirm')}
+          </PrimaryButton>
+        )}
+      </form>
+    </Sheet>
   )
 }
-
-// ---- Category rename / delete modal ----
 
 interface CategoryEditProps {
   category: MenuCategoryDto
@@ -172,7 +154,7 @@ interface CategoryEditProps {
   onDeleted: () => void
 }
 
-function CategoryEditModal({ category, onClose, onSaved, onDeleted }: CategoryEditProps) {
+function CategoryEditSheet({ category, onClose, onSaved, onDeleted }: CategoryEditProps) {
   const { t } = useTranslation()
   const [serverError, setServerError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -207,49 +189,32 @@ function CategoryEditModal({ category, onClose, onSaved, onDeleted }: CategoryEd
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
-      <div className="bg-tg-bg rounded-t-3xl px-5 pt-6 pb-10" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold">{t('menu.editCategory')}</h2>
-          <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-tg-secondary-bg text-tg-hint text-xl leading-none">×</button>
-        </div>
+    <Sheet open onClose={onClose} title={t('menu.editCategory')}>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <Field
+          label={t('menu.categoryName')}
+          enterKeyHint="done"
+          autoFocus
+          {...register('name')}
+          error={errors.name?.message}
+        />
+        {serverError && <p className="m-0 text-sm text-danger text-center">{serverError}</p>}
+        <SubmitButton loading={isSubmitting}>{t('common.submit')}</SubmitButton>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <Field
-            label={t('menu.categoryName')}
-            enterKeyHint="done"
-            autoFocus
-            {...register('name')}
-            error={errors.name?.message}
-          />
-          {serverError && <p className="text-tg-destructive text-sm text-center">{serverError}</p>}
-          <SubmitButton loading={isSubmitting}>{t('common.submit')}</SubmitButton>
-
-          {!confirmDelete && (
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              className="w-full py-3 rounded-2xl bg-tg-secondary-bg text-tg-destructive font-medium active:scale-[0.98] transition"
-            >
-              {t('menu.deleteCategory')}
-            </button>
-          )}
-          {confirmDelete && (
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="w-full py-3 rounded-2xl bg-tg-destructive text-white font-medium active:scale-[0.98] transition"
-            >
-              {t('menu.deleteCategoryConfirm')}
-            </button>
-          )}
-        </form>
-      </div>
-    </div>
+        {!confirmDelete && (
+          <PrimaryButton kind="dangerSoft" type="button" onClick={() => setConfirmDelete(true)}>
+            {t('menu.deleteCategory')}
+          </PrimaryButton>
+        )}
+        {confirmDelete && (
+          <PrimaryButton kind="danger" type="button" onClick={handleDelete}>
+            {t('menu.deleteCategoryConfirm')}
+          </PrimaryButton>
+        )}
+      </form>
+    </Sheet>
   )
 }
-
-// ---- Main page ----
 
 export default function MenuCategoryPage() {
   const { id } = useParams<{ id: string }>()
@@ -296,112 +261,126 @@ export default function MenuCategoryPage() {
 
   if (loading) {
     return (
-      <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
-        <div className="h-8 w-40 rounded-xl bg-tg-secondary-bg animate-pulse mb-6" />
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className="h-20 rounded-2xl bg-tg-secondary-bg animate-pulse mb-2.5" />
-        ))}
+      <main className="page-enter h-full overflow-y-auto pb-7">
+        <AppHeader onBack={() => navigate('/menu')} title="…" />
+        <div className="px-5 flex flex-col gap-2">
+          {[0, 1, 2, 3].map(i => <SkeletonRow key={i} />)}
+        </div>
       </main>
     )
   }
 
   if (error || !category) {
     return (
-      <main className="page-enter flex flex-col items-center px-5 pt-16 pb-10 max-w-md mx-auto w-full min-h-full">
-        <p className="text-tg-destructive">{error ?? t('menu.errors.loadFailed')}</p>
-        <button type="button" onClick={() => navigate('/menu')} className="mt-3 px-4 py-2 rounded-xl bg-tg-secondary-bg text-tg-hint text-sm">
-          {t('common.back')}
-        </button>
+      <main className="page-enter h-full overflow-y-auto pb-7">
+        <AppHeader onBack={() => navigate('/menu')} title={t('menu.title')} />
+        <div className="flex flex-col items-center px-6 pt-16 text-center gap-3">
+          <p className="m-0 text-sm text-danger">{error ?? t('menu.errors.loadFailed')}</p>
+          <button
+            type="button"
+            onClick={() => navigate('/menu')}
+            className="px-4 py-2 rounded-xl bg-muted text-fg-2 text-sm font-semibold tappable border-0"
+          >
+            {t('common.back')}
+          </button>
+        </div>
       </main>
     )
   }
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
-      <header className="mb-5 flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-xs text-tg-hint uppercase tracking-wider mb-1">{t('menu.title')}</p>
-          <h1 className="text-2xl font-bold truncate">{category.name}</h1>
-          <p className="text-xs text-tg-hint mt-1">{t('menu.itemCount', { count: category.items.length })}</p>
-        </div>
-        {canManage && (
-          <button
-            type="button"
-            onClick={() => setEditingCategory(true)}
-            className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full bg-tg-secondary-bg text-tg-hint active:scale-[0.95] transition"
-            aria-label={t('menu.editCategory')}
-          >
-            <PencilIcon />
-          </button>
-        )}
-      </header>
-
-      {category.items.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 mt-16 text-center px-4">
-          <div className="w-16 h-16 rounded-2xl bg-tg-secondary-bg flex items-center justify-center text-3xl mb-2">🍽️</div>
-          <p className="text-tg-text font-medium">{t('menu.noItems')}</p>
-          <p className="text-tg-hint text-sm">{t('menu.noItemsHint')}</p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {category.items.map(item => (
-            <div
-              key={item.id}
-              className={`flex items-start gap-3 px-4 py-3 rounded-2xl bg-tg-secondary-bg
-                ${!item.isAvailable ? 'opacity-60' : ''}`}
+    <div className="relative h-full overflow-hidden">
+      <main className={`page-enter h-full overflow-y-auto ${canManage ? 'pb-24' : 'pb-7'}`}>
+        <AppHeader
+          onBack={() => navigate('/menu')}
+          title={category.name}
+          subtitle={t('menu.itemCount', { count: category.items.length })}
+          trailing={canManage ? (
+            <button
+              type="button"
+              onClick={() => setEditingCategory(true)}
+              aria-label={t('menu.editCategory')}
+              className="w-10 h-10 rounded-full bg-[rgba(15,15,16,0.05)] text-fg-2 flex items-center justify-center tappable border-0"
             >
-              <div className="flex-1 min-w-0">
-                <p className="text-base font-semibold text-tg-text">{item.name}</p>
-                {item.description && (
-                  <p className="text-xs text-tg-hint mt-0.5 line-clamp-2">{item.description}</p>
-                )}
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className="text-sm font-semibold text-tg-text">{formatPrice(item.price)}</span>
-                  {!item.isAvailable && (
-                    <span className="text-[11px] text-tg-destructive font-medium uppercase">
-                      {t('menu.unavailable')}
-                    </span>
+              <PencilIcon />
+            </button>
+          ) : undefined}
+        />
+
+        <div className="px-5">
+          {category.items.length === 0 ? (
+            <div className="flex flex-col items-center text-center pt-12 px-4 gap-2">
+              <div className="text-[40px] mb-2" aria-hidden>🍽️</div>
+              <p className="m-0 text-base font-semibold text-fg">{t('menu.noItems')}</p>
+              <p className="m-0 text-sm text-fg-3">{t('menu.noItemsHint')}</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {category.items.map((item, idx) => (
+                <div
+                  key={item.id}
+                  className={`item-enter bg-card rounded-[18px] py-3 px-3.5 flex items-start gap-3 ${!item.isAvailable ? 'opacity-60' : ''}`}
+                  style={{
+                    animationDelay: `${idx * 30}ms`,
+                    boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
+                  }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="m-0 text-[15px] font-semibold truncate"
+                       style={{ letterSpacing: '-0.005em' }}>
+                      {item.name}
+                    </p>
+                    {item.description && (
+                      <p className="m-0 mt-0.5 text-xs text-fg-3 clamp-2">{item.description}</p>
+                    )}
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="text-[14px] font-bold tabular-nums">{formatPrice(item.price)}</span>
+                      {!item.isAvailable && (
+                        <span className="text-[10px] text-warn font-bold uppercase" style={{ letterSpacing: '0.04em' }}>
+                          {t('menu.unavailable')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {canManage && (
+                    <div className="flex flex-col gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setEditingItem(item)}
+                        aria-label={t('menu.editItem')}
+                        className="w-9 h-9 rounded-full bg-bg text-fg-2 flex items-center justify-center tappable border-0"
+                      >
+                        <PencilIcon />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={e => handleToggle(item, e)}
+                        aria-label={item.isAvailable ? t('menu.unavailable') : t('menu.available')}
+                        className={`w-9 h-9 rounded-full bg-bg flex items-center justify-center tappable border-0 ${
+                          item.isAvailable ? 'text-ok' : 'text-fg-3'
+                        }`}
+                      >
+                        {item.isAvailable ? <CheckIcon /> : <EyeOffIcon />}
+                      </button>
+                    </div>
                   )}
                 </div>
-              </div>
-              {canManage && (
-                <div className="flex flex-col gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setEditingItem(item)}
-                    className="w-9 h-9 flex items-center justify-center rounded-xl bg-tg-bg text-tg-text active:scale-[0.95] transition"
-                    aria-label={t('menu.editItem')}
-                  >
-                    <PencilIcon />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={e => handleToggle(item, e)}
-                    className={`w-9 h-9 flex items-center justify-center rounded-xl bg-tg-bg active:scale-[0.95] transition
-                      ${item.isAvailable ? 'text-green-500' : 'text-tg-hint'}`}
-                    aria-label={item.isAvailable ? t('menu.unavailable') : t('menu.available')}
-                  >
-                    {item.isAvailable ? <CheckIcon /> : <EyeOffIcon />}
-                  </button>
-                </div>
-              )}
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      )}
+      </main>
 
       {canManage && (
-        <button
-          type="button"
-          onClick={() => setEditingItem('new')}
-          className="mt-5 w-full py-3.5 rounded-2xl bg-tg-button text-tg-button-text font-semibold active:scale-[0.98] transition"
-        >
-          + {t('menu.addItem')}
-        </button>
+        <StickyActions>
+          <PrimaryButton kind="primary" onClick={() => setEditingItem('new')} icon={<PlusIcon />}>
+            {t('menu.addItem')}
+          </PrimaryButton>
+        </StickyActions>
       )}
 
       {editingItem !== null && (
-        <ItemFormModal
+        <ItemFormSheet
           categoryId={category.id}
           item={editingItem}
           onClose={() => setEditingItem(null)}
@@ -411,18 +390,16 @@ export default function MenuCategoryPage() {
       )}
 
       {editingCategory && (
-        <CategoryEditModal
+        <CategoryEditSheet
           category={category}
           onClose={() => setEditingCategory(false)}
           onSaved={() => { setEditingCategory(false); load() }}
           onDeleted={() => navigate('/menu', { replace: true })}
         />
       )}
-    </main>
+    </div>
   )
 }
-
-// ---- icons ----
 
 function PencilIcon() {
   return (
@@ -432,7 +409,6 @@ function PencilIcon() {
     </svg>
   )
 }
-
 function CheckIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -440,12 +416,19 @@ function CheckIcon() {
     </svg>
   )
 }
-
 function EyeOffIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
       <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  )
+}
+function PlusIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   )
 }

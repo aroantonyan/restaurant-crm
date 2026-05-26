@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { api, ApiError, type MenuCategoryDto } from '../../../lib/api'
 import { useBackButton } from '../../../hooks/useBackButton'
 import { useOrderDraft } from './OrderDraftContext'
+import { SkeletonRow } from '../../../components/Skeleton'
 import StepHeader from './StepHeader'
 import CartBar from './CartBar'
 
@@ -37,58 +38,76 @@ export default function OrderCategoriesPage() {
 
   const subtitle = addMode
     ? t('orders.selectItems')
-    : `${t('orders.table')} ${draft.table!.number} · ${t('orders.selectItems')}`
+    : `${t('orders.table')} ${draft.table!.number} · ${t('orders.step.pickItems')}`
 
   const itemsRoute = (catId: string) =>
     addMode ? `/orders/${id}/add-items/menu/${catId}` : `/orders/new/menu/${catId}`
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-6 pb-32 max-w-md mx-auto w-full min-h-full">
-      <StepHeader step={addMode ? 1 : 2} subtitle={subtitle} addMode={addMode} />
+    <main className="page-enter h-full overflow-y-auto pb-32">
+      <StepHeader
+        step={addMode ? 1 : 2}
+        subtitle={subtitle}
+        addMode={addMode}
+        backTo={backTarget}
+      />
 
-      {loading ? (
-        <div className="flex flex-col gap-3">
-          {[1,2,3,4].map(i => (
-            <div key={i} className="h-20 rounded-2xl bg-tg-secondary-bg animate-pulse" />
-          ))}
-        </div>
-      ) : error ? (
-        <p className="text-tg-destructive text-sm">{error}</p>
-      ) : categories.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 mt-12 text-center px-4">
-          <div className="w-16 h-16 rounded-2xl bg-tg-secondary-bg flex items-center justify-center text-3xl mb-2">📋</div>
-          <p className="text-tg-text font-medium">{t('menu.noCategories')}</p>
-          <p className="text-tg-hint text-sm">{t('menu.noCategoriesHint')}</p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2.5">
-          {categories.map(cat => {
+      <div className="px-5 flex flex-col gap-2">
+        {loading ? (
+          <>{[0, 1, 2, 3].map(i => <SkeletonRow key={i} />)}</>
+        ) : error ? (
+          <p className="m-0 text-sm text-danger">{error}</p>
+        ) : categories.length === 0 ? (
+          <div className="flex flex-col items-center text-center pt-12 px-4 gap-2">
+            <div className="text-[40px] mb-2" aria-hidden>📋</div>
+            <p className="m-0 text-base font-semibold text-fg">{t('menu.noCategories')}</p>
+            <p className="m-0 text-sm text-fg-3">{t('menu.noCategoriesHint')}</p>
+          </div>
+        ) : (
+          categories.map((cat, idx) => {
             const total = cat.items.filter(i => i.isAvailable).length
             return (
               <button
                 key={cat.id}
                 type="button"
                 onClick={() => navigate(itemsRoute(cat.id))}
-                className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-tg-secondary-bg text-left active:scale-[0.98] transition"
+                className="tappable item-enter w-full bg-card border-0 rounded-[18px] py-3.5 px-3.5 flex items-center gap-3 text-left"
+                style={{
+                  animationDelay: `${idx * 35}ms`,
+                  boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
+                }}
               >
-                <div className="w-11 h-11 shrink-0 rounded-xl bg-tg-bg flex items-center justify-center text-xl">
+                <div className="w-[46px] h-[46px] rounded-[14px] bg-bg flex items-center justify-center text-[22px] shrink-0">
                   {pickEmoji(cat.name)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-tg-text truncate">{cat.name}</p>
-                  <p className="text-xs text-tg-hint mt-0.5">
+                  <p className="m-0 text-[15.5px] font-semibold truncate"
+                     style={{ letterSpacing: '-0.005em' }}>
+                    {cat.name}
+                  </p>
+                  <p className="m-0 mt-0.5 text-[12.5px] text-fg-3">
                     {t('menu.itemCount', { count: total })}
                   </p>
                 </div>
-                <span className="text-tg-hint text-xl shrink-0">›</span>
+                <span className="text-fg-4 shrink-0">
+                  <ChevronIcon />
+                </span>
               </button>
             )
-          })}
-        </div>
-      )}
+          })
+        )}
+      </div>
 
       <CartBar />
     </main>
+  )
+}
+
+function ChevronIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
   )
 }
 

@@ -17,49 +17,27 @@ export default function Register() {
   const [serverError, setServerError] = useState<string | null>(null)
 
   const schema = z.object({
-    firstName: z
-      .string()
-      .min(1, { error: t('auth.errors.required') })
-      .max(100, { error: t('auth.errors.tooLong') }),
-    lastName: z
-      .string()
-      .min(1, { error: t('auth.errors.required') })
-      .max(100, { error: t('auth.errors.tooLong') }),
-    fatherName: z
-      .string()
-      .min(1, { error: t('auth.errors.required') })
-      .max(100, { error: t('auth.errors.tooLong') }),
-    email: z
-      .email({ error: t('auth.errors.invalidEmail') })
-      .max(256, { error: t('auth.errors.tooLong') }),
-    password: z.string().min(6, { error: t('auth.errors.passwordTooShort') }),
-    restaurantName: z
-      .string()
-      .min(1, { error: t('auth.errors.required') })
-      .max(200, { error: t('auth.errors.tooLong') }),
+    firstName:      z.string().min(1, { error: t('auth.errors.required') }).max(100, { error: t('auth.errors.tooLong') }),
+    lastName:       z.string().min(1, { error: t('auth.errors.required') }).max(100, { error: t('auth.errors.tooLong') }),
+    fatherName:     z.string().min(1, { error: t('auth.errors.required') }).max(100, { error: t('auth.errors.tooLong') }),
+    email:          z.email({ error: t('auth.errors.invalidEmail') }).max(256, { error: t('auth.errors.tooLong') }),
+    password:       z.string().min(6, { error: t('auth.errors.passwordTooShort') }),
+    restaurantName: z.string().min(1, { error: t('auth.errors.required') }).max(200, { error: t('auth.errors.tooLong') }),
   })
   type FormData = z.infer<typeof schema>
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({ resolver: zodResolver(schema) })
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  })
 
   const onSubmit = async (data: FormData) => {
     setServerError(null)
     try {
       const res = await api.auth.register(data)
       auth.set(res.token, {
-        userId: res.userId,
-        restaurantId: res.restaurantId,
-        restaurantName: res.restaurantName,
-        currency: res.currency,
-        firstName: res.firstName,
-        lastName: res.lastName,
-        roleName: res.roleName,
-        permissions: res.permissions,
-        status: res.status,
+        userId: res.userId, restaurantId: res.restaurantId, restaurantName: res.restaurantName,
+        currency: res.currency, firstName: res.firstName, lastName: res.lastName,
+        roleName: res.roleName, permissions: res.permissions, status: res.status,
       })
       getTelegram()?.HapticFeedback?.impactOccurred('light')
       navigate('/dashboard', { replace: true })
@@ -69,18 +47,21 @@ export default function Register() {
   }
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
-      <LanguageSwitcher />
+    <main className="page-enter h-full overflow-y-auto pb-10">
+      <div className="px-5 pt-3 flex justify-end">
+        <LanguageSwitcher />
+      </div>
 
-      <header className="mt-6 mb-7">
-        <h1 className="text-2xl font-bold">{t('auth.register.title')}</h1>
-        <p className="text-tg-hint text-sm mt-1.5">{t('auth.register.subtitle')}</p>
-      </header>
+      <div className="px-5 mt-2">
+        <h1 className="m-0 text-[28px] font-bold text-fg" style={{ letterSpacing: '-0.02em' }}>
+          {t('auth.register.title')}
+        </h1>
+        <p className="m-0 mt-1.5 text-sm text-fg-3">{t('auth.register.subtitle')}</p>
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
-        {/* Section 1: Restaurant */}
+      <form onSubmit={handleSubmit(onSubmit)} className="px-5 mt-6 flex flex-col gap-5">
         <section>
-          <p className="text-[11px] text-tg-hint uppercase tracking-wider font-medium mb-3 px-1">
+          <p className="m-0 mb-3 px-1 text-[11.5px] font-bold uppercase text-fg-3" style={{ letterSpacing: '0.06em' }}>
             {t('auth.register.section.restaurant')}
           </p>
           <Field
@@ -92,58 +73,24 @@ export default function Register() {
           />
         </section>
 
-        {/* Section 2: Admin account */}
         <section className="flex flex-col gap-4">
-          <p className="text-[11px] text-tg-hint uppercase tracking-wider font-medium px-1">
+          <p className="m-0 px-1 text-[11.5px] font-bold uppercase text-fg-3" style={{ letterSpacing: '0.06em' }}>
             {t('auth.register.section.admin')}
           </p>
-          <Field
-            label={t('auth.register.firstName')}
-            autoComplete="given-name"
-            enterKeyHint="next"
-            {...register('firstName')}
-            error={errors.firstName?.message}
-          />
-          <Field
-            label={t('auth.register.lastName')}
-            autoComplete="family-name"
-            enterKeyHint="next"
-            {...register('lastName')}
-            error={errors.lastName?.message}
-          />
-          <Field
-            label={t('auth.register.fatherName')}
-            autoComplete="additional-name"
-            enterKeyHint="next"
-            {...register('fatherName')}
-            error={errors.fatherName?.message}
-          />
-          <Field
-            label={t('auth.register.email')}
-            type="email"
-            autoComplete="email"
-            inputMode="email"
-            enterKeyHint="next"
-            {...register('email')}
-            error={errors.email?.message}
-          />
-          <Field
-            label={t('auth.register.password')}
-            type="password"
-            autoComplete="new-password"
-            enterKeyHint="done"
-            {...register('password')}
-            error={errors.password?.message}
-          />
+          <Field label={t('auth.register.firstName')}  autoComplete="given-name"      enterKeyHint="next" {...register('firstName')}  error={errors.firstName?.message} />
+          <Field label={t('auth.register.lastName')}   autoComplete="family-name"     enterKeyHint="next" {...register('lastName')}   error={errors.lastName?.message} />
+          <Field label={t('auth.register.fatherName')} autoComplete="additional-name" enterKeyHint="next" {...register('fatherName')} error={errors.fatherName?.message} />
+          <Field label={t('auth.register.email')} type="email" autoComplete="email" inputMode="email" enterKeyHint="next" {...register('email')}    error={errors.email?.message} />
+          <Field label={t('auth.register.password')} type="password" autoComplete="new-password" enterKeyHint="done" {...register('password')} error={errors.password?.message} />
         </section>
 
-        {serverError && <p className="text-tg-destructive text-sm text-center">{serverError}</p>}
+        {serverError && <p className="m-0 text-sm text-danger text-center">{serverError}</p>}
         <SubmitButton loading={isSubmitting}>{t('auth.register.submit')}</SubmitButton>
       </form>
 
-      <p className="text-center text-tg-hint text-sm mt-6">
+      <p className="m-0 mt-6 px-5 text-center text-fg-3 text-sm">
         {t('auth.register.haveAccount')}{' '}
-        <Link to="/login" className="text-tg-link font-medium">
+        <Link to="/login" className="text-accent font-semibold">
           {t('auth.register.signIn')}
         </Link>
       </p>

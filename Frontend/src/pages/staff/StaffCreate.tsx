@@ -103,7 +103,7 @@ export default function StaffCreate() {
   if (!canManage) return <Navigate to="/staff" replace />
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-6 pb-10 max-w-md mx-auto w-full min-h-full">
+    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
       <header className="mb-6">
         <h1 className="text-2xl font-bold">{t('staff.create.title')}</h1>
       </header>
@@ -164,13 +164,13 @@ export default function StaffCreate() {
         />
 
         {canSetPermissions && (
-          <div className="border-t border-tg-secondary-bg pt-4">
+          <div className="border-t border-line pt-4">
             <PermissionGrid value={permissions} onChange={setPermissions} />
           </div>
         )}
 
         {serverError && (
-          <p className="text-tg-destructive text-sm text-center">{serverError}</p>
+          <p className="text-danger text-sm text-center">{serverError}</p>
         )}
         <SubmitButton loading={isSubmitting}>{t('staff.create.submit')}</SubmitButton>
       </form>

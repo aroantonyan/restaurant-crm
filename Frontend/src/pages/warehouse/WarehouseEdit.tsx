@@ -78,19 +78,19 @@ export default function WarehouseEdit() {
   if (loading) {
     return (
       <main className="page-enter px-5 pt-4 pb-10 max-w-md mx-auto w-full">
-        <div className="h-7 w-40 bg-tg-secondary-bg rounded animate-pulse mb-5" />
+        <div className="h-7 w-40 bg-card rounded animate-pulse mb-5" />
         <div className="flex flex-col gap-4">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-14 rounded-xl bg-tg-secondary-bg animate-pulse" />)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-14 rounded-xl bg-card animate-pulse" />)}
         </div>
       </main>
     )
   }
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
+    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
       <header className="mb-5">
         <h1 className="text-2xl font-bold">{t('warehouse.editProduct')}</h1>
-        <p className="text-tg-hint text-xs mt-1">{t('warehouse.editHint')}</p>
+        <p className="text-fg-3 text-xs mt-1">{t('warehouse.editHint')}</p>
       </header>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -109,10 +109,10 @@ export default function WarehouseEdit() {
         />
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-[13px] text-tg-hint uppercase tracking-wide px-1">{t('warehouse.unit')}</span>
+          <span className="text-[13px] text-fg-3 uppercase tracking-wide px-1">{t('warehouse.unit')}</span>
           <select
             {...register('unit')}
-            className="bg-tg-secondary-bg text-tg-text rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-tg-button transition"
+            className="bg-card text-fg rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-accent transition"
           >
             {UNITS.map(u => (
               <option key={u} value={u}>{t(`warehouse.units.${u}`)}</option>
@@ -137,7 +137,7 @@ export default function WarehouseEdit() {
           error={errors.notes?.message}
         />
 
-        {serverError && <p className="text-tg-destructive text-sm text-center">{serverError}</p>}
+        {serverError && <p className="text-danger text-sm text-center">{serverError}</p>}
         <SubmitButton loading={isSubmitting}>{t('warehouse.save')}</SubmitButton>
       </form>
     </main>

@@ -60,7 +60,7 @@ export default function WarehouseCreate() {
   }
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
+    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
       <header className="mb-5">
         <h1 className="text-2xl font-bold">{t('warehouse.newProduct')}</h1>
       </header>
@@ -83,10 +83,10 @@ export default function WarehouseCreate() {
         />
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-[13px] text-tg-hint uppercase tracking-wide px-1">{t('warehouse.unit')}</span>
+          <span className="text-[13px] text-fg-3 uppercase tracking-wide px-1">{t('warehouse.unit')}</span>
           <select
             {...register('unit')}
-            className="bg-tg-secondary-bg text-tg-text rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-tg-button transition"
+            className="bg-card text-fg rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-accent transition"
           >
             {UNITS.map(u => (
               <option key={u} value={u}>{t(`warehouse.units.${u}`)}</option>
@@ -121,7 +121,7 @@ export default function WarehouseCreate() {
           error={errors.notes?.message}
         />
 
-        {serverError && <p className="text-tg-destructive text-sm text-center">{serverError}</p>}
+        {serverError && <p className="text-danger text-sm text-center">{serverError}</p>}
         <SubmitButton loading={isSubmitting}>{t('warehouse.create')}</SubmitButton>
       </form>
     </main>

@@ -89,16 +89,16 @@ export default function ClientForm({ mode }: Props) {
   if (loadingExisting) {
     return (
       <main className="page-enter px-5 pt-4 pb-10 max-w-md mx-auto w-full">
-        <div className="h-7 w-40 bg-tg-secondary-bg rounded animate-pulse mb-5" />
+        <div className="h-7 w-40 bg-card rounded animate-pulse mb-5" />
         <div className="flex flex-col gap-4">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-14 rounded-xl bg-tg-secondary-bg animate-pulse" />)}
+          {[1, 2, 3, 4].map(i => <div key={i} className="h-14 rounded-xl bg-card animate-pulse" />)}
         </div>
       </main>
     )
   }
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
+    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
       <header className="mb-5">
         <h1 className="text-2xl font-bold">
           {mode === 'create' ? t('clients.newClient') : t('clients.editClient')}
@@ -113,10 +113,10 @@ export default function ClientForm({ mode }: Props) {
         <Field label={t('clients.fields.notes')}    enterKeyHint="next" {...register('notes')}    error={errors.notes?.message} />
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-[13px] text-tg-hint uppercase tracking-wide px-1">{t('clients.fields.loyalty')}</span>
+          <span className="text-[13px] text-fg-3 uppercase tracking-wide px-1">{t('clients.fields.loyalty')}</span>
           <select
             {...register('loyaltyType')}
-            className="bg-tg-secondary-bg text-tg-text rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-tg-button transition"
+            className="bg-card text-fg rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-accent transition"
           >
             {LOYALTY_TYPES.map(lt => (
               <option key={lt} value={lt}>{t(`clients.loyalty.${lt}`)}</option>
@@ -136,7 +136,7 @@ export default function ClientForm({ mode }: Props) {
           />
         )}
 
-        {serverError && <p className="text-tg-destructive text-sm text-center">{serverError}</p>}
+        {serverError && <p className="text-danger text-sm text-center">{serverError}</p>}
         <SubmitButton loading={isSubmitting}>
           {mode === 'create' ? t('clients.create') : t('clients.save')}
         </SubmitButton>

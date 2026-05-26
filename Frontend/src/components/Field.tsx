@@ -6,17 +6,19 @@ interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: string
 }
 
-const Field = forwardRef<HTMLInputElement, FieldProps>(({ label, error, ...rest }, ref) => (
+const Field = forwardRef<HTMLInputElement, FieldProps>(({ label, error, className, ...rest }, ref) => (
   <div className="flex flex-col gap-1.5">
-    <span className="text-[13px] text-tg-hint uppercase tracking-wide px-1">{label}</span>
+    <span className="text-[11.5px] text-fg-3 uppercase font-bold px-1" style={{ letterSpacing: '0.06em' }}>
+      {label}
+    </span>
     <input
       ref={ref}
       {...rest}
-      className="bg-tg-secondary-bg text-tg-text rounded-xl px-4 py-3 text-base
-        outline-none focus:ring-2 focus:ring-tg-button transition
-        scroll-mb-30"
+      className={`bg-card text-fg rounded-2xl px-4 py-3.5 text-base outline-none scroll-mb-30
+        border border-line focus:border-accent transition ${className ?? ''}`}
+      style={{ boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)' }}
     />
-    {error && <span className="text-tg-destructive text-[13px] px-1">{error}</span>}
+    {error && <span className="text-danger text-[13px] px-1">{error}</span>}
   </div>
 ))
 

@@ -8,17 +8,16 @@ const LANGS = [
 export default function LanguageSwitcher() {
   const { i18n } = useTranslation()
   return (
-    <div className="flex gap-1 self-end">
+    <div className="flex gap-1.5">
       {LANGS.map(({ code, label }) => (
         <button
           key={code}
           type="button"
           onClick={() => i18n.changeLanguage(code)}
-          className={`text-xs px-2.5 py-1 rounded-md transition ${
-            i18n.resolvedLanguage === code
-              ? 'bg-tg-button text-tg-button-text'
-              : 'bg-tg-secondary-bg text-tg-hint'
-          }`}
+          className={`text-xs font-semibold px-3 py-1.5 rounded-full tappable border-0 transition
+            ${i18n.resolvedLanguage === code
+              ? 'bg-accent text-white'
+              : 'bg-muted text-fg-2'}`}
         >
           {label}
         </button>

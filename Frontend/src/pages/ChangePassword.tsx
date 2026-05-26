@@ -9,20 +9,19 @@ import { auth } from '../lib/auth'
 import { getTelegram } from '../lib/telegram'
 import Field from '../components/Field'
 import SubmitButton from '../components/SubmitButton'
+import AppHeader from '../components/AppHeader'
 
 export default function ChangePassword() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [serverError, setServerError] = useState<string | null>(null)
 
-  useEffect(() => {
-    getTelegram()?.BackButton?.hide()
-  }, [])
+  useEffect(() => { getTelegram()?.BackButton?.hide() }, [])
 
   const schema = z
     .object({
       currentPassword: z.string().min(1, { error: t('auth.errors.required') }),
-      newPassword: z.string().min(6, { error: t('auth.errors.passwordTooShort') }),
+      newPassword:     z.string().min(6, { error: t('auth.errors.passwordTooShort') }),
       confirmPassword: z.string().min(1, { error: t('auth.errors.required') }),
     })
     .refine(d => d.newPassword === d.confirmPassword, {
@@ -31,19 +30,14 @@ export default function ChangePassword() {
     })
   type FormData = z.infer<typeof schema>
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({ resolver: zodResolver(schema) })
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+    resolver: zodResolver(schema),
+  })
 
   const onSubmit = async (data: FormData) => {
     setServerError(null)
     try {
-      await api.auth.changePassword({
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
-      })
+      await api.auth.changePassword({ currentPassword: data.currentPassword, newPassword: data.newPassword })
       auth.setStatus('Active')
       getTelegram()?.HapticFeedback?.impactOccurred('light')
       navigate('/dashboard', { replace: true })
@@ -53,13 +47,10 @@ export default function ChangePassword() {
   }
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-6 pb-10 max-w-md mx-auto w-full min-h-full">
-      <header className="mb-8 mt-4">
-        <h1 className="text-2xl font-bold">{t('auth.changePassword.title')}</h1>
-        <p className="text-tg-hint text-sm mt-1">{t('auth.changePassword.subtitle')}</p>
-      </header>
+    <main className="page-enter h-full overflow-y-auto pb-10">
+      <AppHeader title={t('auth.changePassword.title')} subtitle={t('auth.changePassword.subtitle')} />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="px-5 flex flex-col gap-4">
         <Field
           label={t('auth.changePassword.currentPassword')}
           type="password"
@@ -84,7 +75,7 @@ export default function ChangePassword() {
           {...register('confirmPassword')}
           error={errors.confirmPassword?.message}
         />
-        {serverError && <p className="text-tg-destructive text-sm text-center">{serverError}</p>}
+        {serverError && <p className="m-0 text-sm text-danger text-center">{serverError}</p>}
         <SubmitButton loading={isSubmitting}>{t('auth.changePassword.submit')}</SubmitButton>
       </form>
     </main>

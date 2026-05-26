@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type ShiftDto, type StaffMember } from '../lib/api'
 import { auth } from '../lib/auth'
@@ -11,6 +12,9 @@ import { useRealtimeEvent } from '../hooks/useRealtimeEvent'
 import { getTelegram } from '../lib/telegram'
 import Field from '../components/Field'
 import SubmitButton from '../components/SubmitButton'
+import AppHeader from '../components/AppHeader'
+import Sheet from '../components/Sheet'
+import PrimaryButton from '../components/PrimaryButton'
 
 // ---- Why this layout ----
 //
@@ -70,6 +74,7 @@ const ROLE_COLOR: Record<string, string> = {
 
 export default function SchedulePage() {
   const { t, i18n } = useTranslation()
+  const navigate = useNavigate()
   const perm = usePermissions()
   const session = auth.getSession()
   useBackButton('/dashboard')
@@ -143,20 +148,21 @@ export default function SchedulePage() {
   const isToday = (d: Date) => localDateKey(d) === localDateKey(new Date())
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
-      <header className="mb-4">
-        <h1 className="text-2xl font-bold">{t('schedule.title')}</h1>
-        <p className="text-tg-hint text-sm mt-0.5">
-          {canManage ? t('schedule.subtitleManager') : t('schedule.subtitleEmployee')}
-        </p>
-      </header>
+    <main className="page-enter h-full overflow-y-auto pb-7">
+      <AppHeader
+        onBack={() => navigate('/dashboard')}
+        title={t('schedule.title')}
+        subtitle={canManage ? t('schedule.subtitleManager') : t('schedule.subtitleEmployee')}
+      />
+
+      <div className="px-5">
 
       {/* Week navigator */}
       <div className="flex items-center justify-between mb-3">
         <button
           type="button"
           onClick={() => setWeekStart(addDays(weekStart, -7))}
-          className="w-9 h-9 rounded-full bg-tg-secondary-bg text-tg-text text-lg active:scale-95 transition"
+          className="w-9 h-9 rounded-full bg-card text-fg text-lg active:scale-95 transition"
           aria-label={t('schedule.prevWeek')}
         >‹</button>
         <div className="text-center">
@@ -166,7 +172,7 @@ export default function SchedulePage() {
           <button
             type="button"
             onClick={() => setWeekStart(startOfWeek(new Date()))}
-            className="text-[11px] text-tg-link mt-0.5"
+            className="text-[11px] text-accent mt-0.5"
           >
             {t('schedule.thisWeek')}
           </button>
@@ -174,7 +180,7 @@ export default function SchedulePage() {
         <button
           type="button"
           onClick={() => setWeekStart(addDays(weekStart, 7))}
-          className="w-9 h-9 rounded-full bg-tg-secondary-bg text-tg-text text-lg active:scale-95 transition"
+          className="w-9 h-9 rounded-full bg-card text-fg text-lg active:scale-95 transition"
           aria-label={t('schedule.nextWeek')}
         >›</button>
       </div>
@@ -191,7 +197,7 @@ export default function SchedulePage() {
                 onClick={() => setViewMode(m)}
                 className={[
                   'flex-1 py-2 rounded-xl text-xs font-semibold transition',
-                  active ? 'bg-tg-button text-tg-button-text' : 'bg-tg-secondary-bg text-tg-hint',
+                  active ? 'bg-accent text-white' : 'bg-card text-fg-3',
                 ].join(' ')}
               >
                 {m === 'all' ? t('schedule.viewAll') : t('schedule.viewMine')}
@@ -202,7 +208,7 @@ export default function SchedulePage() {
       )}
 
       {/* Week summary */}
-      <p className="text-[11px] text-tg-hint mb-4 text-center tabular-nums">
+      <p className="text-[11px] text-fg-3 mb-4 text-center tabular-nums">
         {t('schedule.weekSummary', {
           count: shifts.length,
           hours: (totalMinutes / 60).toFixed(1),
@@ -212,13 +218,13 @@ export default function SchedulePage() {
       {loading ? (
         <div className="flex flex-col gap-2">
           {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="h-20 rounded-2xl bg-tg-secondary-bg animate-pulse" />
+            <div key={i} className="h-20 rounded-2xl bg-card animate-pulse" />
           ))}
         </div>
       ) : error ? (
         <div className="flex flex-col items-center gap-3 mt-12 text-center">
-          <p className="text-tg-destructive text-sm">{error}</p>
-          <button type="button" onClick={load} className="px-4 py-2 rounded-xl bg-tg-secondary-bg text-tg-hint text-sm">
+          <p className="text-danger text-sm">{error}</p>
+          <button type="button" onClick={load} className="px-4 py-2 rounded-xl bg-card text-fg-3 text-sm">
             {t('common.retry')}
           </button>
         </div>
@@ -250,6 +256,7 @@ export default function SchedulePage() {
           onSaved={() => { setEditing(null); load() }}
         />
       )}
+      </div>
     </main>
   )
 }
@@ -273,13 +280,13 @@ function DayCard({ date, shifts, canManage, myUserId, isPast, isToday, fmtDay, o
   const totalH = shifts.reduce((sum, s) => sum + s.durationMinutes, 0) / 60
 
   return (
-    <section className={`rounded-2xl ${isToday ? 'bg-tg-button/10 ring-1 ring-tg-button' : 'bg-tg-secondary-bg'} px-4 py-3`}>
+    <section className={`rounded-2xl ${isToday ? 'bg-accent/10 ring-1 ring-accent' : 'bg-card'} px-4 py-3`}>
       <header className="flex items-center justify-between mb-2">
         <div>
-          <p className={`text-sm font-semibold ${isPast ? 'text-tg-hint' : 'text-tg-text'}`}>
+          <p className={`text-sm font-semibold ${isPast ? 'text-fg-3' : 'text-fg'}`}>
             {fmtDay(date)}
           </p>
-          <p className="text-[11px] text-tg-hint tabular-nums">
+          <p className="text-[11px] text-fg-3 tabular-nums">
             {shifts.length === 0
               ? t('schedule.noShifts')
               : t('schedule.dayShifts', { count: shifts.length, hours: totalH.toFixed(1) })}
@@ -289,7 +296,7 @@ function DayCard({ date, shifts, canManage, myUserId, isPast, isToday, fmtDay, o
           <button
             type="button"
             onClick={onAdd}
-            className="w-8 h-8 rounded-full bg-tg-button text-tg-button-text text-xl leading-none active:scale-95 transition"
+            className="w-8 h-8 rounded-full bg-accent text-white text-xl leading-none active:scale-95 transition"
             aria-label={t('schedule.addShift')}
           >+</button>
         )}
@@ -309,23 +316,23 @@ function DayCard({ date, shifts, canManage, myUserId, isPast, isToday, fmtDay, o
                   onClick={() => canManage && onEdit(s)}
                   disabled={!canManage}
                   className={[
-                    'w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-tg-bg text-left transition',
+                    'w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-bg text-left transition',
                     canManage ? 'active:scale-[0.98] cursor-pointer' : 'cursor-default',
                     cancelled ? 'opacity-50 line-through' : '',
                   ].join(' ')}
                 >
                   <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium truncate ${isMine ? 'text-tg-button' : 'text-tg-text'}`}>
+                    <p className={`text-sm font-medium truncate ${isMine ? 'text-accent' : 'text-fg'}`}>
                       {s.userName}{isMine && <span className="text-[10px] uppercase tracking-wider"> · {t('schedule.you')}</span>}
                     </p>
-                    {s.notes && <p className="text-[11px] text-tg-hint truncate italic">{s.notes}</p>}
+                    {s.notes && <p className="text-[11px] text-fg-3 truncate italic">{s.notes}</p>}
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="text-sm font-semibold tabular-nums">
                       {timeHHmm(s.startAt)}–{timeHHmm(s.endAt)}
                     </p>
-                    <p className="text-[10px] text-tg-hint">{role}</p>
+                    <p className="text-[10px] text-fg-3">{role}</p>
                   </div>
                 </button>
               </li>
@@ -443,58 +450,52 @@ function ShiftFormModal({ initial, staff, defaultUserId, onClose, onSaved }: Shi
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
-      <div className="bg-tg-bg rounded-t-3xl px-5 pt-6 pb-10 max-h-[92vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold">
-            {isEdit ? t('schedule.editShift') : t('schedule.addShift')}
-          </h2>
-          <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-tg-secondary-bg text-tg-hint text-xl leading-none">×</button>
+    <Sheet open onClose={onClose} title={isEdit ? t('schedule.editShift') : t('schedule.addShift')} height="tall">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[11.5px] text-fg-3 uppercase font-bold px-1" style={{ letterSpacing: '0.06em' }}>
+            {t('schedule.employee')}
+          </span>
+          <select
+            {...register('userId')}
+            className="bg-card text-fg rounded-2xl px-4 py-3.5 text-base outline-none border border-line focus:border-accent transition"
+            style={{ boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)' }}
+          >
+            <option value="">{t('schedule.pickEmployee')}</option>
+            {assignable.map(u => (
+              <option key={u.id} value={u.id}>{u.firstName} {u.lastName} — {u.roleName}</option>
+            ))}
+          </select>
+          {errors.userId && <span className="text-danger text-[13px] px-1">{errors.userId.message}</span>}
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[13px] text-tg-hint uppercase tracking-wide px-1">{t('schedule.employee')}</span>
-            <select
-              {...register('userId')}
-              className="bg-tg-secondary-bg text-tg-text rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-tg-button"
-            >
-              <option value="">{t('schedule.pickEmployee')}</option>
-              {assignable.map(u => (
-                <option key={u.id} value={u.id}>{u.firstName} {u.lastName} — {u.roleName}</option>
-              ))}
-            </select>
-            {errors.userId && <span className="text-tg-destructive text-[13px] px-1">{errors.userId.message}</span>}
-          </div>
+        <Field label={t('schedule.startAt')} type="datetime-local" enterKeyHint="next" {...register('startAt')} error={errors.startAt?.message} />
+        <Field label={t('schedule.endAt')}   type="datetime-local" enterKeyHint="next" {...register('endAt')}   error={errors.endAt?.message} />
+        <Field label={t('schedule.roleForShift')} enterKeyHint="next" placeholder={t('schedule.roleForShiftPlaceholder')} {...register('roleForShift')} error={errors.roleForShift?.message} />
+        <Field label={t('schedule.notes')}        enterKeyHint="done" {...register('notes')} error={errors.notes?.message} />
 
-          <Field label={t('schedule.startAt')} type="datetime-local" enterKeyHint="next" {...register('startAt')} error={errors.startAt?.message} />
-          <Field label={t('schedule.endAt')}   type="datetime-local" enterKeyHint="next" {...register('endAt')}   error={errors.endAt?.message} />
-          <Field label={t('schedule.roleForShift')} enterKeyHint="next" placeholder={t('schedule.roleForShiftPlaceholder')} {...register('roleForShift')} error={errors.roleForShift?.message} />
-          <Field label={t('schedule.notes')}        enterKeyHint="done" {...register('notes')} error={errors.notes?.message} />
+        {serverError && <p className="m-0 text-sm text-danger text-center">{serverError}</p>}
 
-          {serverError && <p className="text-tg-destructive text-sm text-center">{serverError}</p>}
+        <SubmitButton loading={isSubmitting}>
+          {isEdit ? t('schedule.save') : t('schedule.create')}
+        </SubmitButton>
 
-          <SubmitButton loading={isSubmitting}>
-            {isEdit ? t('schedule.save') : t('schedule.create')}
-          </SubmitButton>
-
-          {isEdit && initial.status === 'Scheduled' && (
-            <button type="button" onClick={handleCancel} className="w-full py-3 rounded-2xl bg-tg-secondary-bg text-tg-text font-medium active:scale-[0.98] transition">
-              {t('schedule.cancelShift')}
-            </button>
-          )}
-          {isEdit && !confirmDelete && (
-            <button type="button" onClick={() => setConfirmDelete(true)} className="w-full py-3 rounded-2xl bg-tg-secondary-bg text-tg-destructive font-medium active:scale-[0.98] transition">
-              {t('schedule.deleteShift')}
-            </button>
-          )}
-          {isEdit && confirmDelete && (
-            <button type="button" onClick={handleDelete} className="w-full py-3 rounded-2xl bg-tg-destructive text-white font-medium active:scale-[0.98] transition">
-              {t('schedule.deleteConfirm')}
-            </button>
-          )}
-        </form>
-      </div>
-    </div>
+        {isEdit && initial.status === 'Scheduled' && (
+          <PrimaryButton kind="neutral" type="button" onClick={handleCancel}>
+            {t('schedule.cancelShift')}
+          </PrimaryButton>
+        )}
+        {isEdit && !confirmDelete && (
+          <PrimaryButton kind="dangerSoft" type="button" onClick={() => setConfirmDelete(true)}>
+            {t('schedule.deleteShift')}
+          </PrimaryButton>
+        )}
+        {isEdit && confirmDelete && (
+          <PrimaryButton kind="danger" type="button" onClick={handleDelete}>
+            {t('schedule.deleteConfirm')}
+          </PrimaryButton>
+        )}
+      </form>
+    </Sheet>
   )
 }

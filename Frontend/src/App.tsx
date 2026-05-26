@@ -1,4 +1,6 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { useEffect, type ReactNode } from 'react'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import BottomTabBar from './components/BottomTabBar'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
@@ -32,8 +34,55 @@ import WarehouseEdit from './pages/warehouse/WarehouseEdit'
 import WarehouseProductDetail from './pages/warehouse/WarehouseProductDetail'
 import RequireAuth, { RedirectIfAuthed } from './components/RequireAuth'
 
+/**
+ * Scrolls every page-level scroll container (and the window) to the top when
+ * the route changes. Each page mounts a fresh `<main>` so its own scroll is 0,
+ * but if any element already exists with scrollTop > 0 (e.g. CartBar's parent,
+ * #root in older browsers) we reset it here. Belt-and-braces.
+ *
+ * Important: do this on the LOCATION_KEY changing, not the pathname — that way
+ * a `replace` navigation to the same path still resets scroll.
+ */
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    // Defer to next frame so the new page's <main> is mounted first.
+    requestAnimationFrame(() => {
+      document.querySelectorAll<HTMLElement>('main').forEach(m => {
+        m.scrollTop = 0
+      })
+      document.getElementById('root')?.scrollTo({ top: 0 })
+      window.scrollTo({ top: 0 })
+    })
+  }, [pathname])
+  return null
+}
+
+function AppShell({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation()
+  // Hide the bottom tab bar on focused flows (auth + multi-step / detail pages).
+  const hideOnPrefix = ['/login', '/register', '/change-password', '/orders/new']
+  const isOrderDetail = /^\/orders\/[^/]+$/.test(pathname)            // /orders/:id
+  const isOrderAddItems = /^\/orders\/[^/]+\/add-items/.test(pathname) // /orders/:id/add-items/*
+  const isMenuCategory = /^\/menu\/categories\/[^/]+/.test(pathname)   // /menu/categories/:id...
+  const showTabBar =
+    !hideOnPrefix.some(p => pathname.startsWith(p)) &&
+    !isOrderDetail &&
+    !isOrderAddItems &&
+    !isMenuCategory
+
+  return (
+    <div className="flex flex-col h-full">
+      <ScrollToTop />
+      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+      {showTabBar && <BottomTabBar />}
+    </div>
+  )
+}
+
 export default function App() {
   return (
+    <AppShell>
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
@@ -286,5 +335,6 @@ export default function App() {
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
+    </AppShell>
   )
 }

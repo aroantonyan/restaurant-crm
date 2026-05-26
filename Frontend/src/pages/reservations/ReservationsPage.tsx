@@ -11,6 +11,7 @@ import { getTelegram } from '../../lib/telegram'
 import Field from '../../components/Field'
 import Select from '../../components/Select'
 import SubmitButton from '../../components/SubmitButton'
+import Portal from '../../components/Portal'
 
 type FilterKey = 'upcoming' | 'today' | 'past' | 'all'
 
@@ -20,7 +21,7 @@ const STATUS_STYLES: Record<ReservationStatus, { dot: string; text: string; bg: 
   Confirmed: { dot: 'bg-blue-500',   text: 'text-blue-600',   bg: 'bg-blue-500/10'   },
   Seated:    { dot: 'bg-amber-500',  text: 'text-amber-600',  bg: 'bg-amber-500/10'  },
   Completed: { dot: 'bg-green-500',  text: 'text-green-600',  bg: 'bg-green-500/10'  },
-  Cancelled: { dot: 'bg-tg-hint',    text: 'text-tg-hint',    bg: 'bg-tg-secondary-bg' },
+  Cancelled: { dot: 'bg-fg-3',    text: 'text-fg-3',    bg: 'bg-card' },
   NoShow:    { dot: 'bg-red-500',    text: 'text-red-600',    bg: 'bg-red-500/10'    },
 }
 
@@ -80,10 +81,10 @@ function ReservationCard({ reservation: r, onClick, locale }: CardProps) {
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left rounded-2xl bg-tg-secondary-bg px-4 py-3.5 flex flex-col gap-1.5 active:scale-[0.98] transition"
+      className="w-full text-left rounded-2xl bg-card px-4 py-3.5 flex flex-col gap-1.5 active:scale-[0.98] transition"
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="text-base font-semibold text-tg-text truncate">{r.guestName}</span>
+        <span className="text-base font-semibold text-fg truncate">{r.guestName}</span>
         <span
           className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium ${s.bg} ${s.text}`}
         >
@@ -91,10 +92,10 @@ function ReservationCard({ reservation: r, onClick, locale }: CardProps) {
           {t(`reservations.status.${r.status}`)}
         </span>
       </div>
-      <p className="text-xs text-tg-hint">
+      <p className="text-xs text-fg-3">
         {t('reservations.guestsCount', { count: r.guestCount })} · {t('reservations.fields.table')} №{r.tableNumber}
       </p>
-      <p className="text-xs text-tg-text/80">
+      <p className="text-xs text-fg/80">
         {formatDateTime(r.startAt, locale)} · {formatDuration(r.durationMinutes, t)}
       </p>
     </button>
@@ -221,9 +222,10 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={onClose}>
+    <Portal>
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40 backdrop-in" onClick={onClose} style={{ paddingBottom: 'var(--keyboard-offset, 0px)', transition: 'padding-bottom 180ms cubic-bezier(0.16,1,0.3,1)' }}>
       <div
-        className="bg-tg-bg rounded-t-3xl px-5 pt-6 pb-10 max-h-[92%] overflow-y-auto"
+        className="bg-bg rounded-t-3xl px-5 pt-6 pb-10 max-h-[88dvh] overflow-y-auto sheet-in"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
@@ -233,7 +235,7 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-tg-secondary-bg text-tg-hint text-xl leading-none"
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-card text-fg-3 text-xl leading-none"
             aria-label={t('common.back')}
           >
             ×
@@ -247,10 +249,10 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
             <button
               type="button"
               onClick={() => setPickingClient(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-tg-secondary-bg text-left w-full active:scale-[0.98] transition"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card text-left w-full active:scale-[0.98] transition"
             >
               <span className="text-lg" aria-hidden>👤</span>
-              <span className="flex-1 text-sm font-medium text-tg-text truncate">
+              <span className="flex-1 text-sm font-medium text-fg truncate">
                 {linkedClientName ?? t('reservations.pickClient')}
               </span>
               {linkedClientName && (
@@ -261,16 +263,16 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
                     setLinkedClientId(null)
                     setLinkedClientName(null)
                   }}
-                  className="text-tg-destructive text-xs px-2 py-1"
+                  className="text-danger text-xs px-2 py-1"
                 >
                   ✕
                 </span>
               )}
-              <span className="text-tg-hint text-xs">{linkedClientName ? t('reservations.changeClient') : ''}</span>
+              <span className="text-fg-3 text-xs">{linkedClientName ? t('reservations.changeClient') : ''}</span>
             </button>
           )}
           {!editable && linkedClientName && (
-            <p className="text-sm text-tg-text">
+            <p className="text-sm text-fg">
               <span className="mr-1">👤</span>{linkedClientName}
             </p>
           )}
@@ -326,20 +328,20 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
           />
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-[13px] text-tg-hint uppercase tracking-wide px-1">
+            <span className="text-[13px] text-fg-3 uppercase tracking-wide px-1">
               {t('reservations.fields.notes')}
             </span>
             <textarea
               {...register('notes')}
               disabled={!editable}
               rows={2}
-              className="bg-tg-secondary-bg text-tg-text rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-tg-button transition scroll-mb-30 resize-none disabled:opacity-60"
+              className="bg-card text-fg rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-accent transition scroll-mb-30 resize-none disabled:opacity-60"
             />
-            {errors.notes && <span className="text-tg-destructive text-[13px] px-1">{errors.notes.message}</span>}
+            {errors.notes && <span className="text-danger text-[13px] px-1">{errors.notes.message}</span>}
           </div>
 
           {serverError && (
-            <p className="text-tg-destructive text-sm text-center">{serverError}</p>
+            <p className="text-danger text-sm text-center">{serverError}</p>
           )}
 
           {editable && (
@@ -351,7 +353,7 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
 
         {/* Status transitions, gated by current status */}
         {isEdit && (
-          <div className="mt-6 pt-5 border-t border-tg-secondary-bg flex flex-col gap-2">
+          <div className="mt-6 pt-5 border-t border-line flex flex-col gap-2">
             {state.status === 'Confirmed' && (
               <>
                 <ActionButton onClick={() => setStatus('Seated')} disabled={busy} tone="primary">
@@ -386,7 +388,7 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
               <button
                 type="button"
                 onClick={() => setConfirmingDelete(true)}
-                className="w-full py-3.5 rounded-xl text-sm font-medium text-tg-destructive bg-tg-secondary-bg mt-2 active:scale-[0.98] transition"
+                className="w-full py-3.5 rounded-xl text-sm font-medium text-danger bg-card mt-2 active:scale-[0.98] transition"
               >
                 {t('reservations.actions.delete')}
               </button>
@@ -395,7 +397,7 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(false)}
-                  className="flex-1 py-3.5 rounded-xl text-sm font-medium bg-tg-secondary-bg text-tg-text"
+                  className="flex-1 py-3.5 rounded-xl text-sm font-medium bg-card text-fg"
                 >
                   {t('staff.edit.cancel')}
                 </button>
@@ -403,14 +405,14 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
                   type="button"
                   onClick={onDelete}
                   disabled={busy}
-                  className="flex-1 py-3.5 rounded-xl text-sm font-medium bg-tg-destructive text-white disabled:opacity-50"
+                  className="flex-1 py-3.5 rounded-xl text-sm font-medium bg-danger text-white disabled:opacity-50"
                 >
                   {busy ? t('common.loading') : t('reservations.actions.deleteConfirm')}
                 </button>
               </div>
             )}
 
-            <p className="text-[11px] text-tg-hint text-center mt-2">
+            <p className="text-[11px] text-fg-3 text-center mt-2">
               {t('reservations.createdBy')} {state.createdByName} · {formatDateTime(state.createdAt, 'en')}
             </p>
           </div>
@@ -437,6 +439,7 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
         />
       )}
     </div>
+    </Portal>
   )
 }
 
@@ -475,11 +478,12 @@ function ClientPicker({ currentClientId, onClose, onPick }: ClientPickerProps) {
   }, [search])
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col justify-end bg-black/40" onClick={onClose}>
-      <div className="bg-tg-bg rounded-t-3xl px-5 pt-6 pb-10 max-h-[88vh] flex flex-col" onClick={e => e.stopPropagation()}>
+    <Portal>
+    <div className="fixed inset-0 z-[60] flex flex-col justify-end bg-black/40 backdrop-in" onClick={onClose} style={{ paddingBottom: 'var(--keyboard-offset, 0px)', transition: 'padding-bottom 180ms cubic-bezier(0.16,1,0.3,1)' }}>
+      <div className="bg-bg rounded-t-3xl px-5 pt-6 pb-10 max-h-[88dvh] flex flex-col sheet-in" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold">{t('reservations.pickClient')}</h2>
-          <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-tg-secondary-bg text-tg-hint text-xl leading-none">×</button>
+          <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-card text-fg-3 text-xl leading-none">×</button>
         </div>
 
         <input
@@ -488,14 +492,14 @@ function ClientPicker({ currentClientId, onClose, onPick }: ClientPickerProps) {
           placeholder={t('clients.searchPlaceholder')}
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="bg-tg-secondary-bg text-tg-text rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-tg-button transition mb-3"
+          className="bg-card text-fg rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-accent transition mb-3"
         />
 
         {currentClientId && (
           <button
             type="button"
             onClick={() => onPick(null)}
-            className="w-full mb-3 py-3 rounded-xl bg-tg-secondary-bg text-tg-destructive font-medium active:scale-[0.98] transition"
+            className="w-full mb-3 py-3 rounded-xl bg-card text-danger font-medium active:scale-[0.98] transition"
           >
             × {t('reservations.unlinkClient')}
           </button>
@@ -503,25 +507,26 @@ function ClientPicker({ currentClientId, onClose, onPick }: ClientPickerProps) {
 
         <div className="overflow-y-auto flex flex-col gap-2">
           {loading ? (
-            <p className="text-tg-hint text-sm text-center py-4">{t('common.loading')}</p>
+            <p className="text-fg-3 text-sm text-center py-4">{t('common.loading')}</p>
           ) : results.length === 0 ? (
-            <p className="text-tg-hint text-sm text-center py-4">{t('clients.empty')}</p>
+            <p className="text-fg-3 text-sm text-center py-4">{t('clients.empty')}</p>
           ) : results.map(c => (
             <button
               key={c.id}
               type="button"
               onClick={() => onPick(c)}
-              className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-tg-secondary-bg text-left active:scale-[0.98] transition"
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-card text-left active:scale-[0.98] transition"
             >
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{c.fullName}</p>
-                <p className="text-[11px] text-tg-hint mt-0.5 truncate">{c.phone ?? t('clients.noPhone')}</p>
+                <p className="text-[11px] text-fg-3 mt-0.5 truncate">{c.phone ?? t('clients.noPhone')}</p>
               </div>
             </button>
           ))}
         </div>
       </div>
     </div>
+    </Portal>
   )
 }
 
@@ -539,8 +544,8 @@ function ActionButton({ children, onClick, disabled, tone }: {
       className={[
         'w-full py-3.5 rounded-xl text-sm font-medium active:scale-[0.98] transition disabled:opacity-50',
         tone === 'primary'
-          ? 'bg-tg-button text-tg-button-text'
-          : 'bg-tg-secondary-bg text-tg-text',
+          ? 'bg-accent text-white'
+          : 'bg-card text-fg',
       ].join(' ')}
     >
       {children}
@@ -609,14 +614,14 @@ export default function ReservationsPage() {
   useRealtimeEvent('reservationChanged', () => { load() })
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
+    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
       <header className="mb-5 flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">{t('reservations.title')}</h1>
         {canManage && tables.length > 0 && (
           <button
             type="button"
             onClick={() => setModal('new')}
-            className="px-3 py-2 rounded-xl bg-tg-button text-tg-button-text text-sm font-medium active:scale-[0.98] transition"
+            className="px-3 py-2 rounded-xl bg-accent text-white text-sm font-medium active:scale-[0.98] transition"
           >
             + {t('reservations.add')}
           </button>
@@ -634,7 +639,7 @@ export default function ReservationsPage() {
               onClick={() => setFilter(key)}
               className={[
                 'shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition',
-                active ? 'bg-tg-button text-tg-button-text' : 'bg-tg-secondary-bg text-tg-hint',
+                active ? 'bg-accent text-white' : 'bg-card text-fg-3',
               ].join(' ')}
             >
               {t(`reservations.filter.${key}`)}
@@ -646,29 +651,29 @@ export default function ReservationsPage() {
       {loading ? (
         <div className="flex flex-col gap-2">
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-20 rounded-2xl bg-tg-secondary-bg animate-pulse" />
+            <div key={i} className="h-20 rounded-2xl bg-card animate-pulse" />
           ))}
         </div>
       ) : error ? (
         <div className="flex flex-col items-center gap-3 mt-16 text-center">
-          <p className="text-tg-destructive">{error}</p>
+          <p className="text-danger">{error}</p>
           <button
             type="button"
             onClick={load}
-            className="px-4 py-2 rounded-xl bg-tg-secondary-bg text-tg-hint text-sm"
+            className="px-4 py-2 rounded-xl bg-card text-fg-3 text-sm"
           >
             {t('common.retry')}
           </button>
         </div>
       ) : reservations.length === 0 ? (
         <div className="flex flex-col items-center gap-3 mt-16 text-center px-4">
-          <div className="w-16 h-16 rounded-2xl bg-tg-secondary-bg flex items-center justify-center text-3xl mb-2">📅</div>
-          <p className="text-tg-text font-medium">{t('reservations.noResults')}</p>
+          <div className="w-16 h-16 rounded-2xl bg-card flex items-center justify-center text-3xl mb-2">📅</div>
+          <p className="text-fg font-medium">{t('reservations.noResults')}</p>
           {tables.length === 0 && (
-            <p className="text-tg-hint text-sm">{t('tables.noTablesHint')}</p>
+            <p className="text-fg-3 text-sm">{t('tables.noTablesHint')}</p>
           )}
           {canManage && tables.length > 0 && (
-            <p className="text-tg-hint text-sm">{t('reservations.noResultsHint')}</p>
+            <p className="text-fg-3 text-sm">{t('reservations.noResultsHint')}</p>
           )}
         </div>
       ) : (

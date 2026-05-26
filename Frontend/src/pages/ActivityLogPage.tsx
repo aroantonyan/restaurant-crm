@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, type ActivityCategory, type ActivityLogEntryDto } from '../lib/api'
 import { usePermissions } from '../hooks/usePermissions'
 import { useBackButton } from '../hooks/useBackButton'
+import AppHeader from '../components/AppHeader'
+import Chip from '../components/Chip'
+import { SkeletonRow } from '../components/Skeleton'
 
 type RangeKey = 'today' | 'yesterday' | '7d' | '30d'
 
@@ -13,42 +16,42 @@ function rangeFor(key: RangeKey): Range {
   const now = new Date()
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   switch (key) {
-    case 'today': {
-      const t = new Date(startOfToday); t.setDate(t.getDate() + 1)
-      return { from: startOfToday, to: t }
-    }
-    case 'yesterday': {
-      const y = new Date(startOfToday); y.setDate(y.getDate() - 1)
-      return { from: y, to: startOfToday }
-    }
-    case '7d': {
-      const s = new Date(startOfToday); s.setDate(s.getDate() - 6)
-      const t = new Date(startOfToday); t.setDate(t.getDate() + 1)
-      return { from: s, to: t }
-    }
-    case '30d': {
-      const s = new Date(startOfToday); s.setDate(s.getDate() - 29)
-      const t = new Date(startOfToday); t.setDate(t.getDate() + 1)
-      return { from: s, to: t }
-    }
+    case 'today':     { const x = new Date(startOfToday); x.setDate(x.getDate() + 1); return { from: startOfToday, to: x } }
+    case 'yesterday': { const y = new Date(startOfToday); y.setDate(y.getDate() - 1); return { from: y, to: startOfToday } }
+    case '7d':        { const s = new Date(startOfToday); s.setDate(s.getDate() - 6); const x = new Date(startOfToday); x.setDate(x.getDate() + 1); return { from: s, to: x } }
+    case '30d':       { const s = new Date(startOfToday); s.setDate(s.getDate() - 29); const x = new Date(startOfToday); x.setDate(x.getDate() + 1); return { from: s, to: x } }
   }
 }
 
-// Category → color for the row marker. Categories that touch money use red/amber
-// so they stand out in the timeline at a glance.
-const CATEGORY_STYLES: Record<ActivityCategory, { dot: string; text: string }> = {
-  Auth:         { dot: 'bg-blue-500',    text: 'text-blue-600'    },
-  Order:        { dot: 'bg-green-500',   text: 'text-green-600'   },
-  Menu:         { dot: 'bg-purple-500',  text: 'text-purple-600'  },
-  Inventory:    { dot: 'bg-orange-500',  text: 'text-orange-600'  },
-  Table:        { dot: 'bg-gray-500',    text: 'text-gray-600'    },
-  Reservation:  { dot: 'bg-pink-500',    text: 'text-pink-600'    },
-  Staff:        { dot: 'bg-red-500',     text: 'text-red-600'     },
-  Role:         { dot: 'bg-red-500',     text: 'text-red-600'     },
-  Client:       { dot: 'bg-teal-500',    text: 'text-teal-600'    },
-  CashRegister: { dot: 'bg-amber-500',   text: 'text-amber-600'   },
-  Settings:     { dot: 'bg-indigo-500',  text: 'text-indigo-600'  },
-  Security:     { dot: 'bg-red-700',     text: 'text-red-700'     },
+/** Category color — used for the leading dot + the category label text. */
+const CATEGORY_DOT: Record<ActivityCategory, string> = {
+  Auth:         'bg-info',
+  Order:        'bg-ok',
+  Menu:         'bg-accent',
+  Inventory:    'bg-warn',
+  Table:        'bg-fg-3',
+  Reservation:  'bg-info',
+  Staff:        'bg-danger',
+  Role:         'bg-danger',
+  Client:       'bg-ok',
+  CashRegister: 'bg-warn',
+  Settings:     'bg-info',
+  Security:     'bg-danger',
+}
+
+const CATEGORY_TEXT: Record<ActivityCategory, string> = {
+  Auth:         'text-info',
+  Order:        'text-ok',
+  Menu:         'text-accent-press',
+  Inventory:    'text-warn',
+  Table:        'text-fg-3',
+  Reservation:  'text-info',
+  Staff:        'text-danger',
+  Role:         'text-danger',
+  Client:       'text-ok',
+  CashRegister: 'text-warn',
+  Settings:     'text-info',
+  Security:     'text-danger',
 }
 
 const CATEGORIES: ActivityCategory[] = [
@@ -58,6 +61,7 @@ const CATEGORIES: ActivityCategory[] = [
 
 export default function ActivityLogPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const perm = usePermissions()
   useBackButton('/dashboard')
 
@@ -96,96 +100,84 @@ export default function ActivityLogPage() {
   if (!canView) return <Navigate to="/dashboard" replace />
 
   return (
-    <main className="page-enter flex flex-col px-5 pt-4 pb-10 max-w-md mx-auto w-full min-h-full">
-      <header className="mb-5">
-        <h1 className="text-2xl font-bold">{t('activityLog.title')}</h1>
-        <p className="text-tg-hint text-sm mt-1">{t('activityLog.subtitle')}</p>
-      </header>
+    <main className="page-enter h-full overflow-y-auto pb-7">
+      <AppHeader
+        onBack={() => navigate('/dashboard')}
+        title={t('activityLog.title')}
+        subtitle={t('activityLog.subtitle')}
+      />
 
       {/* Range chips */}
-      <div className="flex gap-2 mb-3 overflow-x-auto -mx-1 px-1 pb-1 [&::-webkit-scrollbar]:hidden">
+      <div className="flex gap-2 px-5 pt-2 pb-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
         {(['today', 'yesterday', '7d', '30d'] as RangeKey[]).map(k => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setRangeKey(k)}
-            className={[
-              'shrink-0 px-4 py-1.5 rounded-full text-xs font-medium transition',
-              rangeKey === k ? 'bg-tg-button text-tg-button-text' : 'bg-tg-secondary-bg text-tg-hint',
-            ].join(' ')}
-          >
+          <Chip key={k} active={rangeKey === k} onClick={() => setRangeKey(k)}>
             {t(`reports.range.${k}`)}
-          </button>
+          </Chip>
         ))}
       </div>
 
       {/* Category chips */}
-      <div className="flex gap-2 mb-5 overflow-x-auto -mx-1 px-1 pb-1 [&::-webkit-scrollbar]:hidden">
-        <button
-          type="button"
-          onClick={() => setCategory(null)}
-          className={[
-            'shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition',
-            category === null ? 'bg-tg-button text-tg-button-text' : 'bg-tg-secondary-bg text-tg-hint',
-          ].join(' ')}
-        >
+      <div className="flex gap-2 px-5 pb-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+        <Chip active={category === null} onClick={() => setCategory(null)}>
           {t('activityLog.allCategories')}
-        </button>
+        </Chip>
         {CATEGORIES.map(c => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => setCategory(c)}
-            className={[
-              'shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition',
-              category === c ? 'bg-tg-button text-tg-button-text' : 'bg-tg-secondary-bg text-tg-hint',
-            ].join(' ')}
-          >
+          <Chip key={c} active={category === c} onClick={() => setCategory(c)}>
             {t(`activityLog.category.${c}`)}
-          </button>
+          </Chip>
         ))}
       </div>
 
-      {loading ? (
-        <div className="flex flex-col gap-2">
-          {[1, 2, 3, 4, 5].map(i => <div key={i} className="h-16 rounded-2xl bg-tg-secondary-bg animate-pulse" />)}
-        </div>
-      ) : error ? (
-        <div className="flex flex-col items-center gap-3 mt-12 text-center">
-          <p className="text-tg-destructive text-sm">{error}</p>
-          <button type="button" onClick={load} className="px-4 py-2 rounded-xl bg-tg-secondary-bg text-tg-hint text-sm">
-            {t('common.retry')}
-          </button>
-        </div>
-      ) : entries.length === 0 ? (
-        <div className="flex flex-col items-center justify-center mt-12 px-6 text-center">
-          <p className="text-tg-text font-medium">{t('activityLog.empty')}</p>
-          <p className="text-tg-hint text-sm mt-1">{t('activityLog.emptyHint')}</p>
-        </div>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {entries.map(e => {
-            const style = CATEGORY_STYLES[e.category]
-            return (
-              <li key={e.id} className="flex items-start gap-3 px-4 py-3 rounded-2xl bg-tg-secondary-bg">
-                <span className={`w-2 h-2 rounded-full shrink-0 mt-2 ${style.dot}`} />
+      <div className="px-5">
+        {loading ? (
+          <div className="flex flex-col gap-2">
+            {[0, 1, 2, 3].map(i => <SkeletonRow key={i} />)}
+          </div>
+        ) : error ? (
+          <div className="rounded-[18px] bg-card py-8 text-center"
+               style={{ boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)' }}>
+            <p className="m-0 text-sm text-danger mb-3">{error}</p>
+            <button onClick={load} className="px-4 py-2 rounded-xl bg-muted text-fg-2 text-sm font-semibold tappable border-0">
+              {t('common.retry')}
+            </button>
+          </div>
+        ) : entries.length === 0 ? (
+          <div className="flex flex-col items-center text-center pt-12 px-4 gap-2">
+            <div className="text-[40px] mb-2" aria-hidden>🔍</div>
+            <p className="m-0 text-base font-semibold text-fg">{t('activityLog.empty')}</p>
+            <p className="m-0 text-sm text-fg-3">{t('activityLog.emptyHint')}</p>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-2 m-0 p-0 list-none">
+            {entries.map((e, idx) => (
+              <li
+                key={e.id}
+                className="item-enter bg-card rounded-[18px] py-3 px-3.5 flex items-start gap-3"
+                style={{
+                  animationDelay: `${idx * 25}ms`,
+                  boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
+                }}
+              >
+                <span className={`w-2 h-2 rounded-full shrink-0 mt-2 ${CATEGORY_DOT[e.category]}`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm">
-                    <span className={`font-semibold ${style.text}`}>{t(`activityLog.category.${e.category}`)}</span>
-                    <span className="text-tg-hint"> · {e.action}</span>
+                  <p className="m-0 text-sm">
+                    <span className={`font-semibold ${CATEGORY_TEXT[e.category]}`}>
+                      {t(`activityLog.category.${e.category}`)}
+                    </span>
+                    <span className="text-fg-3"> · {e.action}</span>
                   </p>
-                  <p className="text-sm text-tg-text mt-0.5 break-words">{e.description}</p>
-                  <p className="text-[11px] text-tg-hint mt-1">
+                  <p className="m-0 mt-0.5 text-sm text-fg break-words">{e.description}</p>
+                  <p className="m-0 mt-1 text-[11px] text-fg-3">
                     {new Date(e.createdAt).toLocaleString()}
                     <span className="mx-1">·</span>
                     {e.userName}
                   </p>
                 </div>
               </li>
-            )
-          })}
-        </ul>
-      )}
+            ))}
+          </ul>
+        )}
+      </div>
     </main>
   )
 }
