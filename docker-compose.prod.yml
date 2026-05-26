@@ -74,7 +74,7 @@ services:
 
   web:
 
-    image: aroantonyan/restaurantcrm-web:latest
+    image: aronaa/restaurantcrm-web:latest
 
     container_name: crm-web
 
