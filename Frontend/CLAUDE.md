@@ -25,6 +25,17 @@ npm run gen:api      # regenerate src/lib/api-types.ts from backend OpenAPI doc
 
 **Use `npm run dev` for code editing**, `npm run start` for Telegram testing. Dev mode serves hundreds of unbundled modules over HTTP; preview serves one bundled file.
 
+## Containerization
+
+Production image is a multi-stage build (`Dockerfile`): `node:22-alpine` runs
+`vite build` → static `dist/` is served by `nginx:1.27-alpine`. `nginx.conf`
+provides the SPA fallback, immutable caching for hashed assets, security headers,
+and **proxies `/api/*` and `/hubs/*` to the `api` container** — so in production
+the browser calls the same origin (no CORS, no mixed-content), exactly mirroring
+the Vite dev proxy. nginx listens on `:8080` and runs as the non-root `nginx`
+user. `VITE_API_BASE_URL` stays empty (baked into the bundle as same-origin).
+Full deploy flow: root `DEPLOYMENT.md`.
+
 ## Backend integration
 
 Sibling project: `../Backend/src/` (ASP.NET Core 9, port 5293). Contract source of truth.
@@ -84,10 +95,24 @@ src/
 | `/staff`, `/staff/new`, `/staff/:id/edit` | RequireAuth | StaffTab, StaffCreate, StaffEdit |
 | `/menu` | RequireAuth | MenuPage (category cards) |
 | `/menu/categories/:id` | RequireAuth | MenuCategoryPage (items in category) |
-| `/orders`, `/orders/new`, `/orders/:id` | RequireAuth | OrdersPage, CreateOrderPage, OrderDetailPage |
+| `/orders`, `/orders/:id` | RequireAuth | OrdersPage, OrderDetailPage |
+| `/orders/new/*` | RequireAuth | Multi-step create flow (`pages/orders/create/`): SelectTable → Categories → CategoryItems → Review, with a shared `OrderDraftContext` + `CartBar` |
+| `/orders/:id/add-items/*` | RequireAuth | Same create flow, reused to append items to an existing open order |
+| `/tables` | RequireAuth | TablesPage |
+| `/reservations` | RequireAuth | ReservationsPage |
+| `/clients`, `/clients/new`, `/clients/:id`, `/clients/:id/edit` | RequireAuth | ClientsPage, ClientForm, ClientDetailPage |
+| `/warehouse`, `/warehouse/new`, `/warehouse/:id`, `/warehouse/:id/edit` | RequireAuth | WarehousePage, WarehouseCreate, WarehouseProductDetail, WarehouseEdit |
+| `/menu/items/:id/recipe` | RequireAuth | MenuItemRecipePage |
+| `/cash-register` | RequireAuth | CashRegisterPage |
+| `/reports` | RequireAuth | ReportsPage |
+| `/activity-log` | RequireAuth | ActivityLogPage |
 | `/settings` | RequireAuth | SettingsPage |
-| `/schedule` | RequireAuth | SchedulePage (placeholder) |
+| `/schedule` | RequireAuth | SchedulePage |
 | `*` | — | Redirect → `/dashboard` |
+
+> `src/App.tsx` is the authoritative route list — the exact paths/guards live
+> there. Each route is gated client-side by `usePermissions()` and again
+> server-side by `[RequirePermission]` on the matching controller.
 
 ## Validation rules (mirror backend FluentValidation)
 
@@ -110,8 +135,8 @@ When backend changes a constraint, update Zod schemas in the relevant page.
 ## Telegram Mini App notes
 
 - `initData` is available synchronously as soon as the page loads — no roundtrip needed
-- It expires (`auth_date` field) — backend should reject if older than ~24h (not yet implemented)
-- It's HMAC-signed with the bot token — backend will need to verify (not yet implemented)
+- It expires (`auth_date` field) — the backend rejects payloads older than `Telegram:MaxAgeMinutes` (default 24h) when enforcement is on
+- It's HMAC-signed with the bot token — the backend verifies it (`TelegramInitDataValidator`), enforced on protected `/api/*` when `Telegram:Enforce=true` (off in dev)
 - For local dev outside Telegram, `initData` is empty and the header is omitted; backend accepts JWT-only requests during development
 
 ## Theming

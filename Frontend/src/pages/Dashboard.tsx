@@ -1,10 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { auth } from '../lib/auth'
+import { api } from '../lib/api'
+import { formatPrice } from '../lib/format'
 import { disconnectRealtime } from '../lib/realtime'
 import { getTelegram } from '../lib/telegram'
 import { usePermissions, type Permission } from '../hooks/usePermissions'
+import { useRealtimeEvent } from '../hooks/useRealtimeEvent'
 import Portal from '../components/Portal'
 
 /**
@@ -19,12 +22,26 @@ import Portal from '../components/Portal'
  *      Clients, Staff, Schedule, Settings, Activity). Fits on one screen,
  *      no scroll.
  *
- * Snapshot values are placeholders for now — wiring them to live counts is
- * a separate task and would require new API endpoints. We keep the visual
- * shape and the i18n labels so the swap-in is trivial later.
+ * Snapshot values are computed client-side from the orders + tables endpoints
+ * (each guarded by the viewer's permissions) and refresh on realtime events.
  */
 
 type Tint = 'orange' | 'green' | 'blue' | 'plum'
+
+interface Snapshot {
+  open: number | null
+  revenue: number | null
+  free: number | null
+  total: number | null
+}
+
+function isToday(iso: string): boolean {
+  const d = new Date(iso)
+  const now = new Date()
+  return d.getFullYear() === now.getFullYear()
+    && d.getMonth() === now.getMonth()
+    && d.getDate() === now.getDate()
+}
 
 interface TodayItem {
   key: string
@@ -80,6 +97,35 @@ export default function Dashboard() {
   const session = auth.getSession()
   const perm = usePermissions()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [snap, setSnap] = useState<Snapshot>({ open: null, revenue: null, free: null, total: null })
+
+  const canViewOrders = perm.has('ViewOrders')
+  const canViewTables = perm.has('ViewTables')
+
+  const loadSnapshot = async () => {
+    const next: Partial<Snapshot> = {}
+    await Promise.all([
+      canViewOrders
+        ? api.orders.getAll().then((orders) => {
+            next.open = orders.filter(o => o.status === 'Open').length
+            next.revenue = orders
+              .filter(o => o.status === 'Paid' && isToday(o.createdAt))
+              .reduce((sum, o) => sum + o.total, 0)
+          }).catch(() => {})
+        : Promise.resolve(),
+      canViewTables
+        ? api.tables.getAll().then((tables) => {
+            next.total = tables.length
+            next.free = tables.filter(t => t.status === 'Free').length
+          }).catch(() => {})
+        : Promise.resolve(),
+    ])
+    setSnap(s => ({ ...s, ...next }))
+  }
+
+  useEffect(() => { loadSnapshot() }, [])
+  useRealtimeEvent('orderChanged', () => { loadSnapshot() })
+  useRealtimeEvent('tableChanged', () => { loadSnapshot() })
 
   const visibleToday = TODAY.filter(it => perm.has(it.permission))
   const visibleMore = MORE.filter(it => perm.has(it.permission))
@@ -174,14 +220,27 @@ export default function Dashboard() {
         </div>
 
         {/* Live snapshot card — three KPIs separated by vertical dividers.
-            Values are placeholders until backend KPI endpoints are added. */}
+            Computed client-side from orders + tables, permission-gated; "—"
+            until loaded or when the viewer lacks the relevant permission. */}
         <div className="item-enter mt-4 p-3.5 rounded-[18px] bg-card flex"
              style={{ boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)' }}>
-          <SnapStat label={t('dashboard.snapshot.openOrders')}   value="—" tone="info"  />
+          <SnapStat
+            label={t('dashboard.snapshot.openOrders')}
+            value={snap.open === null ? '—' : String(snap.open)}
+            tone="info"
+          />
           <SnapDivider />
-          <SnapStat label={t('dashboard.snapshot.todayRevenue')} value="—" tone="ok"    />
+          <SnapStat
+            label={t('dashboard.snapshot.todayRevenue')}
+            value={snap.revenue === null ? '—' : formatPrice(snap.revenue)}
+            tone="ok"
+          />
           <SnapDivider />
-          <SnapStat label={t('dashboard.snapshot.tablesFree')}   value="—" tone="muted" />
+          <SnapStat
+            label={t('dashboard.snapshot.tablesFree')}
+            value={snap.total === null ? '—' : `${snap.free}/${snap.total}`}
+            tone="muted"
+          />
         </div>
       </div>
 

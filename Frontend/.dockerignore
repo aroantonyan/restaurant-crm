@@ -1,0 +1,36 @@
+# Dependencies — rebuilt inside the image
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output — produced inside the image, never copied in
+dist/
+build/
+.vite/
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# IDE / OS junk
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Git metadata
+.git/
+.gitignore
+.gitattributes
+
+# CI / tooling configs that don't belong in the image
+.github/
+
+# Tests
+coverage/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx

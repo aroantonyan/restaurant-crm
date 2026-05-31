@@ -1,7 +1,9 @@
 # ── Frontend ──────────────────────────────────────────
 node_modules/
 dist/
-.env*.local
+.env
+.env.*
+!.env.example
 *.local
 
 # ── Backend ───────────────────────────────────────────
@@ -14,6 +16,9 @@ dist/
 **/appsettings.json
 **/appsettings.Development.json
 !**/appsettings.Example.json
+
+# ── Claude Code (may contain local tokens/secrets) ────
+.claude/
 
 # ── OS / editors ──────────────────────────────────────
 .DS_Store

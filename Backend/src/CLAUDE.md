@@ -71,6 +71,45 @@ Every endpoint requires `[Authorize]` AND a `[RequirePermission(PermissionType.X
 - `PATCH /api/orders/{id}/status` — `EditOrder` (Open → Paid/Cancelled, releases table if no other open orders)
 - `PATCH /api/orders/{id}/items/{itemId}/status` — `MoveOrderItems` (Pending → Preparing → Ready → Served)
 
+### Reservations `[Authorize]`
+- `GET /api/reservations`, `GET /api/reservations/{id}` — `ViewReservations`
+- `POST /api/reservations`, `PUT /api/reservations/{id}` — `ManageReservations`
+- `PATCH /api/reservations/{id}/status` — `ManageReservations`
+- `DELETE /api/reservations/{id}` — `ManageReservations`
+
+### Clients `[Authorize]`
+- `GET /api/clients`, `GET /api/clients/{id}` — `ViewClients`
+- `POST /api/clients`, `PUT /api/clients/{id}`, `DELETE /api/clients/{id}` (archive) — `ManageClients`
+- `GET /api/clients/{id}/transactions` — `ViewClients`
+- `POST /api/clients/{id}/deposit`, `POST /api/clients/{id}/withdraw` — `ManageClients` (client balance ledger)
+
+### Warehouse / Products `[Authorize]`
+- `GET /api/products`, `GET /api/products/categories`, `GET /api/products/{id}` — `ViewWarehouse`
+- `POST /api/products`, `PUT /api/products/{id}`, `DELETE /api/products/{id}` (archive) — `ManageWarehouse`
+- `GET /api/products/{id}/movements` — `ViewWarehouse`
+- `POST /api/products/{id}/movements` — `ManageWarehouse` (stock in/out)
+
+### Cash Register `[Authorize]`
+- `GET /api/cash-register/summary`, `GET /api/cash-register/transactions` — `ViewCashRegister`
+- `POST /api/cash-register/manual` — `ManageCashRegister` (manual cash in/out)
+
+### Schedule `[Authorize]`
+- `GET /api/schedule`, `GET /api/schedule/{id}` — `ViewSchedules`
+- `POST /api/schedule`, `PUT /api/schedule/{id}`, `DELETE /api/schedule/{id}` — `ManageSchedules`
+
+### Reports `[Authorize]`
+- `GET /api/reports/summary` — `ViewReports`
+- `GET /api/reports/top-items`, `GET /api/reports/top-servers` — `ViewReports`
+- `GET /api/reports/revenue-trend` — `ViewReports`
+
+### Activity Log `[Authorize]`
+- `GET /api/activity-log` — `ViewActivityLog` (paged/filtered audit trail)
+
+### Health (no auth)
+- `GET /health` — liveness probe for Docker/compose healthchecks. Reachable only
+  inside the container network (nginx proxies just `/api` + `/hubs`), so it's not
+  publicly exposed. Returns 200 once Kestrel is serving — i.e. after migrations.
+
 ## Domain Entities
 
 ### User : BaseEntity, ITenantEntity
@@ -177,21 +216,42 @@ Every endpoint requires `[Authorize]` AND a `[RequirePermission(PermissionType.X
 
 ### Middleware order (Program.cs)
 ```
+Database.Migrate()       ← pending EF migrations applied on startup (before serving)
 UseExceptionHandler()    ← catches everything below
 UseCors("Frontend")
-UseHttpsRedirection()
+UseHttpsRedirection()    ← Development only — TLS is terminated upstream (Caddy/nginx)
 UseSerilogRequestLogging()
 UseAuthentication()
 UseAuthorization()
 MapControllers()
+MapHub<OrderHub>("/hubs/orders")
+MapHealthChecks("/health")
 ```
+- **`UseHttpsRedirection` is gated to `IsDevelopment()`.** In containers the API
+  only speaks HTTP on `:8080` (no HTTPS port); forcing a redirect there is a
+  no-op that just logs a warning. The edge (Caddy) handles HTTPS.
+- **Migrations run automatically on boot**, so Docker deploys need no separate
+  `dotnet ef database update` step. Single-replica only — fine for this app.
+
+### Containerization
+- `Dockerfile` (in `Backend/src/`) is a multi-stage build: `sdk:9.0` restore +
+  publish → `aspnet:9.0` runtime, non-root `app` user, `curl`-based HEALTHCHECK
+  hitting `/health`. Binds `0.0.0.0:8080`. See root `DEPLOYMENT.md` for the full
+  CI/CD + server setup.
 
 ### Money & snapshots
 - All money columns: `decimal` with `HasPrecision(18, 2)`
 - `OrderItem.MenuItemName` and `OrderItem.Price` are **snapshots** captured at order creation. Editing a `MenuItem` after the fact does NOT alter past orders. This is the standard pattern for any transactional record (banks, e-commerce).
 
-### SignalR
-- `OrderHub` is scaffolded (clients join by `restaurantId`) but no events are emitted yet. Planned: `OrderItemSent`, `OrderItemStatusChanged`, `TableStatusChanged`, `InventoryAlert`.
+### SignalR (real-time)
+- `OrderHub` (`Infrastructure/Realtime/`, mapped at `/hubs/orders`) — `[Authorize]`, each connection auto-joins its tenant group (`OrderHub.GroupName(restaurantId)`). JWT is passed as `?access_token=` because browser WebSockets can't set the `Authorization` header (wired in `DependencyInjection`'s `JwtBearerEvents.OnMessageReceived`).
+- `IRealtimeNotifier` (Application interface, `RealtimeNotifier` impl) emits **id-only** events — `orderChanged`, `tableChanged`, `reservationChanged`, `productChanged`, `menuItemChanged`, `scheduleChanged`. Services (Order, Table, Reservation, Inventory, Schedule) call it **after** `SaveChangesAsync`. Clients refetch via REST, so push payloads never bypass auth/permission filters.
+- **New mutation → emit the matching event** so the relevant frontend page refreshes live. Keep payloads id-only.
+
+### Telegram initData verification (opt-in)
+- `ITelegramInitDataValidator` (Application) / `TelegramInitDataValidator` (Infrastructure/Auth) — HMAC-SHA256 verification per Telegram's spec, `secret = HMAC("WebAppData", botToken)`, constant-time hash compare, `auth_date` freshness check, extracts the Telegram user id.
+- `TelegramInitDataMiddleware` (API/Auth, registered after `UseAuthorization`) enforces `X-Telegram-Init-Data` on protected `/api/*` **only when `Telegram:Enforce=true`**. Skips `/api/auth/*`, `/health`, OPTIONS, non-API paths. Returns the standard `{ "error": ... }` envelope (401) on failure.
+- Config section `Telegram` → `TelegramSettings { Enforce, BotToken, MaxAgeMinutes }`. Off by default; never commit a real bot token (env-only).
 
 ## Common pitfalls
 

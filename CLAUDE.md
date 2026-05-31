@@ -52,6 +52,31 @@ When backend DTOs change:
 2. From `Frontend/`: `npm run gen:api` (writes `src/lib/api-types.ts` from `/openapi/v1.json`)
 3. Update Zod schemas in the relevant page to mirror new validation thresholds
 
+## Deployment & Infrastructure
+
+Containerized; deployed by a GitHub Actions pipeline. Full step-by-step in
+[`DEPLOYMENT.md`](DEPLOYMENT.md). Key files and their roles:
+
+| File | Role |
+|---|---|
+| `Backend/src/Dockerfile` | Multi-stage API image (sdk → aspnet runtime, non-root, `/health` probe) |
+| `Frontend/Dockerfile` | Multi-stage web image (node build → nginx serving `dist/` + proxying `/api`,`/hubs`) |
+| `Frontend/nginx.conf` | SPA fallback, `/api` + `/hubs` proxy to `api:8080`, cache + security headers |
+| `docker-compose.yml` | **Local** full-stack run — builds both images, exposes web on `:8080`, no TLS |
+| `docker-compose.prod.yml` | **Server** stack — pulls prebuilt images + adds Caddy for HTTPS |
+| `Caddyfile` | Reverse proxy; auto Let's Encrypt TLS → forwards to `web:8080` |
+| `.github/workflows/deploy.yml` | CI: build+push images (latest + `sha-` tags), sync compose/Caddyfile to server, `compose pull && up -d` |
+| `.env.example` | Template for the server `.env` (Postgres + JWT secrets, `IMAGE_TAG` for rollback) |
+
+Runtime flow: `caddy (443, TLS) → web (nginx) → api (:8080) → postgres`. Only
+Caddy is internet-facing. The API runs **EF migrations on startup**
+(`Database.Migrate()`), so deploys need no separate migration step. Rollback by
+setting `IMAGE_TAG=sha-<commit>` in the server `.env` and re-running compose up.
+
+Secrets: never in the repo or images. Server holds them in `~/restaurant-crm/.env`;
+CI holds `DOCKER_USERNAME`, `DOCKER_PASSWORD`, `SERVER_HOST`, `SERVER_SSH_KEY` as
+GitHub Actions secrets.
+
 ## What is implemented (as of now)
 
 ### Backend — endpoints
@@ -106,11 +131,24 @@ When backend DTOs change:
 - Console sink + rolling file sink at `logs/log-{date}.txt` (kept 7 days, ignored in `.gitignore`).
 - ASP.NET request noise filtered to Warning+; EF SQL filtered to Warning+.
 
+### Real-time (SignalR) — implemented
+- `OrderHub` (`/hubs/orders`) groups connections per tenant; JWT passed as `?access_token=` on the hub URL.
+- `IRealtimeNotifier` emits id-only events (`orderChanged`, `tableChanged`, `reservationChanged`, `productChanged`, `menuItemChanged`, `scheduleChanged`) from the services after each mutation. Clients refetch via REST on receipt — payloads never carry data, so auth filters stay authoritative.
+- Frontend: `lib/realtime.ts` (singleton connection, opened in `RequireAuth`, closed on logout) + `useRealtimeEvent(name, handler)` hook. Subscribed on Dashboard, Orders, OrderDetail, Tables, Reservations, CashRegister, Schedule, Reports, Warehouse, and the order-create flow.
+
+### Telegram initData verification — implemented (opt-in)
+- `TelegramInitDataValidator` (Infrastructure/Auth) verifies the HMAC-SHA256 signature per Telegram's spec + an `auth_date` freshness window.
+- `TelegramInitDataMiddleware` (API/Auth) enforces a valid `X-Telegram-Init-Data` header on protected `/api/*` routes **only when `Telegram:Enforce=true`** and a bot token is configured. Skips `/api/auth/*`, `/health`, preflight, and non-API paths. Off by default → local dev / non-Telegram browsers stay JWT-only.
+- Config: `Telegram:{Enforce,BotToken,MaxAgeMinutes}` (env: `TELEGRAM_ENFORCE`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_MAX_AGE_MINUTES`).
+
 ### Not yet implemented
-- Telegram `initData` HMAC verification on the backend
-- SignalR real-time order events (OrderHub scaffolded, no emitters)
-- Schedule management (permission seeded, UI is placeholder)
-- Reservations, Warehouse, Cash Register, Reports, Clients
+- Persisting `User.TelegramUserId` (validator extracts it, but no login-linking flow yet)
+- Refresh tokens (JWT is single 12h token, no rotation)
+
+> The feature tables above are kept high-level. The authoritative, always-current
+> endpoint list is the controllers in `Backend/src/RestaurantCRM.API/Controllers/`
+> and the routes in `Frontend/src/App.tsx`. See `Backend/src/CLAUDE.md` and
+> `Frontend/CLAUDE.md` for the per-area breakdown.
 
 ## Test accounts (local DB)
 

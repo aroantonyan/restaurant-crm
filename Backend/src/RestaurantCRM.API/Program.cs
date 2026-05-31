@@ -4,7 +4,9 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using RestaurantCRM.API;
 using RestaurantCRM.Application.Auth;
+using Microsoft.EntityFrameworkCore;
 using RestaurantCRM.Infrastructure;
+using RestaurantCRM.Infrastructure.Persistence;
 using Serilog;
 using Serilog.Events;
 
@@ -47,6 +49,8 @@ try
 
     builder.Services.AddSignalR();
 
+    builder.Services.AddHealthChecks();
+
     // Must come after AddControllers — it overrides the default ValidationProblemDetails factory
     builder.Services.Configure<ApiBehaviorOptions>(options =>
     {
@@ -84,17 +88,40 @@ try
 
     var app = builder.Build();
 
+    // Apply any pending EF Core migrations on startup.
+    // Safe for single-replica deployments; avoids the manual `dotnet ef database update` step in Docker.
+    using (var scope = app.Services.CreateScope())
+        scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
+
     if (app.Environment.IsDevelopment())
         app.MapOpenApi();
 
     app.UseExceptionHandler();
     app.UseCors(CorsPolicy);
-    app.UseHttpsRedirection();
+
+    // TLS is terminated upstream (Caddy in prod, Vite/ngrok in dev) — the API
+    // only ever speaks plain HTTP on :8080. Forcing a redirect here is a no-op
+    // that just logs a warning, so only enable it for local HTTPS dev runs.
+    if (app.Environment.IsDevelopment())
+        app.UseHttpsRedirection();
+
     app.UseSerilogRequestLogging();
     app.UseAuthentication();
     app.UseAuthorization();
+
+    // Second factor for the Telegram Mini App: when Telegram:Enforce is on, every
+    // protected /api call must carry a valid, fresh, HMAC-signed initData header.
+    // No-op when disabled (local dev / non-Telegram browsers). Runs after auth so
+    // it only guards already-authenticated routes.
+    app.UseMiddleware<RestaurantCRM.API.Auth.TelegramInitDataMiddleware>();
+
     app.MapControllers();
     app.MapHub<RestaurantCRM.Infrastructure.Realtime.OrderHub>("/hubs/orders");
+
+    // Liveness probe for Docker/compose healthchecks. Reachable only inside the
+    // container network (nginx proxies just /api and /hubs), so it leaks nothing.
+    // Returns 200 once Kestrel is serving — i.e. after migrations have run.
+    app.MapHealthChecks("/health");
 
     app.Run();
 }

@@ -12,6 +12,8 @@ import Field from '../../components/Field'
 import Select from '../../components/Select'
 import SubmitButton from '../../components/SubmitButton'
 import Portal from '../../components/Portal'
+import AppHeader from '../../components/AppHeader'
+import Chip from '../../components/Chip'
 
 type FilterKey = 'upcoming' | 'today' | 'past' | 'all'
 
@@ -553,6 +555,15 @@ function ActionButton({ children, onClick, disabled, tone }: {
   )
 }
 
+function PlusIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  )
+}
+
 function roundToNextHalfHour(d: Date): Date {
   const r = new Date(d)
   r.setSeconds(0, 0)
@@ -614,40 +625,34 @@ export default function ReservationsPage() {
   useRealtimeEvent('reservationChanged', () => { load() })
 
   return (
-    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
-      <header className="mb-5 flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">{t('reservations.title')}</h1>
-        {canManage && tables.length > 0 && (
+    <main className="page-enter h-full overflow-y-auto pb-10">
+      <AppHeader
+        title={t('reservations.title')}
+        trailing={canManage && tables.length > 0 ? (
           <button
             type="button"
             onClick={() => setModal('new')}
-            className="px-3 py-2 rounded-xl bg-accent text-white text-sm font-medium active:scale-[0.98] transition"
+            aria-label={t('reservations.add')}
+            className="w-9 h-9 rounded-full bg-accent text-white border-0 flex items-center justify-center tappable"
           >
-            + {t('reservations.add')}
+            <PlusIcon />
           </button>
-        )}
-      </header>
+        ) : undefined}
+      />
 
       {/* Filter chips */}
-      <div className="flex gap-2 mb-4 overflow-x-auto -mx-1 px-1 pb-1 [&::-webkit-scrollbar]:hidden">
-        {(['upcoming', 'today', 'past', 'all'] as FilterKey[]).map(key => {
-          const active = filter === key
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setFilter(key)}
-              className={[
-                'shrink-0 px-3.5 py-1.5 rounded-full text-xs font-medium transition',
-                active ? 'bg-accent text-white' : 'bg-card text-fg-3',
-              ].join(' ')}
-            >
-              {t(`reservations.filter.${key}`)}
-            </button>
-          )
-        })}
+      <div
+        className="flex gap-2 px-5 pt-2 pb-3.5 overflow-x-auto"
+        style={{ scrollbarWidth: 'none' }}
+      >
+        {(['upcoming', 'today', 'past', 'all'] as FilterKey[]).map(key => (
+          <Chip key={key} active={filter === key} onClick={() => setFilter(key)}>
+            {t(`reservations.filter.${key}`)}
+          </Chip>
+        ))}
       </div>
 
+      <div className="px-5">
       {loading ? (
         <div className="flex flex-col gap-2">
           {[1, 2, 3, 4].map(i => (
@@ -688,6 +693,7 @@ export default function ReservationsPage() {
           ))}
         </div>
       )}
+      </div>
 
       {modal && (
         <ReservationFormModal

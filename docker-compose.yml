@@ -1,13 +1,13 @@
 name: restaurant-crm
 
-# Production stack — runs on the server. Images are pulled from Docker Hub
-# (built & pushed by .github/workflows/deploy.yml), never built here.
+# Local full-stack run — builds both images from source (no Docker Hub, no
+# Caddy/TLS). Use this to smoke-test the production containers on your Mac:
 #
-#   caddy (:80/:443, TLS)  →  web (nginx, SPA + /api proxy)  →  api  →  postgres
+#   docker compose up --build
+#   → web on http://localhost:${WEB_PORT:-8080}, which proxies /api to the API
 #
-# Pin a specific build for rollback by exporting IMAGE_TAG in .env, e.g.
-#   IMAGE_TAG=sha-1a2b3c4   (the CI also tags every build with its git SHA)
-# Defaults to :latest.
+# Production deployment uses docker-compose.prod.yml instead (pulls prebuilt
+# images + adds Caddy for HTTPS).
 
 services:
 
@@ -31,7 +31,10 @@ services:
     networks: [crm]
 
   api:
-    image: aronaa/restaurantcrm-api:${IMAGE_TAG:-latest}
+    image: aronaa/restaurantcrm-api:latest
+    build:
+      context: ./Backend/src
+      dockerfile: Dockerfile
     container_name: crm-api
     restart: unless-stopped
     depends_on:
@@ -54,33 +57,21 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 30s   # EF migrations run on boot — give them room
+      start_period: 30s
     networks: [crm]
 
   web:
-    image: aronaa/restaurantcrm-web:${IMAGE_TAG:-latest}
+    image: aronaa/restaurantcrm-web:latest
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
     container_name: crm-web
     restart: unless-stopped
     depends_on:
       api:
-        condition: service_healthy   # don't serve until the API can answer
-    # No ports exposed to host — Caddy proxies to this container internally.
-    networks: [crm]
-
-  caddy:
-    image: caddy:2-alpine
-    container_name: crm-caddy
-    restart: unless-stopped
+        condition: service_healthy
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"   # HTTP/3
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data         # stores the TLS certificate (persists across restarts)
-      - caddy-config:/config
-    depends_on:
-      - web
+      - "${WEB_PORT:-8080}:8080"
     networks: [crm]
 
 volumes:
@@ -88,10 +79,6 @@ volumes:
     name: crm-pgdata
   api-logs:
     name: crm-api-logs
-  caddy-data:
-    name: crm-caddy-data
-  caddy-config:
-    name: crm-caddy-config
 
 networks:
   crm:

@@ -75,14 +75,11 @@ ENV ASPNETCORE_URLS=http://+:8080 \
 
 EXPOSE 8080
 
-# Soft liveness probe. The OpenAPI doc endpoint is only mounted in Development
-# by default, so we point at the root which returns 404 once the app is up
-# (which is enough to prove the process is serving requests). If you add
-# `app.MapHealthChecks("/health")` in Program.cs, swap the URL here.
+# Liveness probe — hits the dedicated /health endpoint mapped in Program.cs.
+# It returns 200 only after Kestrel is up (i.e. after EF migrations have run),
+# so `condition: service_healthy` in compose gates the web/nginx container until
+# the API is genuinely ready to serve requests.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD curl --fail --silent --show-error --max-time 4 http://localhost:8080/ \
-        || curl --fail --silent --max-time 4 -o /dev/null -w "%{http_code}" \
-           http://localhost:8080/ | grep -E "^(200|404)$" \
-        || exit 1
+    CMD curl --fail --silent --max-time 4 http://localhost:8080/health || exit 1
 
 ENTRYPOINT ["dotnet", "RestaurantCRM.API.dll"]

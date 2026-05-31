@@ -1,0 +1,31 @@
+# Build artifacts — never copy into the build context
+**/bin/
+**/obj/
+**/out/
+
+# IDE / OS junk
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+**/*.suo
+**/.DS_Store
+**/Thumbs.db
+
+# Logs (created at runtime; mounted in compose)
+**/logs/
+
+# Local secrets / dev configs — never bake into the image
+**/appsettings.Development.json
+**/secrets.json
+**/*.env
+**/*.local
+
+# Git metadata
+.git/
+.gitignore
+.gitattributes
+
+# Tests (the API container doesn't need them)
+**/*Tests/
+**/*Test/

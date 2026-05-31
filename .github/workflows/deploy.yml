@@ -1,0 +1,107 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # allow manual runs from the Actions tab
+
+# Never let two deploys race. A newer push to main cancels an in-flight run.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY_NS: aronaa
+  DEPLOY_DIR: /home/ec2-user/restaurant-crm   # where compose + .env live on the server
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # ── Image tags ──────────────────────────────────────────────────────
+      # Every build gets two tags: :latest (what the server pulls) and
+      # :sha-<commit> (immutable — lets you roll back to an exact build by
+      # setting IMAGE_TAG in the server's .env).
+      - name: Compute API image tags
+        id: meta-api
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_NS }}/restaurantcrm-api
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-
+
+      - name: Compute Web image tags
+        id: meta-web
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY_NS }}/restaurantcrm-web
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-
+
+      # ── Build + push ────────────────────────────────────────────────────
+      # cache-from/to type=gha reuses layers across runs via GitHub's cache,
+      # so unchanged dependencies (NuGet restore, npm ci) aren't rebuilt.
+      - name: Build and push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend/src
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta-api.outputs.tags }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Build and push Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Frontend
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta-web.outputs.tags }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+
+      # ── Sync deploy files to the server ─────────────────────────────────
+      # The compose file + Caddyfile are NOT baked into images, so push them to
+      # the server on every deploy. Secrets (.env) are created once manually and
+      # never travel through CI.
+      - name: Copy compose + Caddyfile to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ec2-user
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "docker-compose.prod.yml,Caddyfile"
+          target: ${{ env.DEPLOY_DIR }}
+
+      # ── Pull + restart on the server ────────────────────────────────────
+      - name: Deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ec2-user
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ env.DEPLOY_DIR }}
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker image prune -f
