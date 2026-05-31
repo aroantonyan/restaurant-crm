@@ -1,3 +1,19 @@
-51.20.86.52.nip.io {
+# Caddy reverse proxy — terminates TLS and forwards to the nginx (web) container.
+#
+# Caddy automatically obtains and renews a Let's Encrypt certificate for the
+# domain below via the HTTP-01 challenge (needs ports 80 + 443 open). The cert
+# is stored in the caddy-data volume so it survives container restarts.
+#
+# Replace the host with your own domain once you have one. The current value
+# uses nip.io — a free wildcard DNS service that resolves <anything>.<ip>.nip.io
+# straight to <ip>, so you get a real HTTPS cert without buying a domain.
+
+# Optional: get Let's Encrypt expiry/renewal-failure emails. Uncomment + set.
+# {
+#     email you@example.com
+# }
+
+13.60.70.209.nip.io {
+    encode zstd gzip
     reverse_proxy web:8080
 }
