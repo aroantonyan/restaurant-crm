@@ -12,6 +12,8 @@ import SubmitButton from '../../components/SubmitButton'
 import AppHeader from '../../components/AppHeader'
 import Sheet from '../../components/Sheet'
 import { SkeletonRow } from '../../components/Skeleton'
+import SharedEmptyState from '../../components/EmptyState'
+import { BookOpen } from 'lucide-react'
 
 interface CategoryFormProps {
   onClose: () => void
@@ -164,13 +166,7 @@ export default function MenuPage() {
 
 function EmptyState() {
   const { t } = useTranslation()
-  return (
-    <div className="flex flex-col items-center text-center pt-12 px-4 gap-2">
-      <div className="text-[40px] mb-2" aria-hidden>📋</div>
-      <p className="m-0 text-base font-semibold text-fg">{t('menu.noCategories')}</p>
-      <p className="m-0 text-sm text-fg-3">{t('menu.noCategoriesHint')}</p>
-    </div>
-  )
+  return <SharedEmptyState icon={BookOpen} title={t('menu.noCategories')} hint={t('menu.noCategoriesHint')} />
 }
 
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {

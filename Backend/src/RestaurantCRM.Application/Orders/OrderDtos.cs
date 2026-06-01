@@ -26,7 +26,7 @@ public record OrderItemDto(
     string? Notes
 );
 
-public record CreateOrderRequest(Guid TableId, List<AddOrderItemRequest> Items);
+public record CreateOrderRequest(Guid TableId, List<AddOrderItemRequest> Items, Guid? ClientId = null);
 
 public record AddOrderItemRequest(Guid MenuItemId, int Quantity, string? Notes = null);
 
@@ -35,3 +35,29 @@ public record AddOrderItemRequest(Guid MenuItemId, int Quantity, string? Notes =
 public record UpdateOrderStatusRequest(string Status, string? PaymentMethod = null);
 
 public record UpdateOrderItemStatusRequest(string Status);
+
+/// <summary>
+/// A close-the-bill preview. The app does not take payment itself — the cashier
+/// charges via POS/cash — so this just tells them the numbers:
+///   - what the order costs (Subtotal),
+///   - the attached client's loyalty + deposit balance,
+///   - how much to charge externally if paid by cash/card (SuggestedCharge),
+///   - what the customer's balance becomes for each path (deposit vs. other).
+/// </summary>
+public record BillPreviewDto(
+    decimal Subtotal,
+    Guid? ClientId,
+    string? ClientName,
+    decimal ClientDepositBalance,
+    string LoyaltyType,
+    decimal LoyaltyRate,
+    // Cashback credited to the client's balance if paid by any non-deposit method.
+    decimal CashbackToEarn,
+    // Charge this much on the POS / take this much cash for a non-deposit payment.
+    decimal SuggestedCharge,
+    // If paid from the deposit balance: how much the balance covers and what's
+    // left to settle (negative balance = on credit / "в долг").
+    decimal DepositCovers,
+    decimal DepositRemainder,
+    decimal BalanceAfterDeposit
+);

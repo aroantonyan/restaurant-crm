@@ -19,3 +19,14 @@ public class UpdateTableRequestValidator : AbstractValidator<UpdateTableRequest>
         RuleFor(x => x.Capacity).InclusiveBetween(1, 50);
     }
 }
+
+public class UpdateTableStatusRequestValidator : AbstractValidator<UpdateTableStatusRequest>
+{
+    private static readonly string[] Valid = ["Free", "Occupied", "Reserved"];
+
+    public UpdateTableStatusRequestValidator()
+    {
+        RuleFor(x => x.Status).NotEmpty().Must(s => Valid.Contains(s))
+            .WithMessage("Status must be Free, Occupied, or Reserved.");
+    }
+}

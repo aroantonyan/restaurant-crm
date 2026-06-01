@@ -1,101 +1,80 @@
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { House, ReceiptText, BookOpen, Armchair, type LucideIcon } from 'lucide-react'
+import { getTelegram } from '../lib/telegram'
 
-const TABS = [
-  { key: 'home',   label: 'Home',   path: '/dashboard', icon: GridIcon },
-  { key: 'orders', label: 'Orders', path: '/orders',    icon: ReceiptIcon },
-  { key: 'menu',   label: 'Menu',   path: '/menu',      icon: BookIcon },
-  { key: 'tables', label: 'Tables', path: '/tables',    icon: TableIcon },
-] as const
+interface Tab {
+  key: string
+  labelKey: string
+  path: string
+  icon: LucideIcon
+  /** Sub-routes that should keep this tab lit. */
+  match: (path: string) => boolean
+}
+
+/**
+ * Four primary destinations. Home stays first because it is the launcher for
+ * every secondary section (cash, reports, staff, …) that the bar can't hold —
+ * making it the genuine navigation root. The remaining three are the live
+ * service loop a server touches all shift: Orders, Menu, Tables.
+ */
+const TABS: readonly Tab[] = [
+  { key: 'home',   labelKey: 'dashboard.tabs.home',   path: '/dashboard', icon: House,       match: p => p.startsWith('/dashboard') },
+  { key: 'orders', labelKey: 'dashboard.tabs.orders', path: '/orders',    icon: ReceiptText, match: p => p.startsWith('/orders') },
+  { key: 'menu',   labelKey: 'dashboard.tabs.menu',   path: '/menu',      icon: BookOpen,    match: p => p.startsWith('/menu') },
+  { key: 'tables', labelKey: 'dashboard.tabs.tables', path: '/tables',    icon: Armchair,    match: p => p.startsWith('/tables') },
+]
 
 export default function BottomTabBar() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
+  const { t } = useTranslation()
 
-  // Which tab is currently active? Map any sub-route back to its tab.
-  const activeTab =
-    pathname.startsWith('/orders')      ? 'orders' :
-    pathname.startsWith('/menu')        ? 'menu'   :
-    pathname.startsWith('/tables')      ? 'tables' :
-    pathname.startsWith('/dashboard')   ? 'home'   :
-    null
+  const go = (path: string) => {
+    if (pathname === path) return
+    getTelegram()?.HapticFeedback?.impactOccurred('light')
+    navigate(path)
+  }
 
   return (
     <nav
-      className="flex-shrink-0 flex gap-1 px-2 pt-2 border-t border-line"
+      className="flex-shrink-0 flex px-2 pt-1.5 border-t border-line"
       style={{
         background: 'var(--color-bar-bg)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        // Respect the iPhone home-indicator safe area. Fallback 14px gives a
-        // sensible inset on devices without the home indicator (e.g. Android).
-        paddingBottom: 'max(14px, env(safe-area-inset-bottom))',
+        // Respect the iPhone home-indicator safe area; 12px fallback elsewhere.
+        paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
       }}
     >
       {TABS.map(tab => {
-        const isActive = activeTab === tab.key
+        const active = tab.match(pathname)
         const Icon = tab.icon
         return (
           <button
             key={tab.key}
             type="button"
-            onClick={() => navigate(tab.path)}
-            className={`flex-1 border-0 bg-transparent flex flex-col items-center gap-1 py-1 px-1 tappable
-              ${isActive ? 'text-accent' : 'text-fg-3'}`}
+            onClick={() => go(tab.path)}
+            aria-label={t(tab.labelKey)}
+            aria-current={active ? 'page' : undefined}
+            className="flex-1 min-h-[52px] border-0 bg-transparent flex flex-col items-center gap-1 pt-1.5 pb-1 tappable"
           >
-            <Icon active={isActive} />
             <span
-              className="text-[11px] font-semibold leading-none"
+              className={`flex items-center justify-center w-14 h-7 rounded-full transition-colors duration-150
+                ${active ? 'bg-accent-soft text-accent' : 'text-fg-3'}`}
+            >
+              <Icon size={23} strokeWidth={active ? 2.4 : 2} absoluteStrokeWidth aria-hidden />
+            </span>
+            <span
+              className={`text-[11px] leading-none transition-colors duration-150
+                ${active ? 'text-accent font-bold' : 'text-fg-3 font-semibold'}`}
               style={{ letterSpacing: '-0.005em' }}
             >
-              {tab.label}
+              {t(tab.labelKey)}
             </span>
           </button>
         )
       })}
     </nav>
-  )
-}
-
-interface IconProps { active?: boolean }
-
-/** Slightly heavier stroke on the active tab for visual weight without
- *  needing two glyph variants. */
-function strokeW(active?: boolean) { return active ? 2.25 : 1.85 }
-
-function ReceiptIcon({ active }: IconProps) {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeW(active)} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 3v18l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V3z" />
-      <line x1="8" y1="8" x2="16" y2="8" />
-      <line x1="8" y1="12" x2="16" y2="12" />
-      <line x1="8" y1="16" x2="13" y2="16" />
-    </svg>
-  )
-}
-function BookIcon({ active }: IconProps) {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeW(active)} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-    </svg>
-  )
-}
-function TableIcon({ active }: IconProps) {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeW(active)} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="6" width="18" height="13" rx="2" />
-      <line x1="3" y1="11" x2="21" y2="11" />
-      <line x1="12" y1="11" x2="12" y2="19" />
-    </svg>
-  )
-}
-function GridIcon({ active }: IconProps) {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeW(active)} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="3" width="7" height="7" rx="1.5" />
-      <rect x="3" y="14" width="7" height="7" rx="1.5" />
-      <rect x="14" y="14" width="7" height="7" rx="1.5" />
-    </svg>
   )
 }

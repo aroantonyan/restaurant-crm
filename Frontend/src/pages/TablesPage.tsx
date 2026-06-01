@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
-import { api, ApiError, type TableDto } from '../lib/api'
+import { api, ApiError, type TableDto, type TableStatus } from '../lib/api'
 import { usePermissions } from '../hooks/usePermissions'
 import { useBackButton } from '../hooks/useBackButton'
 import { useRealtimeEvent } from '../hooks/useRealtimeEvent'
@@ -15,6 +15,8 @@ import Chip from '../components/Chip'
 import StatusPill from '../components/StatusPill'
 import Sheet from '../components/Sheet'
 import PrimaryButton from '../components/PrimaryButton'
+import EmptyState from '../components/EmptyState'
+import { Armchair } from 'lucide-react'
 
 type FilterStatus = 'all' | 'Free' | 'Occupied' | 'Reserved'
 
@@ -34,12 +36,33 @@ interface ModalProps {
   onDeleted: () => void
 }
 
+const STATUS_OPTIONS: TableStatus[] = ['Free', 'Occupied', 'Reserved']
+
 function TableFormSheet({ state, onClose, onSaved, onDeleted }: ModalProps) {
   const { t } = useTranslation()
   const isEdit = state !== 'new'
   const [serverError, setServerError] = useState<string | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [status, setStatus] = useState<TableStatus>(isEdit ? (state.status as TableStatus) : 'Free')
+  const [statusSaving, setStatusSaving] = useState(false)
+
+  const changeStatus = async (next: TableStatus) => {
+    if (!isEdit || next === status) return
+    const prev = status
+    setStatus(next)              // optimistic
+    setStatusSaving(true)
+    setServerError(null)
+    try {
+      await api.tables.setStatus(state.id, next)
+      getTelegram()?.HapticFeedback?.impactOccurred('light')
+    } catch (e) {
+      setStatus(prev)            // rollback
+      setServerError(e instanceof ApiError ? e.message : t('tables.errors.saveFailed'))
+    } finally {
+      setStatusSaving(false)
+    }
+  }
 
   const schema = z.object({
     number:   z.number({ error: t('auth.errors.required') }).int().positive(),
@@ -104,10 +127,24 @@ function TableFormSheet({ state, onClose, onSaved, onDeleted }: ModalProps) {
         />
 
         {isEdit && (
-          <div className="flex items-center gap-2 px-1">
-            <StatusPill kind={tableKind(state.status)} size="sm">
-              {t(`tables.status.${state.status}`)}
-            </StatusPill>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[12px] font-bold uppercase text-fg-3 px-1" style={{ letterSpacing: '0.06em' }}>
+              {t('tables.statusLabel')}
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              {STATUS_OPTIONS.map(s => (
+                <button
+                  key={s}
+                  type="button"
+                  disabled={statusSaving}
+                  onClick={() => changeStatus(s)}
+                  className={`py-2.5 rounded-xl text-sm font-semibold transition border-0 tappable disabled:opacity-60
+                    ${status === s ? 'bg-accent text-white' : 'bg-muted text-fg-2'}`}
+                >
+                  {t(`tables.status.${s}`)}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -223,11 +260,7 @@ export default function TablesPage() {
             </button>
           </div>
         ) : tables.length === 0 ? (
-          <div className="flex flex-col items-center text-center pt-12 px-4 gap-2">
-            <div className="text-[40px] mb-2" aria-hidden>🪑</div>
-            <p className="m-0 text-base font-semibold text-fg">{t('tables.noTables')}</p>
-            <p className="m-0 text-sm text-fg-3">{t('tables.noTablesHint')}</p>
-          </div>
+          <EmptyState icon={Armchair} title={t('tables.noTables')} hint={t('tables.noTablesHint')} />
         ) : visible.length === 0 ? (
           <p className="m-0 text-center text-sm text-fg-3 pt-12">—</p>
         ) : (

@@ -84,4 +84,12 @@ public class OrderController(IOrderService orderService) : BaseController
         var result = await orderService.AssignClientAsync(id, request.ClientId, ct);
         return Ok(result);
     }
+
+    [HttpGet("{id:guid}/bill")]
+    [RequirePermission(PermissionType.ViewOrders)]
+    public async Task<IActionResult> GetBill(Guid id, CancellationToken ct)
+    {
+        var result = await orderService.GetBillPreviewAsync(id, ct);
+        return Ok(result);
+    }
 }

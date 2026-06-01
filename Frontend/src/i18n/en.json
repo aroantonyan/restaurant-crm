@@ -54,7 +54,8 @@
     "deleteConfirm": "Yes, delete this item",
     "errors": {
       "loadFailed": "Couldn't load menu",
-      "saveFailed": "Couldn't save changes"
+      "saveFailed": "Couldn't save changes",
+      "pricePositive": "Price must be greater than zero"
     }
   },
   "tables": {
@@ -78,7 +79,8 @@
       "loadFailed": "Couldn't load tables",
       "saveFailed": "Couldn't save changes",
       "deleteFailed": "Couldn't delete table"
-    }
+    },
+    "statusLabel": "Status"
   },
   "orders": {
     "title": "Orders",
@@ -113,7 +115,8 @@
         "BankTransfer": "Bank transfer",
         "Deposit": "Deposit",
         "Other": "Other"
-      }
+      },
+      "howPaid": "How was it paid?"
     },
     "client": {
       "title": "Assign customer",
@@ -170,6 +173,14 @@
       "loadFailed": "Couldn't load orders",
       "saveFailed": "Couldn't save order",
       "deleteItemFailed": "Couldn't delete item"
+    },
+    "paidVia": "Paid via {{method}}",
+    "bill": {
+      "subtotal": "Subtotal",
+      "cashback": "Cashback {{rate}}%",
+      "depositBalance": "Deposit balance",
+      "afterDeposit": "Balance after",
+      "settle": "Settle {{amount}}"
     }
   },
   "reservations": {
@@ -213,12 +224,12 @@
     },
     "duration": {
       "min30": "30 min",
-      "h1":   "1 hour",
+      "h1": "1 hour",
       "h1_5": "1 h 30 min",
-      "h2":   "2 hours",
+      "h2": "2 hours",
       "h2_5": "2 h 30 min",
-      "h3":   "3 hours",
-      "h4":   "4 hours"
+      "h3": "3 hours",
+      "h4": "4 hours"
     },
     "guestsCount_one": "{{count}} guest",
     "guestsCount_other": "{{count}} guests",
@@ -336,7 +347,8 @@
       "loadFailed": "Couldn't load customers",
       "saveFailed": "Couldn't save changes",
       "positive": "Amount must be greater than zero"
-    }
+    },
+    "cashbackBadge": "{{rate}}% cashback"
   },
   "cash": {
     "title": "Cash Register",
@@ -501,6 +513,7 @@
     "greeting": "Hello, {{name}}",
     "role": "Role",
     "tabs": {
+      "home": "Home",
       "staff": "Staff",
       "menu": "Menu",
       "tables": "Tables",

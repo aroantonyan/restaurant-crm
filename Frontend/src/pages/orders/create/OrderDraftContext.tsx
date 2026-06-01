@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
-import type { MenuItemDto, TableDto } from '../../../lib/api'
+import type { ClientDto, MenuItemDto, TableDto } from '../../../lib/api'
 
 export interface OrderDraftItem {
   menuItemId: string
@@ -9,12 +9,20 @@ export interface OrderDraftItem {
   notes?: string
 }
 
+/** A trimmed client reference held on the draft (id + name is all the cart needs). */
+export interface DraftClient {
+  id: string
+  fullName: string
+}
+
 interface OrderDraft {
   table: TableDto | null
+  client: DraftClient | null
   items: OrderDraftItem[]
   total: number
   totalItemsCount: number
   setTable: (table: TableDto) => void
+  setClient: (client: ClientDto | DraftClient | null) => void
   /**
    * Insert or replace an item. If quantity ≤ 0 the item is removed.
    * Used by the item modal (qty + notes) and by the +/− affordances.
@@ -32,9 +40,14 @@ const OrderDraftCtx = createContext<OrderDraft | null>(null)
 
 export function OrderDraftProvider({ children }: { children: ReactNode }) {
   const [table, setTableState] = useState<TableDto | null>(null)
+  const [client, setClientState] = useState<DraftClient | null>(null)
   const [items, setItems] = useState<OrderDraftItem[]>([])
 
   const setTable = useCallback((t: TableDto) => setTableState(t), [])
+
+  const setClient = useCallback((c: ClientDto | DraftClient | null) => {
+    setClientState(c ? { id: c.id, fullName: c.fullName } : null)
+  }, [])
 
   const upsertItem = useCallback((next: OrderDraftItem) => {
     setItems(prev => {
@@ -77,6 +90,7 @@ export function OrderDraftProvider({ children }: { children: ReactNode }) {
 
   const clear = useCallback(() => {
     setTableState(null)
+    setClientState(null)
     setItems([])
   }, [])
 
@@ -91,8 +105,8 @@ export function OrderDraftProvider({ children }: { children: ReactNode }) {
   )
 
   const value: OrderDraft = {
-    table, items, total, totalItemsCount,
-    setTable, upsertItem, incrementItem, removeItem, getItem, getQty, clear,
+    table, client, items, total, totalItemsCount,
+    setTable, setClient, upsertItem, incrementItem, removeItem, getItem, getQty, clear,
   }
 
   return <OrderDraftCtx.Provider value={value}>{children}</OrderDraftCtx.Provider>

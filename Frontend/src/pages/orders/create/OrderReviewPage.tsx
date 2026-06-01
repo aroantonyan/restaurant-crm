@@ -3,11 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type MenuItemDto } from '../../../lib/api'
 import { useBackButton } from '../../../hooks/useBackButton'
+import { usePermissions } from '../../../hooks/usePermissions'
 import { useOrderDraft, type OrderDraftItem } from './OrderDraftContext'
 import { formatPrice } from '../../../lib/format'
 import { getTelegram } from '../../../lib/telegram'
 import StickyActions from '../../../components/StickyActions'
 import PrimaryButton from '../../../components/PrimaryButton'
+import ClientPickerSheet from '../../../components/ClientPickerSheet'
 import StepHeader from './StepHeader'
 import ItemAddModal from './ItemAddModal'
 
@@ -16,6 +18,7 @@ export default function OrderReviewPage() {
   const navigate = useNavigate()
   const { id } = useParams<{ id?: string }>()
   const draft = useOrderDraft()
+  const perm = usePermissions()
 
   const addMode = !!id
   const menuRoute = addMode ? `/orders/${id}/add-items` : '/orders/new/menu'
@@ -28,6 +31,9 @@ export default function OrderReviewPage() {
   const [submitting, setSubmitting] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [editing, setEditing] = useState<OrderDraftItem | null>(null)
+  const [pickingClient, setPickingClient] = useState(false)
+
+  const canAssignClient = !addMode && perm.has('ViewClients')
 
   const handleSubmit = async () => {
     if (draft.items.length === 0) return
@@ -47,8 +53,9 @@ export default function OrderReviewPage() {
         navigate(`/orders/${id}`, { replace: true })
       } else if (draft.table) {
         const order = await api.orders.create({
-          tableId: draft.table.id,
-          items:   draft.items.map(i => ({
+          tableId:  draft.table.id,
+          clientId: draft.client?.id ?? null,
+          items:    draft.items.map(i => ({
             menuItemId: i.menuItemId,
             quantity:   i.quantity,
             notes:      i.notes,
@@ -81,6 +88,29 @@ export default function OrderReviewPage() {
           subtitle={subtitle}
           backTo={menuRoute}
         />
+
+        {/* Assign a customer before the order goes to the kitchen, so loyalty /
+            deposit billing is ready at close. Only on the new-order path. */}
+        {canAssignClient && draft.items.length > 0 && (
+          <div className="px-5 pb-3">
+            <button
+              type="button"
+              onClick={() => setPickingClient(true)}
+              className="tappable w-full py-3 px-3.5 bg-card border-0 rounded-2xl flex items-center gap-2.5 text-left"
+              style={{ boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)' }}
+            >
+              <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm shrink-0" aria-hidden>
+                👤
+              </div>
+              <span className={`flex-1 text-sm font-medium truncate ${draft.client ? 'text-fg' : 'text-fg-3'}`}>
+                {draft.client?.fullName ?? t('orders.client.assign')}
+              </span>
+              <span className="text-xs text-fg-3 shrink-0">
+                {draft.client ? t('orders.client.change') : ''}
+              </span>
+            </button>
+          </div>
+        )}
 
         <div className="px-5">
           {draft.items.length === 0 ? (
@@ -177,6 +207,16 @@ export default function OrderReviewPage() {
           </PrimaryButton>
         </StickyActions>
       )}
+
+      <ClientPickerSheet
+        open={pickingClient}
+        currentClientId={draft.client?.id ?? null}
+        onClose={() => setPickingClient(false)}
+        onPick={client => {
+          draft.setClient(client)
+          setPickingClient(false)
+        }}
+      />
 
       {editing && (
         <ItemAddModal

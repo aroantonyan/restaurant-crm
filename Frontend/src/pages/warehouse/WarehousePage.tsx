@@ -10,6 +10,8 @@ import AppHeader from '../../components/AppHeader'
 import Chip from '../../components/Chip'
 import StatusPill from '../../components/StatusPill'
 import { SkeletonRow } from '../../components/Skeleton'
+import EmptyState from '../../components/EmptyState'
+import { Package } from 'lucide-react'
 
 type Filter = 'all' | 'low'
 
@@ -122,11 +124,7 @@ export default function WarehousePage() {
             </button>
           </div>
         ) : visible.length === 0 ? (
-          <div className="flex flex-col items-center text-center pt-12 px-4 gap-2">
-            <div className="text-[40px] mb-2" aria-hidden>📦</div>
-            <p className="m-0 text-base font-semibold text-fg">{t('warehouse.empty')}</p>
-            <p className="m-0 text-sm text-fg-3">{t('warehouse.emptyHint')}</p>
-          </div>
+          <EmptyState icon={Package} title={t('warehouse.empty')} hint={t('warehouse.emptyHint')} />
         ) : (
           <div className="flex flex-col gap-5">
             {grouped.map(([cat, items]) => (

@@ -14,6 +14,7 @@ import SubmitButton from '../../components/SubmitButton'
 import Portal from '../../components/Portal'
 import AppHeader from '../../components/AppHeader'
 import Chip from '../../components/Chip'
+import { CalendarDays } from 'lucide-react'
 
 type FilterKey = 'upcoming' | 'today' | 'past' | 'all'
 
@@ -672,7 +673,7 @@ export default function ReservationsPage() {
         </div>
       ) : reservations.length === 0 ? (
         <div className="flex flex-col items-center gap-3 mt-16 text-center px-4">
-          <div className="w-16 h-16 rounded-2xl bg-card flex items-center justify-center text-3xl mb-2">📅</div>
+          <div className="w-16 h-16 rounded-[20px] bg-muted flex items-center justify-center text-fg-3 mb-2"><CalendarDays size={28} strokeWidth={1.9} aria-hidden /></div>
           <p className="text-fg font-medium">{t('reservations.noResults')}</p>
           {tables.length === 0 && (
             <p className="text-fg-3 text-sm">{t('tables.noTablesHint')}</p>
