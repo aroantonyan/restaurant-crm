@@ -46,4 +46,12 @@ public class ReportsController(IReportsService reports) : BaseController
         var result = await reports.GetRevenueTrendAsync(from, to, ct);
         return Ok(result);
     }
+
+    [HttpGet("hourly-breakdown")]
+    [RequirePermission(PermissionType.ViewReports)]
+    public async Task<IActionResult> GetHourlyBreakdown(DateTime from, DateTime to, CancellationToken ct)
+    {
+        var result = await reports.GetHourlyBreakdownAsync(from, to, ct);
+        return Ok(result);
+    }
 }

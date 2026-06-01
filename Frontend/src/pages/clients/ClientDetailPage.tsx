@@ -20,10 +20,10 @@ import SubmitButton from '../../components/SubmitButton'
 import Portal from '../../components/Portal'
 
 const TX_STYLES: Record<ClientTransactionType, { dot: string; text: string }> = {
-  Deposit:        { dot: 'bg-green-500',  text: 'text-green-600'  },
-  Withdrawal:     { dot: 'bg-amber-500',  text: 'text-amber-600'  },
-  OrderPayment:   { dot: 'bg-blue-500',   text: 'text-blue-600'   },
-  CashbackEarned: { dot: 'bg-purple-500', text: 'text-purple-600' },
+  Deposit:        { dot: 'bg-ok',          text: 'text-ok'         },
+  Withdrawal:     { dot: 'bg-warn',         text: 'text-warn'       },
+  OrderPayment:   { dot: 'bg-info',         text: 'text-info'       },
+  CashbackEarned: { dot: 'bg-[#9A4E96]',   text: 'text-[#9A4E96]' },
 }
 
 type DialogMode = 'deposit' | 'withdraw' | null
@@ -175,7 +175,7 @@ export default function ClientDetailPage() {
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className={`text-sm font-semibold tabular-nums ${positive ? 'text-green-600' : 'text-danger'}`}>
+                  <p className={`text-sm font-semibold tabular-nums ${positive ? 'text-ok' : 'text-danger'}`}>
                     {positive ? '+' : ''}{formatPrice(tx.amount)}
                   </p>
                   <p className="text-[11px] text-fg-3 tabular-nums">→ {formatPrice(tx.balanceAfter)}</p>

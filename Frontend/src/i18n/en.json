@@ -268,6 +268,7 @@
     },
     "section": {
       "trend": "Revenue trend",
+      "peakHours": "Peak hours",
       "topItems": "Top items",
       "topServers": "Top servers"
     },

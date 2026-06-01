@@ -31,9 +31,13 @@ export function formatQuantity(amount: number, unit: ProductUnit): string {
  */
 export function formatPrice(amount: number, currencyOverride?: string): string {
   const currency = currencyOverride ?? auth.getSession()?.currency ?? 'AMD'
-  const hideDecimals = NO_DECIMAL_CURRENCIES.has(currency) && Number.isInteger(amount)
-  const formatted = hideDecimals
-    ? amount.toLocaleString('en-US')
-    : amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const noDecimal = NO_DECIMAL_CURRENCIES.has(currency)
+  // For no-decimal currencies (AMD, JPY, …) always round to the nearest integer —
+  // computed values like average ticket can be non-integer even when the underlying
+  // prices are whole numbers.
+  const display = noDecimal ? Math.round(amount) : amount
+  const formatted = noDecimal
+    ? display.toLocaleString('en-US')
+    : display.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   return `${formatted} ${currency}`
 }

@@ -248,6 +248,15 @@ export interface ReportSummaryDto {
   orderCount: number
   averageTicket: number
   itemsSold: number
+  /** Percentage change vs prior equivalent period. null = no prior data. */
+  revenuePctChange: number | null
+  orderCountPctChange: number | null
+}
+
+export interface HourlyPointDto {
+  hour: number       // 0–23
+  orderCount: number
+  revenue: number
 }
 
 export interface TopItemDto {
@@ -608,6 +617,8 @@ export const api = {
       request<TopServerDto[]>(`/api/reports/top-servers?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&limit=${limit}`),
     revenueTrend: (from: string, to: string) =>
       request<RevenuePointDto[]>(`/api/reports/revenue-trend?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+    hourlyBreakdown: (from: string, to: string) =>
+      request<HourlyPointDto[]>(`/api/reports/hourly-breakdown?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
   },
 
   products: {
