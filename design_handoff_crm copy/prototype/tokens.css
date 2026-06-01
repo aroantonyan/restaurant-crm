@@ -1,0 +1,251 @@
+/* Design tokens — restaurant CRM redesign */
+
+:root {
+  /* Palette — warm neutrals */
+  --bg-app: #F4F2EE;          /* warm off-white app bg */
+  --bg-card: #FFFFFF;
+  --bg-elev: #FFFFFF;
+  --bg-muted: #ECEAE4;
+  --bg-overlay: rgba(20, 18, 14, 0.42);
+
+  /* Text */
+  --fg: #0E0E10;
+  --fg-2: #4D4C49;
+  --fg-3: #8A8884;
+  --fg-4: #B4B1AB;
+
+  /* Hairlines */
+  --line: rgba(15, 15, 16, 0.06);
+  --line-strong: rgba(15, 15, 16, 0.12);
+
+  /* Accent — terracotta (warm restaurant) */
+  --accent: #D9633F;
+  --accent-press: #BE4F2E;
+  --accent-soft: #FBEDE3;
+  --accent-fg: #FFFFFF;
+
+  /* Semantic — pill bg + text */
+  --ok: #1F8A4E;        --ok-soft: #E5F2EA;
+  --warn: #B5740B;      --warn-soft: #FBEEDB;
+  --info: #1A66CC;      --info-soft: #E5EEFB;
+  --danger: #C73A2E;    --danger-soft: #FBE6E2;
+  --muted: #7B7A77;     --muted-soft: #ECEAE4;
+
+  /* Radius */
+  --r-xs: 10px;
+  --r-sm: 12px;
+  --r-md: 16px;
+  --r-lg: 20px;
+  --r-xl: 24px;
+  --r-2xl: 28px;
+  --r-pill: 9999px;
+
+  /* Shadows — restrained, iOS-ish */
+  --sh-card: 0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05);
+  --sh-elev: 0 10px 24px -8px rgba(15,15,16,.14), 0 1px 3px rgba(15,15,16,.06);
+  --sh-sheet: 0 -10px 36px -8px rgba(15,15,16,.18);
+
+  /* Glass bar (used by sticky CTAs + tab bar) */
+  --bar-bg: rgba(244, 242, 238, 0.86);
+
+  /* Inverse surface — always opposite of bg-card so it pops in both themes */
+  --bg-inverse: #0E0E10;
+  --fg-inverse: #FFFFFF;
+
+  /* Density (overwritten by .density-compact / .density-roomy on .app) */
+  --row-py: 14px;
+  --card-py: 16px;
+  --gap-list: 8px;
+  --title-size: 22px;
+  --row-title-size: 15px;
+  --row-meta-size: 12.5px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.32, 0.72, 0.2, 1);   /* iOS-ish */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.density-compact {
+  --row-py: 11px;
+  --card-py: 13px;
+  --gap-list: 6px;
+  --row-title-size: 14.5px;
+  --row-meta-size: 12px;
+}
+.density-roomy {
+  --row-py: 17px;
+  --card-py: 19px;
+  --gap-list: 10px;
+  --row-title-size: 16px;
+  --row-meta-size: 13px;
+}
+
+/* ─── Dark mode ────────────────────────────────────────────────────
+   Triggered by [data-theme="dark"] on .app. Same token names; the
+   components don't care which palette is active. */
+[data-theme="dark"] {
+  --bg-app: #0F0F11;
+  --bg-card: #1B1B20;
+  --bg-elev: #232229;
+  --bg-muted: #26252B;
+  --bg-overlay: rgba(0, 0, 0, 0.62);
+
+  --fg:   #F4F2EE;
+  --fg-2: #C3C0BA;
+  --fg-3: #8E8B85;
+  --fg-4: #5C5A56;
+
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.14);
+
+  --accent: #E37A52;
+  --accent-press: #C4633D;
+  --accent-soft: #3A2418;
+  --accent-fg: #FFFFFF;
+
+  --ok: #4BBE7E;        --ok-soft: #14301F;
+  --warn: #E0A23A;      --warn-soft: #322411;
+  --info: #5B9CFF;      --info-soft: #142A47;
+  --danger: #E66659;    --danger-soft: #371B16;
+  --muted: #9E9C97;     --muted-soft: #26252B;
+
+  --sh-card: 0 1px 0 rgba(0,0,0,.5), 0 1px 3px rgba(0,0,0,.35);
+  --sh-elev: 0 12px 28px -8px rgba(0,0,0,.6), 0 1px 3px rgba(0,0,0,.4);
+  --sh-sheet: 0 -10px 36px -8px rgba(0,0,0,.6);
+
+  --bar-bg: rgba(15, 15, 17, 0.86);
+  --bg-inverse: #F4F2EE;
+  --fg-inverse: #0E0E10;
+}
+
+/* Base */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-feature-settings: 'cv11', 'ss01', 'ss03', 'cv02';
+  -webkit-font-smoothing: antialiased;
+  background: #E8E4DD;
+  color: var(--fg);
+  letter-spacing: -0.005em;
+  transition: background .3s var(--ease);
+}
+body[data-stage="dark"] { background: #050505; }
+button { font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+input, textarea, select { font-family: inherit; }
+
+/* Reusable utility classes for the app */
+.app {
+  width: 100%; height: 100%;
+  background: var(--bg-app);
+  color: var(--fg);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.scroll {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar { display: none; }
+
+/* Card */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-card);
+}
+
+/* Tap feedback */
+.tappable { transition: transform .14s var(--ease), background .14s var(--ease); }
+.tappable:active { transform: scale(0.985); }
+
+/* Page enter */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter { animation: page-enter 260ms var(--ease-out) both; }
+
+/* Staggered list item entry */
+@keyframes item-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.item-enter { animation: item-enter 360ms var(--ease-out) both; }
+
+/* Sheet slide-up */
+@keyframes sheet-in {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.sheet-in { animation: sheet-in 320ms var(--ease-out) both; }
+.backdrop-in { animation: backdrop-in 220ms var(--ease-out) both; }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(15,15,16,0.04) 0%,
+    rgba(15,15,16,0.08) 50%,
+    rgba(15,15,16,0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: var(--r-md);
+}
+
+/* Pulse for status dot */
+@keyframes dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.35); opacity: 0.6; }
+}
+.dot-pulse { animation: dot-pulse 2s ease-in-out infinite; }
+
+/* Number tick (for total updates) */
+@keyframes tick-up {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.tick { display: inline-block; animation: tick-up 220ms var(--ease-out) both; }
+
+/* Pop (for cart badge) */
+@keyframes pop {
+  0% { transform: scale(0.7); }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+.pop { animation: pop 240ms var(--ease-out) both; }
+
+/* Hide focus ring for mouse, keep for keyboard */
+button:focus { outline: none; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+input[type="text"], input[type="number"], input[type="search"], textarea {
+  font-size: 16px;
+  border: 1px solid var(--line);
+  background: var(--bg-app);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  width: 100%;
+  outline: none;
+  transition: border .14s var(--ease), background .14s var(--ease);
+  color: var(--fg);
+}
+input:focus, textarea:focus {
+  border-color: var(--accent);
+  background: #fff;
+}
+
+/* line-clamp */
+.clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

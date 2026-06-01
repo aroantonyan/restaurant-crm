@@ -127,13 +127,28 @@ export interface UpdateMenuItemRequest { categoryId: string; name: string; descr
 export interface TableDto { id: string; number: number; capacity: number; status: string }
 export interface CreateTableRequest { number: number; capacity?: number }
 export interface UpdateTableRequest { number: number; capacity: number }
+export type TableStatus = 'Free' | 'Occupied' | 'Reserved'
 
 // ---- Orders ----
 
 export interface OrderItemDto { id: string; menuItemId: string; menuItemName: string; price: number; quantity: number; status: string; notes: string | null }
 export interface OrderDto { id: string; tableId: string; tableNumber: number; status: string; createdBy: string; createdAt: string; items: OrderItemDto[]; total: number; paymentMethod: string | null; clientId: string | null; clientName: string | null }
-export interface CreateOrderRequest { tableId: string; items: Array<{ menuItemId: string; quantity: number; notes?: string }> }
+export interface CreateOrderRequest { tableId: string; items: Array<{ menuItemId: string; quantity: number; notes?: string }>; clientId?: string | null }
 export interface AddOrderItemRequest { menuItemId: string; quantity: number; notes?: string }
+
+export interface BillPreviewDto {
+  subtotal: number
+  clientId: string | null
+  clientName: string | null
+  clientDepositBalance: number
+  loyaltyType: LoyaltyType
+  loyaltyRate: number
+  cashbackToEarn: number
+  suggestedCharge: number
+  depositCovers: number
+  depositRemainder: number
+  balanceAfterDeposit: number
+}
 
 // ---- Reservations ----
 
@@ -535,6 +550,8 @@ export const api = {
     getAll: () => request<TableDto[]>('/api/tables'),
     create: (data: CreateTableRequest) => request<TableDto>('/api/tables', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, data: UpdateTableRequest) => request<TableDto>(`/api/tables/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    setStatus: (id: string, status: TableStatus) =>
+      request<TableDto>(`/api/tables/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
     delete: (id: string) => request<void>(`/api/tables/${id}`, { method: 'DELETE' }),
   },
 
@@ -568,6 +585,7 @@ export const api = {
       request<OrderDto>(`/api/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'Paid', paymentMethod }) }),
     assignClient: (id: string, clientId: string | null) =>
       request<OrderDto>(`/api/orders/${id}/client`, { method: 'PATCH', body: JSON.stringify({ clientId }) }),
+    getBill: (id: string) => request<BillPreviewDto>(`/api/orders/${id}/bill`),
     cancel: (id: string) => request<OrderDto>(`/api/orders/${id}/cancel`, { method: 'PATCH' }),
     updateItemStatus: (orderId: string, itemId: string, status: string) => request<OrderDto>(`/api/orders/${orderId}/items/${itemId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
   },

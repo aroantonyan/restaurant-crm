@@ -7,6 +7,8 @@ import { useBackButton } from '../hooks/useBackButton'
 import AppHeader from '../components/AppHeader'
 import Chip from '../components/Chip'
 import { SkeletonRow } from '../components/Skeleton'
+import EmptyState from '../components/EmptyState'
+import { History } from 'lucide-react'
 
 type RangeKey = 'today' | 'yesterday' | '7d' | '30d'
 
@@ -142,11 +144,7 @@ export default function ActivityLogPage() {
             </button>
           </div>
         ) : entries.length === 0 ? (
-          <div className="flex flex-col items-center text-center pt-12 px-4 gap-2">
-            <div className="text-[40px] mb-2" aria-hidden>🔍</div>
-            <p className="m-0 text-base font-semibold text-fg">{t('activityLog.empty')}</p>
-            <p className="m-0 text-sm text-fg-3">{t('activityLog.emptyHint')}</p>
-          </div>
+          <EmptyState icon={History} title={t('activityLog.empty')} hint={t('activityLog.emptyHint')} />
         ) : (
           <ul className="flex flex-col gap-2 m-0 p-0 list-none">
             {entries.map((e, idx) => (

@@ -34,6 +34,14 @@ public class TableController(ITableService tableService) : BaseController
         return Ok(result);
     }
 
+    [HttpPatch("{id:guid}/status")]
+    [RequirePermission(PermissionType.ManageTables)]
+    public async Task<IActionResult> SetStatus(Guid id, UpdateTableStatusRequest request, CancellationToken ct)
+    {
+        var result = await tableService.SetStatusAsync(id, request, ct);
+        return Ok(result);
+    }
+
     [HttpDelete("{id:guid}")]
     [RequirePermission(PermissionType.ManageTables)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)

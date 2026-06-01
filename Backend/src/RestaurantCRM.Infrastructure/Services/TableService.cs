@@ -52,6 +52,32 @@ public class TableService(AppDbContext db, ITenantContext tenant, IRealtimeNotif
         return new TableDto(table.Id, table.Number, table.Capacity, table.Status.ToString());
     }
 
+    public async Task<TableDto> SetStatusAsync(Guid id, UpdateTableStatusRequest request, CancellationToken ct = default)
+    {
+        var table = await db.Tables.FirstOrDefaultAsync(t => t.Id == id, ct)
+            ?? throw new KeyNotFoundException("Table not found.");
+
+        var status = Enum.Parse<Domain.Enums.TableStatus>(request.Status);
+
+        // Guard against desyncing the floor from the order state: a table with a
+        // live open order can't be manually marked Free or Reserved — close or
+        // cancel the order first (that releases the table automatically).
+        if (status != Domain.Enums.TableStatus.Occupied)
+        {
+            var hasOpenOrders = await db.Orders
+                .AnyAsync(o => o.TableId == id && o.Status == Domain.Enums.OrderStatus.Open, ct);
+            if (hasOpenOrders)
+                throw new InvalidOperationException("This table has an open order. Close or cancel it first.");
+        }
+
+        table.Status = status;
+        await db.SaveChangesAsync(ct);
+
+        await notifier.TableChanged(table.Id, ct);
+
+        return new TableDto(table.Id, table.Number, table.Capacity, table.Status.ToString());
+    }
+
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
         var table = await db.Tables.FirstOrDefaultAsync(t => t.Id == id, ct)

@@ -11,4 +11,5 @@ public interface IOrderService
     Task<OrderDto> CancelAsync(Guid id, Guid actingUserId, CancellationToken ct = default);
     Task<OrderDto> UpdateItemStatusAsync(Guid orderId, Guid itemId, UpdateOrderItemStatusRequest request, CancellationToken ct = default);
     Task<OrderDto> AssignClientAsync(Guid orderId, Guid? clientId, CancellationToken ct = default);
+    Task<BillPreviewDto> GetBillPreviewAsync(Guid orderId, CancellationToken ct = default);
 }

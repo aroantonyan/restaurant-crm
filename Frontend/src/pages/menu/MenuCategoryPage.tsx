@@ -36,7 +36,7 @@ function ItemFormSheet({ categoryId, item, onClose, onSaved, onDeleted }: ItemFo
   const schema = z.object({
     name:        z.string().min(1, { error: t('auth.errors.required') }).max(200, { error: t('auth.errors.tooLong') }),
     description: z.string().max(1000, { error: t('auth.errors.tooLong') }).optional(),
-    price:       z.number({ error: t('auth.errors.required') }).positive(),
+    price:       z.number({ error: t('auth.errors.required') }).positive({ error: t('menu.errors.pricePositive') }),
     isAvailable: z.boolean(),
   })
   type FormData = z.infer<typeof schema>

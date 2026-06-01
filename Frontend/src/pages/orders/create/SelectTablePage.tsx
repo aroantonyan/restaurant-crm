@@ -6,6 +6,8 @@ import { useBackButton } from '../../../hooks/useBackButton'
 import { useOrderDraft } from './OrderDraftContext'
 import StatusPill from '../../../components/StatusPill'
 import StepHeader from './StepHeader'
+import EmptyState from '../../../components/EmptyState'
+import { Armchair } from 'lucide-react'
 
 function tableKind(status: string): 'ok' | 'warn' | 'info' | 'muted' {
   if (status === 'Free')     return 'ok'
@@ -52,11 +54,7 @@ export default function SelectTablePage() {
         ) : error ? (
           <p className="m-0 text-sm text-danger">{error}</p>
         ) : tables.length === 0 ? (
-          <div className="flex flex-col items-center text-center px-4 pt-12 gap-2">
-            <div className="text-[40px] mb-2" aria-hidden>🪑</div>
-            <p className="m-0 text-base font-semibold text-fg">{t('tables.noTables')}</p>
-            <p className="m-0 text-sm text-fg-3">{t('tables.noTablesHint')}</p>
-          </div>
+          <EmptyState icon={Armchair} title={t('tables.noTables')} hint={t('tables.noTablesHint')} />
         ) : (
           <div className="grid grid-cols-2 gap-2.5">
             {tables.map((table, idx) => {

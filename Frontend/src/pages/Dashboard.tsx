@@ -9,6 +9,12 @@ import { getTelegram } from '../lib/telegram'
 import { usePermissions, type Permission } from '../hooks/usePermissions'
 import { useRealtimeEvent } from '../hooks/useRealtimeEvent'
 import Portal from '../components/Portal'
+import {
+  ReceiptText, BookOpen, Armchair, CalendarDays,
+  Banknote, ChartColumn, Package, UserRound, UsersRound,
+  CalendarClock, Settings, History, LogOut, Settings2,
+  type LucideIcon,
+} from 'lucide-react'
 
 /**
  * Dashboard — Phase 2 redesign.
@@ -49,7 +55,7 @@ interface TodayItem {
   labelKey: string
   descKey: string
   path: string
-  icon: string
+  icon: LucideIcon
   tint: Tint
 }
 
@@ -58,25 +64,25 @@ interface MoreItem {
   permission: Permission
   labelKey: string
   path: string
-  icon: string
+  icon: LucideIcon
 }
 
 const TODAY: readonly TodayItem[] = [
-  { key: 'orders', permission: 'ViewOrders'           as Permission, labelKey: 'dashboard.tabs.orders',       descKey: 'dashboard.desc.orders',       path: '/orders',       icon: '📝', tint: 'orange' },
-  { key: 'menu',   permission: 'ViewMenu'             as Permission, labelKey: 'dashboard.tabs.menu',         descKey: 'dashboard.desc.menu',         path: '/menu',         icon: '🍽️', tint: 'green'  },
-  { key: 'tables', permission: 'ViewTables'           as Permission, labelKey: 'dashboard.tabs.tables',       descKey: 'dashboard.desc.tables',       path: '/tables',       icon: '🪑', tint: 'blue'   },
-  { key: 'reserv', permission: 'ViewReservations'     as Permission, labelKey: 'dashboard.tabs.reservations', descKey: 'dashboard.desc.reservations', path: '/reservations', icon: '📅', tint: 'plum'   },
+  { key: 'orders', permission: 'ViewOrders'           as Permission, labelKey: 'dashboard.tabs.orders',       descKey: 'dashboard.desc.orders',       path: '/orders',       icon: ReceiptText,  tint: 'orange' },
+  { key: 'menu',   permission: 'ViewMenu'             as Permission, labelKey: 'dashboard.tabs.menu',         descKey: 'dashboard.desc.menu',         path: '/menu',         icon: BookOpen,     tint: 'green'  },
+  { key: 'tables', permission: 'ViewTables'           as Permission, labelKey: 'dashboard.tabs.tables',       descKey: 'dashboard.desc.tables',       path: '/tables',       icon: Armchair,     tint: 'blue'   },
+  { key: 'reserv', permission: 'ViewReservations'     as Permission, labelKey: 'dashboard.tabs.reservations', descKey: 'dashboard.desc.reservations', path: '/reservations', icon: CalendarDays, tint: 'plum'   },
 ]
 
 const MORE: readonly MoreItem[] = [
-  { key: 'cash',     permission: 'ViewCashRegister'         as Permission, labelKey: 'dashboard.tabs.cash',               path: '/cash-register',  icon: '💵' },
-  { key: 'reports',  permission: 'ViewReports'              as Permission, labelKey: 'dashboard.tabs.reports',            path: '/reports',        icon: '📊' },
-  { key: 'stock',    permission: 'ViewWarehouse'            as Permission, labelKey: 'dashboard.tabs.warehouse',          path: '/warehouse',      icon: '📦' },
-  { key: 'clients',  permission: 'ViewClients'              as Permission, labelKey: 'dashboard.tabs.clients',            path: '/clients',        icon: '👤' },
-  { key: 'staff',    permission: 'ViewStaff'                as Permission, labelKey: 'dashboard.tabs.staff',              path: '/staff',          icon: '👥' },
-  { key: 'schedule', permission: 'ViewSchedules'            as Permission, labelKey: 'dashboard.tabs.schedule',           path: '/schedule',       icon: '🗓️' },
-  { key: 'settings', permission: 'ManageRestaurantSettings' as Permission, labelKey: 'dashboard.tabs.restaurantSettings', path: '/settings',       icon: '⚙️' },
-  { key: 'audit',    permission: 'ViewActivityLog'          as Permission, labelKey: 'dashboard.tabs.activityLog',        path: '/activity-log',   icon: '🔍' },
+  { key: 'cash',     permission: 'ViewCashRegister'         as Permission, labelKey: 'dashboard.tabs.cash',               path: '/cash-register',  icon: Banknote },
+  { key: 'reports',  permission: 'ViewReports'              as Permission, labelKey: 'dashboard.tabs.reports',            path: '/reports',        icon: ChartColumn },
+  { key: 'stock',    permission: 'ViewWarehouse'            as Permission, labelKey: 'dashboard.tabs.warehouse',          path: '/warehouse',      icon: Package },
+  { key: 'clients',  permission: 'ViewClients'              as Permission, labelKey: 'dashboard.tabs.clients',            path: '/clients',        icon: UserRound },
+  { key: 'staff',    permission: 'ViewStaff'                as Permission, labelKey: 'dashboard.tabs.staff',              path: '/staff',          icon: UsersRound },
+  { key: 'schedule', permission: 'ViewSchedules'            as Permission, labelKey: 'dashboard.tabs.schedule',           path: '/schedule',       icon: CalendarClock },
+  { key: 'settings', permission: 'ManageRestaurantSettings' as Permission, labelKey: 'dashboard.tabs.restaurantSettings', path: '/settings',       icon: Settings },
+  { key: 'audit',    permission: 'ViewActivityLog'          as Permission, labelKey: 'dashboard.tabs.activityLog',        path: '/activity-log',   icon: History },
 ]
 
 const TINT_BG: Record<Tint, string> = {
@@ -84,6 +90,13 @@ const TINT_BG: Record<Tint, string> = {
   green:  'bg-ok-soft',
   blue:   'bg-info-soft',
   plum:   'bg-[#F2E7F1]',
+}
+
+const TINT_FG: Record<Tint, string> = {
+  orange: 'text-accent',
+  green:  'text-ok',
+  blue:   'text-info',
+  plum:   'text-[#9A4E96]',
 }
 
 const LANGS = [
@@ -162,60 +175,60 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <div className="relative shrink-0">
+          <div className="shrink-0">
             <button
               type="button"
               onClick={() => setMenuOpen(v => !v)}
               aria-label={t('common.accountMenu')}
               className="w-10 h-10 rounded-full bg-[rgba(15,15,16,0.05)] text-fg-2 flex items-center justify-center tappable"
             >
-              <GearIcon />
+              <Settings2 size={18} strokeWidth={2} aria-hidden />
             </button>
 
+            {/* Backdrop + panel both live in the Portal (at <body>) so they share
+                one stacking context — the page's .page-enter transform no longer
+                traps the panel beneath the backdrop (the old click-swallowing bug). */}
             {menuOpen && (
               <Portal>
-                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+                <div className="fixed inset-0 z-[100]" onClick={() => setMenuOpen(false)} />
+                <div
+                  className="fixed top-[60px] right-4 z-[101] w-56 rounded-2xl bg-card overflow-hidden border border-line origin-top-right"
+                  style={{ boxShadow: '0 10px 24px -8px rgba(15,15,16,.14), 0 1px 3px rgba(15,15,16,.06)' }}
+                >
+                  <div className="px-4 pt-3.5 pb-3">
+                    <p className="text-[11px] text-fg-3 uppercase tracking-wider mb-2 font-semibold">
+                      {t('common.language')}
+                    </p>
+                    <div className="flex gap-2">
+                      {LANGS.map(({ code, label }) => (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() => { i18n.changeLanguage(code); setMenuOpen(false) }}
+                          className={`flex-1 py-2 rounded-xl text-sm font-semibold transition
+                            ${i18n.resolvedLanguage === code
+                              ? 'bg-accent text-white'
+                              : 'bg-muted text-fg-2'}`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-line" />
+
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="w-full px-4 py-3.5 text-sm font-semibold text-danger text-left active:bg-muted transition flex items-center gap-2.5"
+                  >
+                    <LogOut size={16} strokeWidth={2.2} aria-hidden />
+                    {t('common.logout')}
+                  </button>
+                </div>
               </Portal>
             )}
-
-            <div
-              className={`absolute top-full right-0 mt-2 z-50 w-56 rounded-2xl bg-card overflow-hidden border border-line
-                transition-all duration-200 ease-out origin-top-right
-                ${menuOpen ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'}`}
-              style={{ boxShadow: '0 10px 24px -8px rgba(15,15,16,.14), 0 1px 3px rgba(15,15,16,.06)' }}
-            >
-              <div className="px-4 pt-3.5 pb-3">
-                <p className="text-[11px] text-fg-3 uppercase tracking-wider mb-2 font-semibold">
-                  {t('common.language')}
-                </p>
-                <div className="flex gap-2">
-                  {LANGS.map(({ code, label }) => (
-                    <button
-                      key={code}
-                      type="button"
-                      onClick={() => i18n.changeLanguage(code)}
-                      className={`flex-1 py-2 rounded-xl text-sm font-semibold transition
-                        ${i18n.resolvedLanguage === code
-                          ? 'bg-accent text-white'
-                          : 'bg-muted text-fg-2'}`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="h-px bg-line" />
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-full px-4 py-3.5 text-sm font-semibold text-danger text-left active:bg-muted transition flex items-center gap-2.5"
-              >
-                <span>↩</span>
-                {t('common.logout')}
-              </button>
-            </div>
           </div>
         </div>
 
@@ -264,8 +277,8 @@ export default function Dashboard() {
                     boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
                   }}
                 >
-                  <div className={`w-[38px] h-[38px] rounded-xl flex items-center justify-center text-[18px] shrink-0 ${TINT_BG[it.tint]}`}>
-                    {it.icon}
+                  <div className={`w-[38px] h-[38px] rounded-xl flex items-center justify-center shrink-0 ${TINT_BG[it.tint]} ${TINT_FG[it.tint]}`}>
+                    <it.icon size={19} strokeWidth={2.1} aria-hidden />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="m-0 text-[15px] font-semibold" style={{ letterSpacing: '-0.005em' }}>
@@ -303,7 +316,9 @@ export default function Dashboard() {
                     boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
                   }}
                 >
-                  <span className="text-[22px]" aria-hidden>{it.icon}</span>
+                  <span className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-fg-2" aria-hidden>
+                    <it.icon size={19} strokeWidth={2} />
+                  </span>
                   <span className="text-[11.5px] font-semibold text-fg-2 text-center leading-tight"
                         style={{ letterSpacing: '-0.005em' }}>
                     {t(it.labelKey)}
@@ -344,15 +359,6 @@ function SnapStat({ label, value, tone }: { label: string; value: string; tone: 
 
 function SnapDivider() {
   return <div className="w-px self-stretch bg-line my-1" />
-}
-
-function GearIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </svg>
-  )
 }
 
 function ChevronIcon() {

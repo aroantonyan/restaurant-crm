@@ -66,11 +66,20 @@ public class OrderService(
         if (unavailable.Count > 0)
             throw new InvalidOperationException($"Items not available: {string.Join(", ", unavailable)}");
 
+        // Optional client assigned at creation time (before the order hits the kitchen),
+        // so loyalty/deposit billing is ready when the bill is closed.
+        if (request.ClientId is not null)
+        {
+            var clientExists = await db.Clients.AnyAsync(c => c.Id == request.ClientId.Value && !c.IsArchived, ct);
+            if (!clientExists) throw new KeyNotFoundException("Client not found.");
+        }
+
         var order = new Order
         {
             RestaurantId = tenant.RestaurantId,
             TableId = table.Id,
             CreatedById = createdById,
+            ClientId = request.ClientId,
             Items = request.Items.Select(i =>
             {
                 var menuItem = menuItems.First(m => m.Id == i.MenuItemId);
@@ -358,6 +367,54 @@ public class OrderService(
 
         await notifier.OrderChanged(orderId, ct);
         return await GetByIdAsync(orderId, ct);
+    }
+
+    public async Task<BillPreviewDto> GetBillPreviewAsync(Guid orderId, CancellationToken ct = default)
+    {
+        var order = await db.Orders
+            .Include(o => o.Items)
+            .Include(o => o.Client)
+            .FirstOrDefaultAsync(o => o.Id == orderId, ct)
+            ?? throw new KeyNotFoundException("Order not found.");
+
+        var subtotal = order.Items.Sum(i => i.Price * i.Quantity);
+        var client = order.Client;
+
+        // No client → plain bill: charge the subtotal, nothing else to compute.
+        if (client is null)
+            return new BillPreviewDto(
+                subtotal, null, null, 0m,
+                LoyaltyType.None.ToString(), 0m,
+                CashbackToEarn: 0m,
+                SuggestedCharge: subtotal,
+                DepositCovers: 0m,
+                DepositRemainder: subtotal,
+                BalanceAfterDeposit: 0m);
+
+        // Cashback is earned on any non-deposit payment (matches the payment flow).
+        var cashback = client.LoyaltyType == LoyaltyType.Cashback && client.LoyaltyRate > 0m
+            ? Math.Round(subtotal * (client.LoyaltyRate / 100m), 2)
+            : 0m;
+
+        // Deposit path: the balance absorbs as much as it can; the rest is owed.
+        // A negative remainder never happens (covers is capped at subtotal), but a
+        // remainder > 0 with insufficient balance means the customer goes on credit.
+        var depositCovers = Math.Min(Math.Max(client.DepositBalance, 0m), subtotal);
+        var depositRemainder = subtotal - depositCovers;
+        var balanceAfterDeposit = client.DepositBalance - subtotal;
+
+        return new BillPreviewDto(
+            subtotal,
+            client.Id,
+            client.FullName,
+            client.DepositBalance,
+            client.LoyaltyType.ToString(),
+            client.LoyaltyRate,
+            CashbackToEarn: cashback,
+            SuggestedCharge: subtotal,
+            DepositCovers: depositCovers,
+            DepositRemainder: depositRemainder,
+            BalanceAfterDeposit: balanceAfterDeposit);
     }
 
     private static OrderDto ToDto(Order o) => new(

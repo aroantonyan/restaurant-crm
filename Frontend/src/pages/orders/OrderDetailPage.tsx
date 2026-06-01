@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { api, ApiError, type ClientDto, type OrderDto, type OrderItemDto, type PaymentMethod } from '../../lib/api'
+import { api, ApiError, type BillPreviewDto, type OrderDto, type OrderItemDto, type PaymentMethod } from '../../lib/api'
 import { useBackButton } from '../../hooks/useBackButton'
 import { usePermissions } from '../../hooks/usePermissions'
 import { useRealtimeEvent } from '../../hooks/useRealtimeEvent'
@@ -11,6 +11,7 @@ import StatusPill from '../../components/StatusPill'
 import StickyActions from '../../components/StickyActions'
 import PrimaryButton from '../../components/PrimaryButton'
 import Sheet from '../../components/Sheet'
+import ClientPickerSheet from '../../components/ClientPickerSheet'
 import { SkeletonRow } from '../../components/Skeleton'
 import OrderItemActionSheet from './OrderItemActionSheet'
 
@@ -32,6 +33,10 @@ function formatDateTime(iso: string): string {
   return new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
+const PAYMENT_ICONS: Record<string, string> = {
+  Cash: '💵', Card: '💳', BankTransfer: '🏦', Deposit: '🪙', Other: '📝',
+}
+
 export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { t } = useTranslation()
@@ -47,6 +52,8 @@ export default function OrderDetailPage() {
   const [actionItem, setActionItem] = useState<OrderItemDto | null>(null)
   const [paying, setPaying] = useState(false)
   const [payError, setPayError] = useState<string | null>(null)
+  const [bill, setBill] = useState<BillPreviewDto | null>(null)
+  const [billLoading, setBillLoading] = useState(false)
   const [pickingClient, setPickingClient] = useState(false)
   const [tickItem, setTickItem] = useState<string | null>(null)
 
@@ -85,6 +92,21 @@ export default function OrderDetailPage() {
     } finally {
       setActionLoading(false)
       setConfirmCancel(false)
+    }
+  }
+
+  const openPayment = async () => {
+    if (!order) return
+    setPaying(true)
+    setPayError(null)
+    setBill(null)
+    setBillLoading(true)
+    try {
+      setBill(await api.orders.getBill(order.id))
+    } catch {
+      // Bill preview is best-effort; the sheet still works with the raw total.
+    } finally {
+      setBillLoading(false)
     }
   }
 
@@ -173,12 +195,24 @@ export default function OrderDetailPage() {
             </button>
           </div>
         )}
-        {!isOpen && order.clientName && (
-          <div className="px-5 pb-3">
-            <p className="m-0 text-sm text-fg-2">
-              <span className="mr-1.5" aria-hidden>👤</span>
-              {order.clientName}
-            </p>
+        {!isOpen && (order.clientName || order.paymentMethod) && (
+          <div className="px-5 pb-3 flex flex-col gap-2">
+            {order.clientName && (
+              <p className="m-0 text-sm text-fg-2">
+                <span className="mr-1.5" aria-hidden>👤</span>
+                {order.clientName}
+              </p>
+            )}
+            {order.status === 'Paid' && order.paymentMethod && (
+              <div
+                className="flex items-center gap-2.5 py-2.5 px-3.5 bg-ok-soft rounded-2xl"
+              >
+                <span className="text-base" aria-hidden>{PAYMENT_ICONS[order.paymentMethod] ?? '✓'}</span>
+                <span className="text-sm font-semibold text-ok">
+                  {t('orders.paidVia', { method: t(`orders.payment.methods.${order.paymentMethod}`) })}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -280,7 +314,7 @@ export default function OrderDetailPage() {
               <PrimaryButton
                 kind="primary"
                 disabled={actionLoading}
-                onClick={() => setPaying(true)}
+                onClick={openPayment}
               >
                 {t('orders.closeAndPay')}
               </PrimaryButton>
@@ -324,6 +358,8 @@ export default function OrderDetailPage() {
       <PaymentMethodSheet
         open={paying}
         total={grand}
+        bill={bill}
+        billLoading={billLoading}
         hasClient={order.clientId !== null}
         busy={actionLoading}
         error={payError}
@@ -332,13 +368,13 @@ export default function OrderDetailPage() {
       />
 
       {/* Client picker sheet */}
-      <ClientPicker
+      <ClientPickerSheet
         open={pickingClient}
         currentClientId={order.clientId}
         onClose={() => setPickingClient(false)}
-        onPick={async clientId => {
+        onPick={async client => {
           try {
-            const updated = await api.orders.assignClient(order.id, clientId)
+            const updated = await api.orders.assignClient(order.id, client?.id ?? null)
             setOrder(updated)
             setPickingClient(false)
           } catch (e) {
@@ -366,6 +402,8 @@ function PlusIconSmall() {
 interface PaymentSheetProps {
   open: boolean
   total: number
+  bill: BillPreviewDto | null
+  billLoading: boolean
   hasClient: boolean
   busy: boolean
   error: string | null
@@ -373,7 +411,7 @@ interface PaymentSheetProps {
   onPick: (method: PaymentMethod) => void
 }
 
-function PaymentMethodSheet({ open, total, hasClient, busy, error, onClose, onPick }: PaymentSheetProps) {
+function PaymentMethodSheet({ open, total, bill, billLoading, hasClient, busy, error, onClose, onPick }: PaymentSheetProps) {
   const { t } = useTranslation()
   const methods: { value: PaymentMethod; icon: string }[] = [
     { value: 'Cash',         icon: '💵' },
@@ -382,107 +420,87 @@ function PaymentMethodSheet({ open, total, hasClient, busy, error, onClose, onPi
     ...(hasClient ? [{ value: 'Deposit' as PaymentMethod, icon: '🪙' }] : []),
     { value: 'Other',        icon: '📝' },
   ]
+
+  const hasCashback = bill !== null && bill.cashbackToEarn > 0
+  const hasDeposit = bill !== null && bill.clientId !== null
+
   return (
     <Sheet open={open} onClose={onClose} title={t('orders.payment.title')}>
-      <p className="m-0 mb-3.5 text-[13.5px] text-fg-3">
-        {t('orders.payment.subtitle')}
-        <strong className="ml-1 text-fg tabular-nums">{formatPrice(total)}</strong>
-      </p>
-      <div className="grid grid-cols-2 gap-2.5">
-        {methods.map(m => (
-          <button
-            key={m.value}
-            type="button"
-            disabled={busy}
-            onClick={() => onPick(m.value)}
-            className="tappable border-0 bg-bg rounded-[18px] py-5 px-3 flex flex-col items-center gap-2 disabled:opacity-50"
-          >
-            <span className="text-[28px]" aria-hidden>{m.icon}</span>
-            <span className="text-[13.5px] font-semibold text-fg-2">
-              {t(`orders.payment.methods.${m.value}`)}
+      {/* Bill summary — the app doesn't take payment, it tells the cashier the
+          numbers. Subtotal, plus loyalty/deposit context when a client is set. */}
+      <div className="mb-3.5 rounded-[18px] bg-bg p-3.5 flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[13px] text-fg-3">{t('orders.bill.subtotal')}</span>
+          <span className="text-[15px] font-bold tabular-nums text-fg">{formatPrice(total)}</span>
+        </div>
+
+        {billLoading && (
+          <p className="m-0 text-xs text-fg-3">{t('common.loading')}</p>
+        )}
+
+        {hasCashback && (
+          <div className="flex items-center justify-between">
+            <span className="text-[13px] text-ok">
+              {t('orders.bill.cashback', { rate: bill!.loyaltyRate })}
             </span>
-          </button>
-        ))}
+            <span className="text-[13px] font-semibold tabular-nums text-ok">
+              +{formatPrice(bill!.cashbackToEarn)}
+            </span>
+          </div>
+        )}
+
+        {hasDeposit && (
+          <>
+            <div className="h-px bg-line my-0.5" />
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-fg-3">{t('orders.bill.depositBalance')}</span>
+              <span className={`text-[13px] font-semibold tabular-nums ${bill!.clientDepositBalance < 0 ? 'text-danger' : 'text-fg-2'}`}>
+                {formatPrice(bill!.clientDepositBalance)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-fg-3">{t('orders.bill.afterDeposit')}</span>
+              <span className={`text-[13px] font-semibold tabular-nums ${bill!.balanceAfterDeposit < 0 ? 'text-danger' : 'text-ok'}`}>
+                {formatPrice(bill!.balanceAfterDeposit)}
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+
+      <p className="m-0 mb-2.5 text-[12px] font-bold uppercase text-fg-3" style={{ letterSpacing: '0.06em' }}>
+        {t('orders.payment.howPaid')}
+      </p>
+
+      <div className="grid grid-cols-2 gap-2.5">
+        {methods.map(m => {
+          const isDeposit = m.value === 'Deposit'
+          // What to charge externally / settle for this method.
+          const amount = isDeposit
+            ? (bill ? bill.depositRemainder : total)
+            : total
+          return (
+            <button
+              key={m.value}
+              type="button"
+              disabled={busy}
+              onClick={() => onPick(m.value)}
+              className="tappable border-0 bg-bg rounded-[18px] py-4 px-3 flex flex-col items-center gap-1.5 disabled:opacity-50"
+            >
+              <span className="text-[26px]" aria-hidden>{m.icon}</span>
+              <span className="text-[13px] font-semibold text-fg-2">
+                {t(`orders.payment.methods.${m.value}`)}
+              </span>
+              <span className="text-[12px] font-bold tabular-nums text-accent-press">
+                {isDeposit ? t('orders.bill.settle', { amount: formatPrice(amount) }) : formatPrice(amount)}
+              </span>
+            </button>
+          )
+        })}
       </div>
       {error && (
         <p className="m-0 mt-4 text-sm text-danger text-center">{error}</p>
       )}
-    </Sheet>
-  )
-}
-
-/* ─── Client picker ─────────────────────────────────────────────── */
-
-interface ClientPickerProps {
-  open: boolean
-  currentClientId: string | null
-  onClose: () => void
-  onPick: (clientId: string | null) => void
-}
-
-function ClientPicker({ open, currentClientId, onClose, onPick }: ClientPickerProps) {
-  const { t } = useTranslation()
-  const [search, setSearch] = useState('')
-  const [results, setResults] = useState<ClientDto[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (!open) return
-    const handle = setTimeout(() => {
-      setLoading(true)
-      api.clients.getAll(search ? { search } : undefined)
-        .then(setResults)
-        .catch(() => setResults([]))
-        .finally(() => setLoading(false))
-    }, 250)
-    return () => clearTimeout(handle)
-  }, [search, open])
-
-  return (
-    <Sheet open={open} onClose={onClose} title={t('orders.client.title')} height="tall">
-      <input
-        type="search"
-        autoFocus
-        placeholder={t('clients.searchPlaceholder')}
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        className="bg-muted text-fg rounded-xl px-4 py-3 text-base outline-none w-full mb-3"
-      />
-
-      {currentClientId && (
-        <button
-          type="button"
-          onClick={() => onPick(null)}
-          className="w-full mb-3 py-3 rounded-xl bg-danger-soft text-danger font-semibold tappable border-0"
-        >
-          × {t('orders.client.unassign')}
-        </button>
-      )}
-
-      <div className="flex flex-col gap-2">
-        {loading ? (
-          <p className="m-0 text-sm text-fg-3 text-center py-4">{t('common.loading')}</p>
-        ) : results.length === 0 ? (
-          <p className="m-0 text-sm text-fg-3 text-center py-4">{t('clients.empty')}</p>
-        ) : results.map(c => (
-          <button
-            key={c.id}
-            type="button"
-            onClick={() => onPick(c.id)}
-            className="tappable border-0 flex items-center gap-3 px-3.5 py-3 rounded-2xl bg-bg text-left"
-          >
-            <div className="flex-1 min-w-0">
-              <p className="m-0 text-sm font-semibold truncate">{c.fullName}</p>
-              <p className="m-0 mt-0.5 text-[11px] text-fg-3 truncate">
-                {c.phone ?? t('clients.noPhone')}
-              </p>
-            </div>
-            <span className={`text-sm font-semibold tabular-nums ${c.depositBalance < 0 ? 'text-danger' : 'text-fg'}`}>
-              {formatPrice(c.depositBalance)}
-            </span>
-          </button>
-        ))}
-      </div>
     </Sheet>
   )
 }

@@ -8,6 +8,8 @@ import { usePermissions } from '../../hooks/usePermissions'
 import AppHeader from '../../components/AppHeader'
 import StatusPill from '../../components/StatusPill'
 import { SkeletonRow } from '../../components/Skeleton'
+import EmptyState from '../../components/EmptyState'
+import { UsersRound } from 'lucide-react'
 
 const STATUS_KIND: Record<UserStatus, 'ok' | 'warn' | 'muted'> = {
   Active:                'ok',
@@ -60,11 +62,7 @@ export default function StaffTab() {
             <p className="m-0 text-sm text-danger">{error}</p>
           </div>
         ) : staff.length === 0 ? (
-          <div className="flex flex-col items-center text-center pt-12 px-4 gap-2">
-            <div className="text-[40px] mb-2" aria-hidden>👥</div>
-            <p className="m-0 text-base font-semibold text-fg">{t('staff.empty')}</p>
-            <p className="m-0 text-sm text-fg-3">{t('staff.emptyHint')}</p>
-          </div>
+          <EmptyState icon={UsersRound} title={t('staff.empty')} hint={t('staff.emptyHint')} />
         ) : (
           staff.map((m, idx) => (
             <button

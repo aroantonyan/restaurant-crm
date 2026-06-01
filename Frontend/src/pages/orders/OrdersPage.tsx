@@ -10,6 +10,8 @@ import AppHeader from '../../components/AppHeader'
 import Chip from '../../components/Chip'
 import StatusPill from '../../components/StatusPill'
 import { SkeletonRow } from '../../components/Skeleton'
+import SharedEmptyState from '../../components/EmptyState'
+import { Inbox } from 'lucide-react'
 
 type Filter = 'Open' | 'Paid' | 'Cancelled' | 'all'
 
@@ -177,13 +179,7 @@ function OrderRow({ order, idx, onClick, t }: RowProps) {
 
 function EmptyState() {
   const { t } = useTranslation()
-  return (
-    <div className="flex flex-col items-center justify-center text-center px-6 py-16">
-      <div className="text-[40px] mb-3" aria-hidden>📭</div>
-      <p className="m-0 text-[16px] font-semibold text-fg">{t('orders.noOrders')}</p>
-      <p className="m-0 mt-1 text-sm text-fg-3">{t('orders.noOrdersHint')}</p>
-    </div>
-  )
+  return <SharedEmptyState icon={Inbox} title={t('orders.noOrders')} hint={t('orders.noOrdersHint')} />
 }
 
 function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
