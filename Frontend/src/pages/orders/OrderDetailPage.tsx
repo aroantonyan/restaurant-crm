@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { Check, Banknote, CreditCard, Landmark, MoreHorizontal } from 'lucide-react'
 import { api, ApiError, type BillPreviewDto, type OrderDto, type OrderItemDto, type PaymentMethod } from '../../lib/api'
 import { useBackButton } from '../../hooks/useBackButton'
 import { usePermissions } from '../../hooks/usePermissions'
@@ -110,12 +111,12 @@ export default function OrderDetailPage() {
     }
   }
 
-  const handlePay = async (method: PaymentMethod) => {
+  const handlePay = async (method: PaymentMethod, opts: { useDeposit: boolean; applyCashback: boolean }) => {
     if (!order) return
     setPayError(null)
     setActionLoading(true)
     try {
-      await api.orders.markPaid(order.id, method)
+      await api.orders.markPaid(order.id, method, opts)
       setPaying(false)
       navigate('/orders', { replace: true })
     } catch (e) {
@@ -360,7 +361,6 @@ export default function OrderDetailPage() {
         total={grand}
         bill={bill}
         billLoading={billLoading}
-        hasClient={order.clientId !== null}
         busy={actionLoading}
         error={payError}
         onClose={() => { setPaying(false); setPayError(null) }}
@@ -404,103 +404,187 @@ interface PaymentSheetProps {
   total: number
   bill: BillPreviewDto | null
   billLoading: boolean
-  hasClient: boolean
   busy: boolean
   error: string | null
   onClose: () => void
-  onPick: (method: PaymentMethod) => void
+  onPick: (method: PaymentMethod, opts: { useDeposit: boolean; applyCashback: boolean }) => void
 }
 
-function PaymentMethodSheet({ open, total, bill, billLoading, hasClient, busy, error, onClose, onPick }: PaymentSheetProps) {
-  const { t } = useTranslation()
-  const methods: { value: PaymentMethod; icon: string }[] = [
-    { value: 'Cash',         icon: '💵' },
-    { value: 'Card',         icon: '💳' },
-    { value: 'BankTransfer', icon: '🏦' },
-    ...(hasClient ? [{ value: 'Deposit' as PaymentMethod, icon: '🪙' }] : []),
-    { value: 'Other',        icon: '📝' },
-  ]
+const METHOD_ICONS: Record<Exclude<PaymentMethod, 'Deposit'>, typeof Banknote> = {
+  Cash:         Banknote,
+  Card:         CreditCard,
+  BankTransfer: Landmark,
+  Other:        MoreHorizontal,
+}
 
-  const hasCashback = bill !== null && bill.cashbackToEarn > 0
-  const hasDeposit = bill !== null && bill.clientId !== null
+/**
+ * Close-the-bill sheet. The customer's store-credit balance and loyalty cashback
+ * are NEVER applied automatically — the cashier opts into each with a checkbox and
+ * sees the charge update live before picking how the remainder is settled.
+ *
+ *   subtotal − (balance, if ticked) = amount to charge
+ *   cashback (if ticked) is earned on that out-of-pocket amount and credited back
+ */
+function PaymentMethodSheet({ open, total, bill, billLoading, busy, error, onClose, onPick }: PaymentSheetProps) {
+  const { t } = useTranslation()
+
+  const [useBalance, setUseBalance] = useState(false)
+  const [giveCashback, setGiveCashback] = useState(false)
+
+  // Reset the toggles every time the sheet re-opens — opting in is a per-bill decision.
+  useEffect(() => {
+    if (open) { setUseBalance(false); setGiveCashback(false) }
+  }, [open])
+
+  const rawBalance     = bill?.clientDepositBalance ?? 0
+  const balanceAvail   = Math.max(rawBalance, 0)
+  const hasBalance     = balanceAvail > 0
+  const isCashbackTier = bill !== null && bill.loyaltyType === 'Cashback' && bill.loyaltyRate > 0
+  const rate           = bill?.loyaltyRate ?? 0
+
+  const { balanceApplied, toCharge, cashbackEarned, newBalance } = useMemo(() => {
+    const applied = useBalance ? Math.min(balanceAvail, total) : 0
+    const charge  = total - applied
+    const cb      = giveCashback ? Math.round(charge * (rate / 100)) : 0
+    return {
+      balanceApplied: applied,
+      toCharge:       charge,
+      cashbackEarned: cb,
+      newBalance:     rawBalance - applied + cb,
+    }
+  }, [useBalance, giveCashback, balanceAvail, total, rate, rawBalance])
+
+  const methods: PaymentMethod[] = ['Cash', 'Card', 'BankTransfer', 'Other']
+  const fullyCovered = toCharge === 0 && balanceApplied > 0
+  const optsForPick = { useDeposit: useBalance, applyCashback: giveCashback }
 
   return (
     <Sheet open={open} onClose={onClose} title={t('orders.payment.title')}>
-      {/* Bill summary — the app doesn't take payment, it tells the cashier the
-          numbers. Subtotal, plus loyalty/deposit context when a client is set. */}
+      {/* Live breakdown — updates as the toggles below change. */}
       <div className="mb-3.5 rounded-[18px] bg-bg p-3.5 flex flex-col gap-2">
+        <Row label={t('orders.bill.subtotal')} value={formatPrice(total)} />
+
+        {balanceApplied > 0 && (
+          <Row label={t('orders.bill.balanceApplied')} value={`−${formatPrice(balanceApplied)}`} tone="ok" />
+        )}
+
+        <div className="h-px bg-line my-0.5" />
         <div className="flex items-center justify-between">
-          <span className="text-[13px] text-fg-3">{t('orders.bill.subtotal')}</span>
-          <span className="text-[15px] font-bold tabular-nums text-fg">{formatPrice(total)}</span>
+          <span className="text-[14px] font-semibold text-fg">{t('orders.bill.toCharge')}</span>
+          <span className="text-[18px] font-bold tabular-nums text-fg" style={{ letterSpacing: '-0.01em' }}>
+            {formatPrice(toCharge)}
+          </span>
         </div>
 
-        {billLoading && (
-          <p className="m-0 text-xs text-fg-3">{t('common.loading')}</p>
+        {cashbackEarned > 0 && (
+          <Row label={t('orders.bill.cashbackEarned')} value={`+${formatPrice(cashbackEarned)}`} tone="ok" />
+        )}
+        {(useBalance || giveCashback) && bill?.clientId && (
+          <Row
+            label={t('orders.bill.newBalance')}
+            value={formatPrice(newBalance)}
+            tone={newBalance < 0 ? 'danger' : 'muted'}
+          />
         )}
 
-        {hasCashback && (
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] text-ok">
-              {t('orders.bill.cashback', { rate: bill!.loyaltyRate })}
-            </span>
-            <span className="text-[13px] font-semibold tabular-nums text-ok">
-              +{formatPrice(bill!.cashbackToEarn)}
-            </span>
-          </div>
-        )}
-
-        {hasDeposit && (
-          <>
-            <div className="h-px bg-line my-0.5" />
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] text-fg-3">{t('orders.bill.depositBalance')}</span>
-              <span className={`text-[13px] font-semibold tabular-nums ${bill!.clientDepositBalance < 0 ? 'text-danger' : 'text-fg-2'}`}>
-                {formatPrice(bill!.clientDepositBalance)}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] text-fg-3">{t('orders.bill.afterDeposit')}</span>
-              <span className={`text-[13px] font-semibold tabular-nums ${bill!.balanceAfterDeposit < 0 ? 'text-danger' : 'text-ok'}`}>
-                {formatPrice(bill!.balanceAfterDeposit)}
-              </span>
-            </div>
-          </>
-        )}
+        {billLoading && <p className="m-0 text-xs text-fg-3">{t('common.loading')}</p>}
       </div>
 
-      <p className="m-0 mb-2.5 text-[12px] font-bold uppercase text-fg-3" style={{ letterSpacing: '0.06em' }}>
-        {t('orders.payment.howPaid')}
-      </p>
-
-      <div className="grid grid-cols-2 gap-2.5">
-        {methods.map(m => {
-          const isDeposit = m.value === 'Deposit'
-          // What to charge externally / settle for this method.
-          const amount = isDeposit
-            ? (bill ? bill.depositRemainder : total)
-            : total
-          return (
-            <button
-              key={m.value}
-              type="button"
-              disabled={busy}
-              onClick={() => onPick(m.value)}
-              className="tappable border-0 bg-bg rounded-[18px] py-4 px-3 flex flex-col items-center gap-1.5 disabled:opacity-50"
-            >
-              <span className="text-[26px]" aria-hidden>{m.icon}</span>
-              <span className="text-[13px] font-semibold text-fg-2">
-                {t(`orders.payment.methods.${m.value}`)}
-              </span>
-              <span className="text-[12px] font-bold tabular-nums text-accent-press">
-                {isDeposit ? t('orders.bill.settle', { amount: formatPrice(amount) }) : formatPrice(amount)}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-      {error && (
-        <p className="m-0 mt-4 text-sm text-danger text-center">{error}</p>
+      {/* Opt-in toggles — only shown when the attached client actually has the perk. */}
+      {(hasBalance || isCashbackTier) && (
+        <div className="mb-3.5 flex flex-col gap-2">
+          {hasBalance && (
+            <CheckRow
+              checked={useBalance}
+              onToggle={() => setUseBalance(v => !v)}
+              title={t('orders.bill.useBalance')}
+              sub={t('orders.bill.available', { amount: formatPrice(balanceAvail) })}
+            />
+          )}
+          {isCashbackTier && (
+            <CheckRow
+              checked={giveCashback}
+              onToggle={() => setGiveCashback(v => !v)}
+              title={t('orders.bill.giveCashback', { rate })}
+            />
+          )}
+        </div>
       )}
+
+      {fullyCovered ? (
+        // Balance covers the whole bill — no external payment, just confirm.
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onPick('Cash', optsForPick)}
+          className="tappable w-full border-0 bg-accent text-white rounded-2xl py-3.5 font-semibold disabled:opacity-50"
+        >
+          {t('orders.bill.fullyCovered')}
+        </button>
+      ) : (
+        <>
+          <p className="m-0 mb-2.5 text-[12px] font-bold uppercase text-fg-3" style={{ letterSpacing: '0.06em' }}>
+            {t('orders.payment.howPaid')}
+          </p>
+          <div className="grid grid-cols-2 gap-2.5">
+            {methods.map(m => {
+              const Icon = METHOD_ICONS[m as Exclude<PaymentMethod, 'Deposit'>]
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onPick(m, optsForPick)}
+                  className="tappable border-0 bg-bg rounded-[18px] py-4 px-3 flex flex-col items-center gap-1.5 disabled:opacity-50"
+                >
+                  <span className="text-accent" aria-hidden><Icon size={24} strokeWidth={2} /></span>
+                  <span className="text-[13px] font-semibold text-fg-2">
+                    {t(`orders.payment.methods.${m}`)}
+                  </span>
+                  <span className="text-[12px] font-bold tabular-nums text-accent-press">
+                    {formatPrice(toCharge)}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {error && <p className="m-0 mt-4 text-sm text-danger text-center">{error}</p>}
     </Sheet>
+  )
+}
+
+function Row({ label, value, tone = 'muted' }: { label: string; value: string; tone?: 'ok' | 'danger' | 'muted' }) {
+  const toneClass = tone === 'ok' ? 'text-ok' : tone === 'danger' ? 'text-danger' : 'text-fg-2'
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-[13px] text-fg-3">{label}</span>
+      <span className={`text-[13px] font-semibold tabular-nums ${toneClass}`}>{value}</span>
+    </div>
+  )
+}
+
+function CheckRow({ checked, onToggle, title, sub }: { checked: boolean; onToggle: () => void; title: string; sub?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={checked}
+      className={`tappable w-full border rounded-2xl py-3 px-3.5 flex items-center gap-3 text-left transition-colors
+        ${checked ? 'border-accent bg-accent-soft' : 'border-line bg-bg'}`}
+    >
+      <span
+        className={`w-[22px] h-[22px] rounded-[7px] flex items-center justify-center shrink-0 transition-colors
+          ${checked ? 'bg-accent text-white' : 'bg-card border border-line-strong'}`}
+      >
+        {checked && <Check size={15} strokeWidth={3} aria-hidden />}
+      </span>
+      <span className="flex-1 min-w-0">
+        <span className="block text-[14px] font-semibold text-fg">{title}</span>
+        {sub && <span className="block text-[12px] text-fg-3 tabular-nums">{sub}</span>}
+      </span>
+    </button>
   )
 }

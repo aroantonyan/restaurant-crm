@@ -65,11 +65,13 @@ function AppShell({ children }: { children: ReactNode }) {
   const isOrderDetail = /^\/orders\/[^/]+$/.test(pathname)            // /orders/:id
   const isOrderAddItems = /^\/orders\/[^/]+\/add-items/.test(pathname) // /orders/:id/add-items/*
   const isMenuCategory = /^\/menu\/categories\/[^/]+/.test(pathname)   // /menu/categories/:id...
+  const isMenuItemRecipe = /^\/menu\/items\/[^/]+\/recipe/.test(pathname) // /menu/items/:id/recipe
   const showTabBar =
     !hideOnPrefix.some(p => pathname.startsWith(p)) &&
     !isOrderDetail &&
     !isOrderAddItems &&
-    !isMenuCategory
+    !isMenuCategory &&
+    !isMenuItemRecipe
 
   return (
     <div className="flex flex-col h-full">

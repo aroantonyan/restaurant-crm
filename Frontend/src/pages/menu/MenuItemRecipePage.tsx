@@ -7,6 +7,9 @@ import { useBackButton } from '../../hooks/useBackButton'
 import { getTelegram } from '../../lib/telegram'
 import { formatQuantity } from '../../lib/format'
 import Portal from '../../components/Portal'
+import StickyActions from '../../components/StickyActions'
+import PrimaryButton from '../../components/PrimaryButton'
+import { Plus } from 'lucide-react'
 
 // Local working row — what the user sees & edits before pressing Save.
 // Includes display fields the server would otherwise have to be re-fetched for.
@@ -112,70 +115,71 @@ export default function MenuItemRecipePage() {
   }
 
   return (
-    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
-      <header className="mb-2">
-        <h1 className="text-2xl font-bold">{t('recipe.title')}</h1>
-        <p className="text-fg-3 text-sm mt-0.5 truncate">{recipe?.menuItemName}</p>
-      </header>
-      <p className="text-fg-3 text-xs mb-5">{t('recipe.hint')}</p>
+    <div className="relative h-full overflow-hidden">
+      <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-32">
+        <header className="mb-2">
+          <h1 className="text-2xl font-bold">{t('recipe.title')}</h1>
+          <p className="text-fg-3 text-sm mt-0.5 truncate">{recipe?.menuItemName}</p>
+        </header>
+        <p className="text-fg-3 text-xs mb-5">{t('recipe.hint')}</p>
 
-      {rows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 px-6 text-center rounded-2xl bg-card">
-          <p className="text-fg font-medium">{t('recipe.empty')}</p>
-          <p className="text-fg-3 text-sm mt-1">{t('recipe.emptyHint')}</p>
-        </div>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {rows.map(r => (
-            <li key={r.productId} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-card">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{r.productName}</p>
-                <p className="text-[11px] text-fg-3 mt-0.5">{t(`warehouse.units.${r.productUnit}`)}</p>
-              </div>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.001"
-                value={r.quantity}
-                onChange={e => updateQty(r.productId, parseFloat(e.target.value) || 0)}
-                disabled={!canManage}
-                className="w-20 bg-bg text-fg rounded-xl px-3 py-2 text-base text-right tabular-nums outline-none focus:ring-2 focus:ring-accent"
-              />
-              {canManage && (
-                <button
-                  type="button"
-                  onClick={() => removeRow(r.productId)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-bg text-danger text-lg leading-none shrink-0 active:scale-95 transition"
-                  aria-label={t('recipe.remove')}
-                >×</button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+        {rows.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 px-6 text-center rounded-2xl bg-card">
+            <p className="text-fg font-medium">{t('recipe.empty')}</p>
+            <p className="text-fg-3 text-sm mt-1">{t('recipe.emptyHint')}</p>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-2 m-0 p-0 list-none">
+            {rows.map(r => (
+              <li key={r.productId} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-card">
+                <div className="flex-1 min-w-0">
+                  <p className="m-0 text-sm font-medium truncate">{r.productName}</p>
+                  <p className="m-0 text-[11px] text-fg-3 mt-0.5">{t(`warehouse.units.${r.productUnit}`)}</p>
+                </div>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.001"
+                  value={r.quantity}
+                  onChange={e => updateQty(r.productId, parseFloat(e.target.value) || 0)}
+                  disabled={!canManage}
+                  className="w-20 bg-bg text-fg rounded-xl px-3 py-2 text-base text-right tabular-nums outline-none focus:ring-2 focus:ring-accent"
+                />
+                {canManage && (
+                  <button
+                    type="button"
+                    onClick={() => removeRow(r.productId)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-bg text-danger text-lg leading-none shrink-0 active:scale-95 transition"
+                    aria-label={t('recipe.remove')}
+                  >×</button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
 
+        {canManage && (
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            disabled={pickable.length === 0}
+            className="mt-3 w-full py-3 rounded-2xl bg-card text-fg font-medium tappable border-0 flex items-center justify-center gap-1.5 disabled:opacity-50
+              shadow-[0_1px_0_rgba(15,15,16,.04),0_1px_3px_rgba(15,15,16,.05)]"
+          >
+            <Plus size={17} strokeWidth={2.4} aria-hidden />
+            {t('recipe.addIngredient')}
+          </button>
+        )}
+      </main>
+
+      {/* Sticky Save bar — separated from the in-flow "Add ingredient" so the two
+          actions never collide, and the primary CTA stays in the thumb zone. */}
       {canManage && (
-        <button
-          type="button"
-          onClick={() => setPickerOpen(true)}
-          disabled={pickable.length === 0}
-          className="mt-3 py-3 rounded-xl bg-card text-fg font-medium active:scale-[0.98] transition disabled:opacity-50"
-        >
-          + {t('recipe.addIngredient')}
-        </button>
-      )}
-
-      {error && <p className="text-danger text-sm text-center mt-3">{error}</p>}
-
-      {canManage && (
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving}
-          className="mt-5 py-3.5 rounded-xl bg-accent text-white font-semibold active:scale-[0.98] transition disabled:opacity-50"
-        >
-          {saving ? t('common.loading') : t('recipe.save')}
-        </button>
+        <StickyActions hint={error ? <span className="text-danger">{error}</span> : undefined}>
+          <PrimaryButton kind="primary" onClick={save} disabled={saving}>
+            {saving ? t('common.loading') : t('recipe.save')}
+          </PrimaryButton>
+        </StickyActions>
       )}
 
       {/* Ingredient picker — full-height sheet with search */}
@@ -186,7 +190,7 @@ export default function MenuItemRecipePage() {
           onClose={() => setPickerOpen(false)}
         />
       )}
-    </main>
+    </div>
   )
 }
 

@@ -32,7 +32,14 @@ public record AddOrderItemRequest(Guid MenuItemId, int Quantity, string? Notes =
 
 // Status is always "Paid" here (cancellation has its own endpoint).
 // PaymentMethod is required when status is Paid — the validator enforces it.
-public record UpdateOrderStatusRequest(string Status, string? PaymentMethod = null);
+// UseDeposit applies the client's store-credit balance toward the bill; ApplyCashback
+// credits loyalty cashback on the out-of-pocket remainder. Both opt-in, default off —
+// the cashier ticks them per bill in the close-bill sheet.
+public record UpdateOrderStatusRequest(
+    string Status,
+    string? PaymentMethod = null,
+    bool UseDeposit = false,
+    bool ApplyCashback = false);
 
 public record UpdateOrderItemStatusRequest(string Status);
 
