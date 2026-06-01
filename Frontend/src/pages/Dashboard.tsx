@@ -32,7 +32,7 @@ import {
  * (each guarded by the viewer's permissions) and refresh on realtime events.
  */
 
-type Tint = 'orange' | 'green' | 'blue' | 'plum'
+type Tint = 'orange' | 'green' | 'blue' | 'plum' | 'amber' | 'teal'
 
 interface Snapshot {
   open: number | null
@@ -65,6 +65,7 @@ interface MoreItem {
   labelKey: string
   path: string
   icon: LucideIcon
+  tint: Tint
 }
 
 const TODAY: readonly TodayItem[] = [
@@ -75,14 +76,14 @@ const TODAY: readonly TodayItem[] = [
 ]
 
 const MORE: readonly MoreItem[] = [
-  { key: 'cash',     permission: 'ViewCashRegister'         as Permission, labelKey: 'dashboard.tabs.cash',               path: '/cash-register',  icon: Banknote },
-  { key: 'reports',  permission: 'ViewReports'              as Permission, labelKey: 'dashboard.tabs.reports',            path: '/reports',        icon: ChartColumn },
-  { key: 'stock',    permission: 'ViewWarehouse'            as Permission, labelKey: 'dashboard.tabs.warehouse',          path: '/warehouse',      icon: Package },
-  { key: 'clients',  permission: 'ViewClients'              as Permission, labelKey: 'dashboard.tabs.clients',            path: '/clients',        icon: UserRound },
-  { key: 'staff',    permission: 'ViewStaff'                as Permission, labelKey: 'dashboard.tabs.staff',              path: '/staff',          icon: UsersRound },
-  { key: 'schedule', permission: 'ViewSchedules'            as Permission, labelKey: 'dashboard.tabs.schedule',           path: '/schedule',       icon: CalendarClock },
-  { key: 'settings', permission: 'ManageRestaurantSettings' as Permission, labelKey: 'dashboard.tabs.restaurantSettings', path: '/settings',       icon: Settings },
-  { key: 'audit',    permission: 'ViewActivityLog'          as Permission, labelKey: 'dashboard.tabs.activityLog',        path: '/activity-log',   icon: History },
+  { key: 'cash',     permission: 'ViewCashRegister'         as Permission, labelKey: 'dashboard.tabs.cash',               path: '/cash-register',  icon: Banknote,      tint: 'green'  },
+  { key: 'reports',  permission: 'ViewReports'              as Permission, labelKey: 'dashboard.tabs.reports',            path: '/reports',        icon: ChartColumn,   tint: 'blue'   },
+  { key: 'stock',    permission: 'ViewWarehouse'            as Permission, labelKey: 'dashboard.tabs.warehouse',          path: '/warehouse',      icon: Package,       tint: 'amber'  },
+  { key: 'clients',  permission: 'ViewClients'              as Permission, labelKey: 'dashboard.tabs.clients',            path: '/clients',        icon: UserRound,     tint: 'plum'   },
+  { key: 'staff',    permission: 'ViewStaff'                as Permission, labelKey: 'dashboard.tabs.staff',              path: '/staff',          icon: UsersRound,    tint: 'teal'   },
+  { key: 'schedule', permission: 'ViewSchedules'            as Permission, labelKey: 'dashboard.tabs.schedule',           path: '/schedule',       icon: CalendarClock, tint: 'orange' },
+  { key: 'settings', permission: 'ManageRestaurantSettings' as Permission, labelKey: 'dashboard.tabs.restaurantSettings', path: '/settings',       icon: Settings,      tint: 'blue'   },
+  { key: 'audit',    permission: 'ViewActivityLog'          as Permission, labelKey: 'dashboard.tabs.activityLog',        path: '/activity-log',   icon: History,       tint: 'plum'   },
 ]
 
 const TINT_BG: Record<Tint, string> = {
@@ -90,6 +91,8 @@ const TINT_BG: Record<Tint, string> = {
   green:  'bg-ok-soft',
   blue:   'bg-info-soft',
   plum:   'bg-[#F2E7F1]',
+  amber:  'bg-warn-soft',
+  teal:   'bg-[#E0F0EE]',
 }
 
 const TINT_FG: Record<Tint, string> = {
@@ -97,6 +100,8 @@ const TINT_FG: Record<Tint, string> = {
   green:  'text-ok',
   blue:   'text-info',
   plum:   'text-[#9A4E96]',
+  amber:  'text-warn',
+  teal:   'text-[#0E8A7E]',
 }
 
 const LANGS = [
@@ -316,7 +321,7 @@ export default function Dashboard() {
                     boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
                   }}
                 >
-                  <span className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center text-fg-2" aria-hidden>
+                  <span className={`w-9 h-9 rounded-xl flex items-center justify-center ${TINT_BG[it.tint]} ${TINT_FG[it.tint]}`} aria-hidden>
                     <it.icon size={19} strokeWidth={2} />
                   </span>
                   <span className="text-[11.5px] font-semibold text-fg-2 text-center leading-tight"

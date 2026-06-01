@@ -581,8 +581,16 @@ export const api = {
     create: (data: CreateOrderRequest) => request<OrderDto>('/api/orders', { method: 'POST', body: JSON.stringify(data) }),
     addItem: (orderId: string, data: AddOrderItemRequest) => request<OrderDto>(`/api/orders/${orderId}/items`, { method: 'POST', body: JSON.stringify(data) }),
     removeItem: (orderId: string, itemId: string) => request<OrderDto>(`/api/orders/${orderId}/items/${itemId}`, { method: 'DELETE' }),
-    markPaid: (id: string, paymentMethod: PaymentMethod) =>
-      request<OrderDto>(`/api/orders/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status: 'Paid', paymentMethod }) }),
+    markPaid: (id: string, paymentMethod: PaymentMethod, opts?: { useDeposit?: boolean; applyCashback?: boolean }) =>
+      request<OrderDto>(`/api/orders/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          status: 'Paid',
+          paymentMethod,
+          useDeposit: opts?.useDeposit ?? false,
+          applyCashback: opts?.applyCashback ?? false,
+        }),
+      }),
     assignClient: (id: string, clientId: string | null) =>
       request<OrderDto>(`/api/orders/${id}/client`, { method: 'PATCH', body: JSON.stringify({ clientId }) }),
     getBill: (id: string) => request<BillPreviewDto>(`/api/orders/${id}/bill`),

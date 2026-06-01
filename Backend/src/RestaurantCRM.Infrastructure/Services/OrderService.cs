@@ -168,17 +168,17 @@ public class OrderService(
         if (!Enum.TryParse<PaymentMethod>(request.PaymentMethod, out var method))
             throw new ArgumentException($"Invalid payment method: {request.PaymentMethod}");
 
-        return await TransitionStatusAsync(id, OrderStatus.Paid, actingUserId, method, ct);
+        return await TransitionStatusAsync(id, OrderStatus.Paid, actingUserId, method, request.UseDeposit, request.ApplyCashback, ct);
     }
 
     public async Task<OrderDto> CancelAsync(Guid id, Guid actingUserId, CancellationToken ct = default)
     {
         // Cancelled orders do not deduct stock or record a payment — but the canceller
         // is captured via actingUserId so the audit log can attribute the void.
-        return await TransitionStatusAsync(id, OrderStatus.Cancelled, actingUserId, null, ct);
+        return await TransitionStatusAsync(id, OrderStatus.Cancelled, actingUserId, null, false, false, ct);
     }
 
-    private async Task<OrderDto> TransitionStatusAsync(Guid id, OrderStatus target, Guid actingUserId, PaymentMethod? method, CancellationToken ct)
+    private async Task<OrderDto> TransitionStatusAsync(Guid id, OrderStatus target, Guid actingUserId, PaymentMethod? method, bool useDeposit, bool applyCashback, CancellationToken ct)
     {
         var order = await db.Orders
             .Include(o => o.Table)
@@ -199,11 +199,9 @@ public class OrderService(
             if (method is null)
                 throw new InvalidOperationException("Payment method is required when paying an order.");
 
-            // Paying with the client's deposit balance requires a client linked to the order.
-            if (method == PaymentMethod.Deposit && order.ClientId is null)
-                throw new InvalidOperationException("Deposit payment requires a client to be assigned to the order.");
-
-            order.PaymentMethod = method;
+            // Applying store-credit (balance) or earning cashback both require a client.
+            if ((useDeposit || method == PaymentMethod.Deposit || applyCashback) && order.ClientId is null)
+                throw new InvalidOperationException("A client must be assigned to the order to use balance or cashback.");
 
             if (order.Items.Count > 0)
                 await StageRecipeDeductionsAsync(order, actingUserId, ct);
@@ -211,18 +209,46 @@ public class OrderService(
             // Snapshot total at payment time.
             var total = order.Items.Sum(i => i.Price * i.Quantity);
 
-            // 1. Record on the cash register ledger (Deposit method is logged but doesn't move drawer).
-            await cashRegister.StageOrderPaymentAsync(order.Id, total, method.Value, actingUserId, ct);
-
-            // 2. If paid via the client's deposit, debit their account.
+            // ── Split the bill into store-credit (deposit) + out-of-pocket remainder ──
+            // `method == Deposit` is the legacy "charge the whole bill to the client's
+            // account" path (balance may go negative = on credit / в долг). Otherwise
+            // `useDeposit` applies only the available positive balance, capped at the bill.
+            decimal depositApplied;
             if (method == PaymentMethod.Deposit)
-                await clients.StageOrderPaymentAsync(order.ClientId!.Value, order.Id, total, actingUserId, ct);
+            {
+                depositApplied = total;
+            }
+            else if (useDeposit && order.ClientId is not null)
+            {
+                var balance = await db.Clients
+                    .Where(c => c.Id == order.ClientId.Value)
+                    .Select(c => c.DepositBalance)
+                    .FirstAsync(ct);
+                depositApplied = Math.Min(Math.Max(balance, 0m), total);
+            }
+            else
+            {
+                depositApplied = 0m;
+            }
 
-            // 3. Cashback applies for every payment method EXCEPT Deposit itself
-            //    (preventing the arbitrage where spending deposit also earns cashback,
-            //    which would let a balance regenerate itself perpetually).
-            if (order.ClientId is not null && method != PaymentMethod.Deposit)
-                await clients.StageCashbackAsync(order.ClientId.Value, order.Id, total, actingUserId, ct);
+            var remainder = total - depositApplied;
+
+            // Record the method actually settled: Deposit when the balance covered the
+            // whole bill, otherwise the chosen out-of-pocket method (cash/card/…).
+            order.PaymentMethod = depositApplied > 0m && remainder == 0m ? PaymentMethod.Deposit : method.Value;
+
+            // 1. Out-of-pocket portion hits the cash register ledger (only Cash moves the drawer).
+            if (remainder > 0m)
+                await cashRegister.StageOrderPaymentAsync(order.Id, remainder, order.PaymentMethod.Value, actingUserId, ct);
+
+            // 2. Debit whatever store-credit was applied from the client's account.
+            if (depositApplied > 0m)
+                await clients.StageOrderPaymentAsync(order.ClientId!.Value, order.Id, depositApplied, actingUserId, ct);
+
+            // 3. Cashback — opt-in, earned only on the out-of-pocket remainder. Never on
+            //    store-credit, which would let a balance regenerate itself perpetually.
+            if (applyCashback && order.ClientId is not null && remainder > 0m)
+                await clients.StageCashbackAsync(order.ClientId.Value, order.Id, remainder, actingUserId, ct);
         }
 
         // If no other order keeps the table busy, release it.

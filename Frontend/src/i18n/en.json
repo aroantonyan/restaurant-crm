@@ -180,7 +180,15 @@
       "cashback": "Cashback {{rate}}%",
       "depositBalance": "Deposit balance",
       "afterDeposit": "Balance after",
-      "settle": "Settle {{amount}}"
+      "settle": "Settle {{amount}}",
+      "useBalance": "Use balance",
+      "available": "{{amount}} available",
+      "giveCashback": "Give {{rate}}% cashback",
+      "balanceApplied": "Balance applied",
+      "toCharge": "To charge",
+      "cashbackEarned": "Cashback earned",
+      "newBalance": "New balance",
+      "fullyCovered": "Covered by balance"
     }
   },
   "reservations": {

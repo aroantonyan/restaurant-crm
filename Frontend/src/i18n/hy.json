@@ -180,7 +180,15 @@
       "cashback": "Քեշբեք {{rate}}%",
       "depositBalance": "Դեպոզիտի մնացորդ",
       "afterDeposit": "Մնացորդը հետո",
-      "settle": "Մարել {{amount}}"
+      "settle": "Մարել {{amount}}",
+      "useBalance": "Օգտագործել մնացորդը",
+      "available": "հասանելի է {{amount}}",
+      "giveCashback": "Տալ {{rate}}% քեշբեք",
+      "balanceApplied": "Կիրառված մնացորդ",
+      "toCharge": "Գանձելու գումար",
+      "cashbackEarned": "Վաստակած քեշբեք",
+      "newBalance": "Նոր մնացորդ",
+      "fullyCovered": "Ծածկված է մնացորդով"
     }
   },
   "reservations": {
