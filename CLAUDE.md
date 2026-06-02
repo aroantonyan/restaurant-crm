@@ -84,10 +84,17 @@ GitHub Actions secrets.
 |---|---|
 | Auth | `POST /api/auth/register`, `/login`, `/change-password` |
 | Restaurant | `GET /api/restaurants/me`, `PUT /api/restaurants/me` |
-| Staff | `GET /api/staff`, `GET /api/staff/roles`, `GET /api/staff/{id}`, `POST /api/staff`, `PUT /api/staff/{id}`, `DELETE /api/staff/{id}` |
-| Menu | `GET /api/menu`, `POST/PUT/DELETE /api/menu/categories`, `POST/PUT/DELETE /api/menu/items`, `PATCH /api/menu/items/{id}/toggle` |
-| Tables | `GET/POST/PUT/DELETE /api/tables` |
-| Orders | `GET /api/orders`, `GET/POST /api/orders/{id}`, `POST/DELETE /api/orders/{id}/items[/{itemId}]`, `PATCH /api/orders/{id}/status`, `PATCH /api/orders/{id}/items/{itemId}/seq` |
+| Staff | `GET /api/staff`, `GET /api/staff/roles`, `GET /api/staff/{id}`, `POST /api/staff`, `PUT /api/staff/{id}`, `PUT /api/staff/{id}/permissions`, `DELETE /api/staff/{id}` |
+| Menu | `GET /api/menu`, `POST/PUT/DELETE /api/menu/categories`, `POST/PUT/DELETE /api/menu/items`, `PATCH /api/menu/items/{id}/toggle`, `GET/PUT /api/menu/items/{id}/recipe` |
+| Tables | `GET/POST/PUT/DELETE /api/tables`, `PATCH /api/tables/{id}/status` |
+| Orders | `GET /api/orders`, `GET/POST /api/orders/{id}`, `POST/DELETE /api/orders/{id}/items[/{itemId}]`, `PATCH /api/orders/{id}/status`, `PATCH /api/orders/{id}/cancel`, `PATCH /api/orders/{id}/items/{itemId}/status`, `PATCH /api/orders/{id}/client`, `GET /api/orders/{id}/bill` |
+| Clients | `GET /api/clients`, `GET /api/clients/{id}`, `POST /api/clients`, `PUT /api/clients/{id}`, `DELETE /api/clients/{id}`, `GET /api/clients/{id}/transactions`, `POST /api/clients/{id}/deposit`, `POST /api/clients/{id}/withdraw` |
+| Products (Warehouse) | `GET /api/products`, `GET /api/products/categories`, `GET /api/products/{id}`, `POST /api/products`, `PUT /api/products/{id}`, `DELETE /api/products/{id}`, `GET/POST /api/products/{id}/movements` |
+| Reservations | `GET /api/reservations`, `GET /api/reservations/{id}`, `POST /api/reservations`, `PUT /api/reservations/{id}`, `PATCH /api/reservations/{id}/status`, `DELETE /api/reservations/{id}` |
+| Schedule | `GET /api/schedule`, `GET /api/schedule/{id}`, `POST /api/schedule`, `PUT /api/schedule/{id}`, `DELETE /api/schedule/{id}` |
+| Cash Register | `GET /api/cash-register/summary`, `GET /api/cash-register/transactions`, `POST /api/cash-register/manual` |
+| Reports | `GET /api/reports/summary`, `/top-items`, `/top-servers`, `/revenue-trend`, `/hourly-breakdown` |
+| Activity Log | `GET /api/activity-log` |
 
 ### Frontend — implemented routes
 | Route | Status |
