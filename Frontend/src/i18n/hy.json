@@ -7,7 +7,9 @@
     "settings": "Կարգավորումներ",
     "accountMenu": "Հաշվի ընտրացանկ",
     "retry": "Կրկնել",
-    "back": "Հետ"
+    "back": "Հետ",
+    "discard": "Չպահել",
+    "discardConfirm": "Սեղմեք կրկին՝ չպահելու համար"
   },
   "settings": {
     "subtitle": "Կառավարեք ձեր ռեստորանի պրոֆիլը",
@@ -80,7 +82,12 @@
       "saveFailed": "Չհաջողվեց պահպանել",
       "deleteFailed": "Չհաջողվեց ջնջել սեղանը"
     },
-    "statusLabel": "Կարգավիճակ"
+    "statusLabel": "Կարգավիճակ",
+    "vipLabel": "VIP սեղան",
+    "vipHint": "Ավելացնում է VIP պիտակ և գումար, որը գանձապահը գանձում է ձեռքով։",
+    "vipAmount": "VIP գումար",
+    "vipTag": "VIP",
+    "vipAmountRequired": "Մուտքագրեք VIP գումարը"
   },
   "orders": {
     "title": "Պատվերներ",
@@ -188,8 +195,11 @@
       "toCharge": "Գանձելու գումար",
       "cashbackEarned": "Վաստակած քեշբեք",
       "newBalance": "Նոր մնացորդ",
-      "fullyCovered": "Ծածկված է մնացորդով"
-    }
+      "fullyCovered": "Ծածկված է մնացորդով",
+      "vipSurcharge": "VIP սեղան"
+    },
+    "cancelOrder": "Չեղարկել պատվերը",
+    "cancelOrderConfirm": "Սեղմեք կրկին՝ չեղարկելու համար"
   },
   "reservations": {
     "title": "Ամրագրումներ",

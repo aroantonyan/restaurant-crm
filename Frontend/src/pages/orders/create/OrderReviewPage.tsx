@@ -32,8 +32,22 @@ export default function OrderReviewPage() {
   const [serverError, setServerError] = useState<string | null>(null)
   const [editing, setEditing] = useState<OrderDraftItem | null>(null)
   const [pickingClient, setPickingClient] = useState(false)
+  const [cancelArmed, setCancelArmed] = useState(false)
 
   const canAssignClient = !addMode && perm.has('ViewClients')
+
+  // Abandon the in-progress order: return home. Nothing is persisted yet on the
+  // new-order path, and on add-items it just discards the pending additions (the
+  // existing order is untouched). Leaving unmounts CreateOrderLayout, which drops
+  // the draft provider — so we navigate without clear() to avoid racing the
+  // "no table → bounce to step 1" effect. Two-tap confirm guards a stray touch.
+  const handleCancel = () => {
+    if (!cancelArmed) {
+      setCancelArmed(true)
+      return
+    }
+    navigate('/dashboard')
+  }
 
   const handleSubmit = async () => {
     if (draft.items.length === 0) return
@@ -81,7 +95,7 @@ export default function OrderReviewPage() {
 
   return (
     <div className="relative h-full overflow-hidden">
-      <main className="page-enter h-full overflow-y-auto pb-[150px]">
+      <main className="page-enter h-full overflow-y-auto pb-[220px]">
         <StepHeader
           step={addMode ? 2 : 3}
           addMode={addMode}
@@ -204,6 +218,13 @@ export default function OrderReviewPage() {
               : addMode
                 ? t('orders.addToOrder')
                 : t('orders.kitchen.title')}
+          </PrimaryButton>
+          <PrimaryButton
+            kind={cancelArmed ? 'danger' : 'dangerSoft'}
+            disabled={submitting}
+            onClick={handleCancel}
+          >
+            {cancelArmed ? t('orders.cancelOrderConfirm') : t('orders.cancelOrder')}
           </PrimaryButton>
         </StickyActions>
       )}

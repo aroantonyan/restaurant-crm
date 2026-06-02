@@ -11,6 +11,11 @@ interface Props {
   onPick: (client: ClientDto | null) => void
 }
 
+// Module-level cache of the unfiltered customer list. Lets the sheet paint the
+// list the instant it opens (no empty→spinner→list flash) while a fresh fetch
+// reconciles in the background. Survives remounts; reset only on full reload.
+let allClientsCache: ClientDto[] | null = null
+
 /**
  * Searchable customer picker. Used both when assigning a client to an open order
  * and when attaching one to a new order before it's sent to the kitchen.
@@ -20,19 +25,32 @@ interface Props {
 export default function ClientPickerSheet({ open, currentClientId, onClose, onPick }: Props) {
   const { t } = useTranslation()
   const [search, setSearch] = useState('')
-  const [results, setResults] = useState<ClientDto[]>([])
-  const [loading, setLoading] = useState(true)
+  const [results, setResults] = useState<ClientDto[]>(allClientsCache ?? [])
+  // Only show the spinner when we have nothing cached to paint yet.
+  const [loading, setLoading] = useState(allClientsCache === null)
 
   useEffect(() => {
     if (!open) return
-    const handle = setTimeout(() => {
-      setLoading(true)
-      api.clients.getAll(search ? { search } : undefined)
-        .then(setResults)
+    const trimmed = search.trim()
+
+    const run = () => {
+      // Spinner only when there's no list on screen to keep warm.
+      if (results.length === 0) setLoading(true)
+      api.clients.getAll(trimmed ? { search: trimmed } : undefined)
+        .then(data => {
+          setResults(data)
+          if (!trimmed) allClientsCache = data   // refresh the unfiltered cache
+        })
         .catch(() => setResults([]))
         .finally(() => setLoading(false))
-    }, 250)
+    }
+
+    // Fetch the default list immediately on open (cache is shown meanwhile);
+    // debounce only while the user is typing a query.
+    if (!trimmed) { run(); return }
+    const handle = setTimeout(run, 250)
     return () => clearTimeout(handle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, open])
 
   return (

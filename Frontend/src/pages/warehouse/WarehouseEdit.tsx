@@ -10,6 +10,8 @@ import { useBackButton } from '../../hooks/useBackButton'
 import { getTelegram } from '../../lib/telegram'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
+import PrimaryButton from '../../components/PrimaryButton'
+import AppHeader from '../../components/AppHeader'
 
 const UNITS: ProductUnit[] = ['Kg', 'Gram', 'Liter', 'Milliliter', 'Piece']
 
@@ -18,12 +20,14 @@ export default function WarehouseEdit() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton(`/warehouse/${id}`)
+  const backTarget = `/warehouse/${id}`
+  useBackButton(backTarget)
 
   const canManage = perm.has('ManageWarehouse')
   const [product, setProduct] = useState<ProductDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [serverError, setServerError] = useState<string | null>(null)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
 
   const schema = z.object({
     name: z.string().min(1, { error: t('auth.errors.required') }).max(200, { error: t('auth.errors.tooLong') }),
@@ -34,9 +38,14 @@ export default function WarehouseEdit() {
   })
   type FormData = z.infer<typeof schema>
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
+
+  const handleDiscard = () => {
+    if (isDirty && !confirmDiscard) { setConfirmDiscard(true); return }
+    navigate(backTarget)
+  }
 
   useEffect(() => {
     if (!id) return
@@ -87,13 +96,10 @@ export default function WarehouseEdit() {
   }
 
   return (
-    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
-      <header className="mb-5">
-        <h1 className="text-2xl font-bold">{t('warehouse.editProduct')}</h1>
-        <p className="text-fg-3 text-xs mt-1">{t('warehouse.editHint')}</p>
-      </header>
+    <main className="page-enter h-full overflow-y-auto pb-10">
+      <AppHeader onBack={handleDiscard} title={t('warehouse.editProduct')} subtitle={t('warehouse.editHint')} />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-5 pt-2">
         <Field
           label={t('warehouse.name')}
           enterKeyHint="next"
@@ -139,6 +145,9 @@ export default function WarehouseEdit() {
 
         {serverError && <p className="text-danger text-sm text-center">{serverError}</p>}
         <SubmitButton loading={isSubmitting}>{t('warehouse.save')}</SubmitButton>
+        <PrimaryButton type="button" kind={confirmDiscard ? 'dangerSoft' : 'neutral'} onClick={handleDiscard}>
+          {confirmDiscard ? t('common.discardConfirm') : t('common.discard')}
+        </PrimaryButton>
       </form>
     </main>
   )

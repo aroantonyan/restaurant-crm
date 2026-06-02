@@ -7,7 +7,9 @@
     "settings": "Settings",
     "accountMenu": "Account menu",
     "retry": "Retry",
-    "back": "Back"
+    "back": "Back",
+    "discard": "Discard",
+    "discardConfirm": "Tap again to discard"
   },
   "settings": {
     "subtitle": "Manage your restaurant profile",
@@ -80,7 +82,12 @@
       "saveFailed": "Couldn't save changes",
       "deleteFailed": "Couldn't delete table"
     },
-    "statusLabel": "Status"
+    "statusLabel": "Status",
+    "vipLabel": "VIP table",
+    "vipHint": "Adds a VIP label + amount the cashier collects manually.",
+    "vipAmount": "VIP amount",
+    "vipTag": "VIP",
+    "vipAmountRequired": "Enter the VIP amount"
   },
   "orders": {
     "title": "Orders",
@@ -188,8 +195,11 @@
       "toCharge": "To charge",
       "cashbackEarned": "Cashback earned",
       "newBalance": "New balance",
-      "fullyCovered": "Covered by balance"
-    }
+      "fullyCovered": "Covered by balance",
+      "vipSurcharge": "VIP table"
+    },
+    "cancelOrder": "Cancel order",
+    "cancelOrderConfirm": "Tap again to cancel"
   },
   "reservations": {
     "title": "Reservations",

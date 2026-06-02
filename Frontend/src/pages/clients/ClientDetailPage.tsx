@@ -18,6 +18,8 @@ import { formatPrice } from '../../lib/format'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
 import Portal from '../../components/Portal'
+import AppHeader from '../../components/AppHeader'
+import { SquarePen } from 'lucide-react'
 
 const TX_STYLES: Record<ClientTransactionType, { dot: string; text: string }> = {
   Deposit:        { dot: 'bg-ok',          text: 'text-ok'         },
@@ -100,26 +102,25 @@ export default function ClientDetailPage() {
   const negative = client.depositBalance < 0
 
   return (
-    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
-      <header className="mb-4 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold truncate">{client.fullName}</h1>
-          <p className="text-fg-3 text-sm mt-0.5 truncate">
-            {client.phone ?? t('clients.noPhone')}
-            {client.email && <span> · {client.email}</span>}
-          </p>
-        </div>
-        {canManage && (
+    <main className="page-enter h-full overflow-y-auto pb-10">
+      <AppHeader
+        onBack={() => navigate('/clients')}
+        title={client.fullName}
+        titleLines={2}
+        subtitle={client.email ? `${client.phone ?? t('clients.noPhone')} · ${client.email}` : (client.phone ?? t('clients.noPhone'))}
+        trailing={canManage ? (
           <button
             type="button"
             onClick={() => navigate(`/clients/${client.id}/edit`)}
-            className="text-accent text-sm font-medium shrink-0 active:opacity-60 transition"
+            aria-label={t('clients.edit')}
+            className="w-9 h-9 rounded-full bg-[rgba(15,15,16,0.05)] text-fg-2 flex items-center justify-center tappable"
           >
-            {t('clients.edit')}
+            <SquarePen size={18} strokeWidth={2} aria-hidden />
           </button>
-        )}
-      </header>
+        ) : undefined}
+      />
 
+      <div className="px-5 pt-1">
       {/* Balance hero card */}
       <div className="rounded-2xl bg-card px-5 py-4 mb-3">
         <p className="text-[11px] text-fg-3 uppercase tracking-wide font-medium">{t('clients.balance')}</p>
@@ -205,6 +206,7 @@ export default function ClientDetailPage() {
           )}
         </div>
       )}
+      </div>
 
       {dialog && (
         <BalanceOpModal

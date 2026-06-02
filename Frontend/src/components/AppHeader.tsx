@@ -5,6 +5,9 @@ interface Props {
   subtitle?: string
   onBack?: () => void
   trailing?: ReactNode
+  /** Allow the title to wrap to 2 lines instead of truncating — used for
+   *  data-driven titles like a customer name that can be long. */
+  titleLines?: 1 | 2
   /** Kept for call-site compatibility; the header is always the compact row now. */
   large?: boolean
 }
@@ -21,7 +24,7 @@ interface Props {
  * The back chevron mirrors Telegram's BackButton (wired via useBackButton in
  * pages) — both fire the same navigation.
  */
-export default function AppHeader({ title, subtitle, onBack, trailing }: Props) {
+export default function AppHeader({ title, subtitle, onBack, trailing, titleLines = 1 }: Props) {
   return (
     <div className="bg-bg pt-3 px-3 pb-2.5">
       <div className="flex items-center gap-2 min-h-10">
@@ -44,7 +47,10 @@ export default function AppHeader({ title, subtitle, onBack, trailing }: Props) 
         {/* Center — title + optional subtitle */}
         <div className="flex-1 min-w-0 text-center px-1">
           {title && (
-            <h1 className="m-0 text-[17px] font-bold text-fg truncate" style={{ letterSpacing: '-0.015em' }}>
+            <h1
+              className={`m-0 text-[17px] font-bold text-fg ${titleLines === 2 ? 'line-clamp-2 leading-tight' : 'truncate'}`}
+              style={{ letterSpacing: '-0.015em' }}
+            >
               {title}
             </h1>
           )}

@@ -242,7 +242,17 @@ export default function WarehouseProductDetail() {
   }
 
   return (
-    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
+    <main className="page-enter h-full overflow-y-auto px-5 pt-4 pb-10">
+      <button
+        type="button"
+        onClick={() => navigate('/warehouse')}
+        aria-label={t('common.back')}
+        className="w-9 h-9 -ml-1 mb-2 rounded-full bg-[rgba(15,15,16,0.05)] text-fg-2 flex items-center justify-center tappable"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
       <header className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold truncate">{product.name}</h1>

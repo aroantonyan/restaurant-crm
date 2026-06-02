@@ -11,6 +11,8 @@ import { useBackButton } from '../../hooks/useBackButton'
 import { getTelegram } from '../../lib/telegram'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
+import PrimaryButton from '../../components/PrimaryButton'
+import AppHeader from '../../components/AppHeader'
 
 const UNITS: ProductUnit[] = ['Kg', 'Gram', 'Liter', 'Milliliter', 'Piece']
 
@@ -22,6 +24,7 @@ export default function WarehouseCreate() {
 
   const canManage = perm.has('ManageWarehouse')
   const [serverError, setServerError] = useState<string | null>(null)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
 
   // Backend rules: name required, non-negative numbers, max lengths mirror EF config.
   const schema = z.object({
@@ -34,10 +37,15 @@ export default function WarehouseCreate() {
   })
   type FormData = z.infer<typeof schema>
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { unit: 'Piece', initialStock: 0, lowStockThreshold: 0 },
   })
+
+  const handleDiscard = () => {
+    if (isDirty && !confirmDiscard) { setConfirmDiscard(true); return }
+    navigate('/warehouse')
+  }
 
   if (!canManage) return <Navigate to="/warehouse" replace />
 
@@ -60,12 +68,10 @@ export default function WarehouseCreate() {
   }
 
   return (
-    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
-      <header className="mb-5">
-        <h1 className="text-2xl font-bold">{t('warehouse.newProduct')}</h1>
-      </header>
+    <main className="page-enter h-full overflow-y-auto pb-10">
+      <AppHeader onBack={handleDiscard} title={t('warehouse.newProduct')} />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-5 pt-2">
         <Field
           label={t('warehouse.name')}
           enterKeyHint="next"
@@ -123,6 +129,9 @@ export default function WarehouseCreate() {
 
         {serverError && <p className="text-danger text-sm text-center">{serverError}</p>}
         <SubmitButton loading={isSubmitting}>{t('warehouse.create')}</SubmitButton>
+        <PrimaryButton type="button" kind={confirmDiscard ? 'dangerSoft' : 'neutral'} onClick={handleDiscard}>
+          {confirmDiscard ? t('common.discardConfirm') : t('common.discard')}
+        </PrimaryButton>
       </form>
     </main>
   )

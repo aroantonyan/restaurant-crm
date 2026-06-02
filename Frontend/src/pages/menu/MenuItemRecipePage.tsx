@@ -116,7 +116,17 @@ export default function MenuItemRecipePage() {
 
   return (
     <div className="relative h-full overflow-hidden">
-      <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-32">
+      <main className="page-enter h-full overflow-y-auto px-5 pt-4 pb-32">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          aria-label={t('common.back')}
+          className="w-9 h-9 -ml-1 mb-2 rounded-full bg-[rgba(15,15,16,0.05)] text-fg-2 flex items-center justify-center tappable"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
         <header className="mb-2">
           <h1 className="text-2xl font-bold">{t('recipe.title')}</h1>
           <p className="text-fg-3 text-sm mt-0.5 truncate">{recipe?.menuItemName}</p>
@@ -202,23 +212,83 @@ interface PickerProps {
   onClose: () => void
 }
 
+const UNCATEGORIZED = ' uncat'
+
 function ProductPicker({ products, onPick, onClose }: PickerProps) {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
+  // Two-level navigation: pick a category first, then a product inside it.
+  // A non-empty search short-circuits the drill-down to a flat result list.
+  const [category, setCategory] = useState<string | null>(null)
+
+  const searching = query.trim().length > 0
+
+  const categories = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const p of products) {
+      const key = p.category ?? UNCATEGORIZED
+      counts.set(key, (counts.get(key) ?? 0) + 1)
+    }
+    return [...counts.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+  }, [products])
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return products
-    return products.filter(p => p.name.toLowerCase().includes(q) || (p.category ?? '').toLowerCase().includes(q))
-  }, [products, query])
+    if (q) {
+      return products.filter(p => p.name.toLowerCase().includes(q) || (p.category ?? '').toLowerCase().includes(q))
+    }
+    if (category === null) return []
+    return products.filter(p => (p.category ?? UNCATEGORIZED) === category)
+  }, [products, query, category])
+
+  const catLabel = (key: string) => (key === UNCATEGORIZED ? t('warehouse.uncategorized') : key)
+  const showCategories = !searching && category === null
+
+  const productRow = (p: ProductDto) => (
+    <li key={p.id}>
+      <button
+        type="button"
+        onClick={() => onPick(p)}
+        className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-card active:scale-[0.98] transition text-left"
+      >
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">{p.name}</p>
+          <p className="text-[11px] text-fg-3 mt-0.5">
+            {p.category ?? t('warehouse.uncategorized')}
+            <span className="mx-1.5">·</span>
+            {formatQuantity(p.currentStock, p.unit)} {t('recipe.inStock')}
+          </p>
+        </div>
+        <span className="text-accent text-xl shrink-0">+</span>
+      </button>
+    </li>
+  )
 
   return (
     <Portal>
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40 backdrop-in" onClick={onClose} style={{ paddingBottom: 'var(--keyboard-offset, 0px)', transition: 'padding-bottom 180ms cubic-bezier(0.16,1,0.3,1)' }}>
       <div className="bg-bg rounded-t-3xl px-5 pt-6 pb-10 max-h-[85dvh] flex flex-col sheet-in" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">{t('recipe.pickProduct')}</h2>
-          <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-card text-fg-3 text-xl leading-none">×</button>
+        <div className="flex items-center justify-between mb-4 gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            {/* When drilled into a category (and not searching), this chevron
+                returns to the category list instead of closing the sheet. */}
+            {!searching && category !== null && (
+              <button
+                type="button"
+                onClick={() => setCategory(null)}
+                aria-label={t('common.back')}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-card text-fg-2 shrink-0"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+              </button>
+            )}
+            <h2 className="text-lg font-bold truncate">
+              {!searching && category !== null ? catLabel(category) : t('recipe.pickProduct')}
+            </h2>
+          </div>
+          <button type="button" onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-card text-fg-3 text-xl leading-none shrink-0">×</button>
         </div>
 
         <input
@@ -229,29 +299,33 @@ function ProductPicker({ products, onPick, onClose }: PickerProps) {
           className="bg-card text-fg rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-accent transition mb-3"
         />
 
-        <ul className="overflow-y-auto flex flex-col gap-2">
-          {visible.length === 0 ? (
-            <li className="text-fg-3 text-sm text-center py-6">{t('recipe.noResults')}</li>
-          ) : visible.map(p => (
-            <li key={p.id}>
-              <button
-                type="button"
-                onClick={() => onPick(p)}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-card active:scale-[0.98] transition text-left"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{p.name}</p>
-                  <p className="text-[11px] text-fg-3 mt-0.5">
-                    {p.category ?? t('warehouse.uncategorized')}
-                    <span className="mx-1.5">·</span>
-                    {formatQuantity(p.currentStock, p.unit)} {t('recipe.inStock')}
-                  </p>
-                </div>
-                <span className="text-accent text-xl shrink-0">+</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        {showCategories ? (
+          <ul className="overflow-y-auto flex flex-col gap-2">
+            {categories.length === 0 ? (
+              <li className="text-fg-3 text-sm text-center py-6">{t('recipe.noResults')}</li>
+            ) : categories.map(([key, count]) => (
+              <li key={key}>
+                <button
+                  type="button"
+                  onClick={() => setCategory(key)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-card active:scale-[0.98] transition text-left"
+                >
+                  <span className="flex-1 min-w-0 text-sm font-medium truncate">{catLabel(key)}</span>
+                  <span className="text-[12px] text-fg-3 tabular-nums shrink-0">{count}</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-fg-3 shrink-0">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <ul className="overflow-y-auto flex flex-col gap-2">
+            {visible.length === 0 ? (
+              <li className="text-fg-3 text-sm text-center py-6">{t('recipe.noResults')}</li>
+            ) : visible.map(productRow)}
+          </ul>
+        )}
       </div>
     </div>
     </Portal>

@@ -12,6 +12,8 @@ import { usePermissions } from '../../hooks/usePermissions'
 import Field from '../../components/Field'
 import Select from '../../components/Select'
 import SubmitButton from '../../components/SubmitButton'
+import PrimaryButton from '../../components/PrimaryButton'
+import AppHeader from '../../components/AppHeader'
 import PermissionGrid from '../../components/PermissionGrid'
 
 export default function StaffCreate() {
@@ -19,6 +21,7 @@ export default function StaffCreate() {
   const navigate = useNavigate()
   const perm = usePermissions()
   useBackButton('/staff')
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
 
   // The component must call all its hooks before any early return,
   // so the permission gate runs at the very end of this function.
@@ -54,7 +57,7 @@ export default function StaffCreate() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
     setValue,
     watch,
   } = useForm<FormData>({
@@ -63,6 +66,11 @@ export default function StaffCreate() {
   })
 
   const selectedRoleId = watch('roleId')
+
+  const handleDiscard = () => {
+    if (isDirty && !confirmDiscard) { setConfirmDiscard(true); return }
+    navigate('/staff')
+  }
 
   // Populate roles on mount; pre-select the first one.
   useEffect(() => {
@@ -103,12 +111,10 @@ export default function StaffCreate() {
   if (!canManage) return <Navigate to="/staff" replace />
 
   return (
-    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold">{t('staff.create.title')}</h1>
-      </header>
+    <main className="page-enter h-full overflow-y-auto pb-10">
+      <AppHeader onBack={handleDiscard} title={t('staff.create.title')} />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-5 pt-2">
         <Field
           label={t('auth.register.firstName')}
           autoComplete="given-name"
@@ -173,6 +179,9 @@ export default function StaffCreate() {
           <p className="text-danger text-sm text-center">{serverError}</p>
         )}
         <SubmitButton loading={isSubmitting}>{t('staff.create.submit')}</SubmitButton>
+        <PrimaryButton type="button" kind={confirmDiscard ? 'dangerSoft' : 'neutral'} onClick={handleDiscard}>
+          {confirmDiscard ? t('common.discardConfirm') : t('common.discard')}
+        </PrimaryButton>
       </form>
     </main>
   )

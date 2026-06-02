@@ -10,6 +10,8 @@ import { useBackButton } from '../../hooks/useBackButton'
 import { getTelegram } from '../../lib/telegram'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
+import PrimaryButton from '../../components/PrimaryButton'
+import AppHeader from '../../components/AppHeader'
 
 const LOYALTY_TYPES: LoyaltyType[] = ['None', 'Cashback']
 // Discount is in the enum but deferred to v2 — hidden from the picker for now.
@@ -21,11 +23,13 @@ export default function ClientForm({ mode }: Props) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton(mode === 'create' ? '/clients' : `/clients/${id}`)
+  const backTarget = mode === 'create' ? '/clients' : `/clients/${id}`
+  useBackButton(backTarget)
 
   const canManage = perm.has('ManageClients')
   const [serverError, setServerError] = useState<string | null>(null)
   const [loadingExisting, setLoadingExisting] = useState(mode === 'edit')
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
 
   const schema = z.object({
     fullName: z.string().min(1, { error: t('auth.errors.required') }).max(200, { error: t('auth.errors.tooLong') }),
@@ -38,12 +42,22 @@ export default function ClientForm({ mode }: Props) {
   })
   type FormData = z.infer<typeof schema>
 
-  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting, isDirty } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { loyaltyType: 'None', loyaltyRate: 0 },
   })
 
   const loyaltyType = watch('loyaltyType')
+
+  // Discard: if the form is untouched, just go back. If there are unsaved edits,
+  // require a confirming second tap so a stray touch doesn't throw away work.
+  const handleDiscard = () => {
+    if (isDirty && !confirmDiscard) {
+      setConfirmDiscard(true)
+      return
+    }
+    navigate(backTarget)
+  }
 
   useEffect(() => {
     if (mode !== 'edit' || !id) return
@@ -98,14 +112,13 @@ export default function ClientForm({ mode }: Props) {
   }
 
   return (
-    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
-      <header className="mb-5">
-        <h1 className="text-2xl font-bold">
-          {mode === 'create' ? t('clients.newClient') : t('clients.editClient')}
-        </h1>
-      </header>
+    <main className="page-enter h-full overflow-y-auto pb-10">
+      <AppHeader
+        onBack={handleDiscard}
+        title={mode === 'create' ? t('clients.newClient') : t('clients.editClient')}
+      />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-5 pt-2">
         <Field label={t('clients.fields.fullName')} autoFocus={mode === 'create'} enterKeyHint="next" {...register('fullName')} error={errors.fullName?.message} />
         <Field label={t('clients.fields.phone')}    enterKeyHint="next" inputMode="tel"   {...register('phone')}    error={errors.phone?.message} />
         <Field label={t('clients.fields.email')}    enterKeyHint="next" inputMode="email" {...register('email')}    error={errors.email?.message} />
@@ -140,6 +153,13 @@ export default function ClientForm({ mode }: Props) {
         <SubmitButton loading={isSubmitting}>
           {mode === 'create' ? t('clients.create') : t('clients.save')}
         </SubmitButton>
+        <PrimaryButton
+          type="button"
+          kind={confirmDiscard ? 'dangerSoft' : 'neutral'}
+          onClick={handleDiscard}
+        >
+          {confirmDiscard ? t('common.discardConfirm') : t('common.discard')}
+        </PrimaryButton>
       </form>
     </main>
   )

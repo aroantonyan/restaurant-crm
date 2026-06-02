@@ -12,6 +12,8 @@ import { usePermissions } from '../../hooks/usePermissions'
 import Field from '../../components/Field'
 import Select from '../../components/Select'
 import SubmitButton from '../../components/SubmitButton'
+import PrimaryButton from '../../components/PrimaryButton'
+import AppHeader from '../../components/AppHeader'
 import PermissionGrid from '../../components/PermissionGrid'
 
 export default function StaffEdit() {
@@ -20,6 +22,7 @@ export default function StaffEdit() {
   const { id } = useParams<{ id: string }>()
   const perm = usePermissions()
   useBackButton('/staff')
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
 
   // Two tiers: ManageStaff for profile/role, ManageRoles for the permission grid.
   const canManageProfile = perm.has('ManageStaff')
@@ -54,9 +57,14 @@ export default function StaffEdit() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
     reset,
   } = useForm<FormData>({ resolver: zodResolver(schema) })
+
+  const handleDiscard = () => {
+    if (isDirty && !confirmDiscard) { setConfirmDiscard(true); return }
+    navigate('/staff')
+  }
 
   useEffect(() => {
     if (!id) return
@@ -137,15 +145,14 @@ export default function StaffEdit() {
   }
 
   return (
-    <main className="page-enter h-full overflow-y-auto px-5 pt-6 pb-10">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold">{t('staff.edit.title')}</h1>
-        <p className="text-fg-3 text-sm mt-1">
-          {member.lastName} {member.firstName} {member.fatherName}
-        </p>
-      </header>
+    <main className="page-enter h-full overflow-y-auto pb-10">
+      <AppHeader
+        onBack={handleDiscard}
+        title={t('staff.edit.title')}
+        subtitle={`${member.lastName} ${member.firstName} ${member.fatherName}`}
+      />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-5 pt-2">
         <Field
           label={t('auth.register.firstName')}
           autoComplete="given-name"
@@ -200,6 +207,9 @@ export default function StaffEdit() {
         {(canManageProfile || canSetPermissions) && (
           <SubmitButton loading={isSubmitting}>{t('staff.edit.submit')}</SubmitButton>
         )}
+        <PrimaryButton type="button" kind={confirmDiscard ? 'dangerSoft' : 'neutral'} onClick={handleDiscard}>
+          {confirmDiscard ? t('common.discardConfirm') : t('common.discard')}
+        </PrimaryButton>
       </form>
 
       {canManageProfile && (
