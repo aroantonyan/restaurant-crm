@@ -7,6 +7,7 @@ import { api, ApiError, type TableDto, type TableStatus } from '../lib/api'
 import { usePermissions } from '../hooks/usePermissions'
 import { useBackButton } from '../hooks/useBackButton'
 import { useRealtimeEvent } from '../hooks/useRealtimeEvent'
+import { formatPrice } from '../lib/format'
 import { getTelegram } from '../lib/telegram'
 import Field from '../components/Field'
 import SubmitButton from '../components/SubmitButton'
@@ -65,23 +66,36 @@ function TableFormSheet({ state, onClose, onSaved, onDeleted }: ModalProps) {
   }
 
   const schema = z.object({
-    number:   z.number({ error: t('auth.errors.required') }).int().positive(),
-    capacity: z.number({ error: t('auth.errors.required') }).int().min(1).max(50),
+    number:    z.number({ error: t('auth.errors.required') }).int().positive(),
+    capacity:  z.number({ error: t('auth.errors.required') }).int().min(1).max(50),
+    isVip:     z.boolean(),
+    vipAmount: z.number({ error: t('auth.errors.required') }).min(0).max(99_999_999),
+  }).refine(d => !d.isVip || d.vipAmount > 0, {
+    path: ['vipAmount'],
+    error: t('tables.vipAmountRequired'),
   })
   type FormData = z.infer<typeof schema>
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: isEdit
-      ? { number: state.number, capacity: state.capacity }
-      : ({ capacity: 4 } as FormData),
+      ? { number: state.number, capacity: state.capacity, isVip: state.isVip, vipAmount: state.vipAmount }
+      : ({ capacity: 4, isVip: false, vipAmount: 0 } as FormData),
   })
+
+  const isVip = watch('isVip')
 
   const onSubmit = async (data: FormData) => {
     setServerError(null)
     try {
-      if (isEdit) await api.tables.update(state.id, { number: data.number, capacity: data.capacity })
-      else await api.tables.create({ number: data.number, capacity: data.capacity })
+      const payload = {
+        number: data.number,
+        capacity: data.capacity,
+        isVip: data.isVip,
+        vipAmount: data.isVip ? data.vipAmount : 0,
+      }
+      if (isEdit) await api.tables.update(state.id, payload)
+      else await api.tables.create(payload)
       getTelegram()?.HapticFeedback?.impactOccurred('light')
       onSaved()
     } catch (e) {
@@ -125,6 +139,38 @@ function TableFormSheet({ state, onClose, onSaved, onDeleted }: ModalProps) {
           {...register('capacity', { valueAsNumber: true })}
           error={errors.capacity?.message}
         />
+
+        {/* VIP toggle — display-only label + amount the cashier collects manually. */}
+        <button
+          type="button"
+          onClick={() => setValue('isVip', !isVip, { shouldDirty: true, shouldValidate: true })}
+          className="flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl bg-card border border-line text-left tappable"
+          style={{ boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)' }}
+        >
+          <span className="flex flex-col">
+            <span className="text-[15px] font-semibold text-fg">{t('tables.vipLabel')}</span>
+            <span className="text-[12px] text-fg-3 mt-0.5">{t('tables.vipHint')}</span>
+          </span>
+          <span
+            className={`w-12 h-7 rounded-full shrink-0 relative transition-colors ${isVip ? 'bg-accent' : 'bg-line-strong'}`}
+            aria-hidden
+          >
+            <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white transition-transform ${isVip ? 'translate-x-5' : ''}`} />
+          </span>
+        </button>
+        <input type="hidden" {...register('isVip')} />
+
+        {isVip && (
+          <Field
+            label={t('tables.vipAmount')}
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            enterKeyHint="done"
+            {...register('vipAmount', { valueAsNumber: true })}
+            error={errors.vipAmount?.message}
+          />
+        )}
 
         {isEdit && (
           <div className="flex flex-col gap-1.5">
@@ -279,7 +325,11 @@ export default function TablesPage() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold uppercase text-fg-3" style={{ letterSpacing: '0.06em' }}>
-                    {t('tables.label', { defaultValue: 'Table' })}
+                    {table.isVip ? (
+                      <span className="inline-flex items-center gap-0.5 text-accent">⭐ {t('tables.vipTag')}</span>
+                    ) : (
+                      t('tables.label', { defaultValue: 'Table' })
+                    )}
                   </span>
                   <StatusPill kind={tableKind(table.status)} size="sm">
                     {t(`tables.status.${table.status}`)}
@@ -290,6 +340,7 @@ export default function TablesPage() {
                 </p>
                 <p className="m-0 text-xs text-fg-3">
                   {t('tables.seats', { count: table.capacity })}
+                  {table.isVip && <span className="text-accent"> · {formatPrice(table.vipAmount)}</span>}
                 </p>
               </button>
             ))}

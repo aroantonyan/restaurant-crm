@@ -53,6 +53,9 @@ public record UpdateOrderItemStatusRequest(string Status);
 /// </summary>
 public record BillPreviewDto(
     decimal Subtotal,
+    // Flat surcharge added for a VIP table (0 for normal tables). Shown as its own
+    // line on the bill and rolled into SuggestedCharge / deposit math.
+    decimal VipSurcharge,
     Guid? ClientId,
     string? ClientName,
     decimal ClientDepositBalance,

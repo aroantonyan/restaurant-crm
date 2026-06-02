@@ -124,9 +124,9 @@ export interface UpdateMenuItemRequest { categoryId: string; name: string; descr
 
 // ---- Tables ----
 
-export interface TableDto { id: string; number: number; capacity: number; status: string }
-export interface CreateTableRequest { number: number; capacity?: number }
-export interface UpdateTableRequest { number: number; capacity: number }
+export interface TableDto { id: string; number: number; capacity: number; status: string; isVip: boolean; vipAmount: number }
+export interface CreateTableRequest { number: number; capacity?: number; isVip?: boolean; vipAmount?: number }
+export interface UpdateTableRequest { number: number; capacity: number; isVip?: boolean; vipAmount?: number }
 export type TableStatus = 'Free' | 'Occupied' | 'Reserved'
 
 // ---- Orders ----
@@ -138,6 +138,7 @@ export interface AddOrderItemRequest { menuItemId: string; quantity: number; not
 
 export interface BillPreviewDto {
   subtotal: number
+  vipSurcharge: number
   clientId: string | null
   clientName: string | null
   clientDepositBalance: number

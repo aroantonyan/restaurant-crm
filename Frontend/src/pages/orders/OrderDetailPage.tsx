@@ -441,10 +441,14 @@ function PaymentMethodSheet({ open, total, bill, billLoading, busy, error, onClo
   const hasBalance     = balanceAvail > 0
   const isCashbackTier = bill !== null && bill.loyaltyType === 'Cashback' && bill.loyaltyRate > 0
   const rate           = bill?.loyaltyRate ?? 0
+  // VIP table surcharge — a flat amount added on top of the items. The bill total
+  // the customer actually owes is items + VIP.
+  const vipSurcharge   = bill?.vipSurcharge ?? 0
+  const billTotal      = total + vipSurcharge
 
   const { balanceApplied, toCharge, cashbackEarned, newBalance } = useMemo(() => {
-    const applied = useBalance ? Math.min(balanceAvail, total) : 0
-    const charge  = total - applied
+    const applied = useBalance ? Math.min(balanceAvail, billTotal) : 0
+    const charge  = billTotal - applied
     const cb      = giveCashback ? Math.round(charge * (rate / 100)) : 0
     return {
       balanceApplied: applied,
@@ -452,7 +456,7 @@ function PaymentMethodSheet({ open, total, bill, billLoading, busy, error, onClo
       cashbackEarned: cb,
       newBalance:     rawBalance - applied + cb,
     }
-  }, [useBalance, giveCashback, balanceAvail, total, rate, rawBalance])
+  }, [useBalance, giveCashback, balanceAvail, billTotal, rate, rawBalance])
 
   const methods: PaymentMethod[] = ['Cash', 'Card', 'BankTransfer', 'Other']
   const fullyCovered = toCharge === 0 && balanceApplied > 0
@@ -463,6 +467,10 @@ function PaymentMethodSheet({ open, total, bill, billLoading, busy, error, onClo
       {/* Live breakdown — updates as the toggles below change. */}
       <div className="mb-3.5 rounded-[18px] bg-bg p-3.5 flex flex-col gap-2">
         <Row label={t('orders.bill.subtotal')} value={formatPrice(total)} />
+
+        {vipSurcharge > 0 && (
+          <Row label={t('orders.bill.vipSurcharge')} value={`+${formatPrice(vipSurcharge)}`} />
+        )}
 
         {balanceApplied > 0 && (
           <Row label={t('orders.bill.balanceApplied')} value={`−${formatPrice(balanceApplied)}`} tone="ok" />

@@ -10,6 +10,7 @@ public class TableConfiguration : IEntityTypeConfiguration<Table>
     {
         builder.HasKey(t => t.Id);
         builder.Property(t => t.Status).HasConversion<string>().HasMaxLength(20);
+        builder.Property(t => t.VipAmount).HasPrecision(18, 2);
 
         builder.HasIndex(t => new { t.RestaurantId, t.Number }).IsUnique();
     }

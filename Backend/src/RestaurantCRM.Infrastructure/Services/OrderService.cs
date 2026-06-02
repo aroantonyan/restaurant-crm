@@ -206,8 +206,11 @@ public class OrderService(
             if (order.Items.Count > 0)
                 await StageRecipeDeductionsAsync(order, actingUserId, ct);
 
-            // Snapshot total at payment time.
-            var total = order.Items.Sum(i => i.Price * i.Quantity);
+            // Snapshot total at payment time. A VIP table adds a flat surcharge that
+            // the customer pays on top of the items (it flows into the cash drawer /
+            // deposit settlement just like the item subtotal).
+            var vipSurcharge = order.Table.IsVip ? order.Table.VipAmount : 0m;
+            var total = order.Items.Sum(i => i.Price * i.Quantity) + vipSurcharge;
 
             // ── Split the bill into store-credit (deposit) + out-of-pocket remainder ──
             // `method == Deposit` is the legacy "charge the whole bill to the client's
@@ -269,7 +272,8 @@ public class OrderService(
         var shortId = order.Id.ToString()[..8];
         if (target == OrderStatus.Paid)
         {
-            var orderTotal = order.Items.Sum(i => i.Price * i.Quantity);
+            var orderTotal = order.Items.Sum(i => i.Price * i.Quantity)
+                + (order.Table.IsVip ? order.Table.VipAmount : 0m);
             await activityLog.LogAsync(actingUserId, ActivityCategory.Order, "Paid", nameof(Order), order.Id,
                 $"Order #{shortId} paid via {method} — total {orderTotal:N2}", ct);
         }
@@ -400,44 +404,50 @@ public class OrderService(
         var order = await db.Orders
             .Include(o => o.Items)
             .Include(o => o.Client)
+            .Include(o => o.Table)
             .FirstOrDefaultAsync(o => o.Id == orderId, ct)
             ?? throw new KeyNotFoundException("Order not found.");
 
         var subtotal = order.Items.Sum(i => i.Price * i.Quantity);
+        // VIP tables carry a flat surcharge on top of the items; it's part of the
+        // amount owed, so all the deposit/cashback math runs against the bill total.
+        var vipSurcharge = order.Table.IsVip ? order.Table.VipAmount : 0m;
+        var billTotal = subtotal + vipSurcharge;
         var client = order.Client;
 
-        // No client → plain bill: charge the subtotal, nothing else to compute.
+        // No client → plain bill: charge the bill total, nothing else to compute.
         if (client is null)
             return new BillPreviewDto(
-                subtotal, null, null, 0m,
+                subtotal, vipSurcharge, null, null, 0m,
                 LoyaltyType.None.ToString(), 0m,
                 CashbackToEarn: 0m,
-                SuggestedCharge: subtotal,
+                SuggestedCharge: billTotal,
                 DepositCovers: 0m,
-                DepositRemainder: subtotal,
+                DepositRemainder: billTotal,
                 BalanceAfterDeposit: 0m);
 
         // Cashback is earned on any non-deposit payment (matches the payment flow).
         var cashback = client.LoyaltyType == LoyaltyType.Cashback && client.LoyaltyRate > 0m
-            ? Math.Round(subtotal * (client.LoyaltyRate / 100m), 2)
+            ? Math.Round(billTotal * (client.LoyaltyRate / 100m), 2)
             : 0m;
 
         // Deposit path: the balance absorbs as much as it can; the rest is owed.
-        // A negative remainder never happens (covers is capped at subtotal), but a
+        // A negative remainder never happens (covers is capped at the bill total), but a
         // remainder > 0 with insufficient balance means the customer goes on credit.
-        var depositCovers = Math.Min(Math.Max(client.DepositBalance, 0m), subtotal);
-        var depositRemainder = subtotal - depositCovers;
-        var balanceAfterDeposit = client.DepositBalance - subtotal;
+        var depositCovers = Math.Min(Math.Max(client.DepositBalance, 0m), billTotal);
+        var depositRemainder = billTotal - depositCovers;
+        var balanceAfterDeposit = client.DepositBalance - billTotal;
 
         return new BillPreviewDto(
             subtotal,
+            vipSurcharge,
             client.Id,
             client.FullName,
             client.DepositBalance,
             client.LoyaltyType.ToString(),
             client.LoyaltyRate,
             CashbackToEarn: cashback,
-            SuggestedCharge: subtotal,
+            SuggestedCharge: billTotal,
             DepositCovers: depositCovers,
             DepositRemainder: depositRemainder,
             BalanceAfterDeposit: balanceAfterDeposit);

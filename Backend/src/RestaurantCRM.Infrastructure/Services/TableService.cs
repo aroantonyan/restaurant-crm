@@ -12,7 +12,7 @@ public class TableService(AppDbContext db, ITenantContext tenant, IRealtimeNotif
     {
         return await db.Tables
             .OrderBy(t => t.Number)
-            .Select(t => new TableDto(t.Id, t.Number, t.Capacity, t.Status.ToString()))
+            .Select(t => new TableDto(t.Id, t.Number, t.Capacity, t.Status.ToString(), t.IsVip, t.VipAmount))
             .ToListAsync(ct);
     }
 
@@ -26,13 +26,15 @@ public class TableService(AppDbContext db, ITenantContext tenant, IRealtimeNotif
             RestaurantId = tenant.RestaurantId,
             Number = request.Number,
             Capacity = request.Capacity,
+            IsVip = request.IsVip,
+            VipAmount = request.IsVip ? request.VipAmount : 0m,
         };
         db.Tables.Add(table);
         await db.SaveChangesAsync(ct);
 
         await notifier.TableChanged(table.Id, ct);
 
-        return new TableDto(table.Id, table.Number, table.Capacity, table.Status.ToString());
+        return new TableDto(table.Id, table.Number, table.Capacity, table.Status.ToString(), table.IsVip, table.VipAmount);
     }
 
     public async Task<TableDto> UpdateAsync(Guid id, UpdateTableRequest request, CancellationToken ct = default)
@@ -45,11 +47,13 @@ public class TableService(AppDbContext db, ITenantContext tenant, IRealtimeNotif
 
         table.Number = request.Number;
         table.Capacity = request.Capacity;
+        table.IsVip = request.IsVip;
+        table.VipAmount = request.IsVip ? request.VipAmount : 0m;
         await db.SaveChangesAsync(ct);
 
         await notifier.TableChanged(table.Id, ct);
 
-        return new TableDto(table.Id, table.Number, table.Capacity, table.Status.ToString());
+        return new TableDto(table.Id, table.Number, table.Capacity, table.Status.ToString(), table.IsVip, table.VipAmount);
     }
 
     public async Task<TableDto> SetStatusAsync(Guid id, UpdateTableStatusRequest request, CancellationToken ct = default)
@@ -75,7 +79,7 @@ public class TableService(AppDbContext db, ITenantContext tenant, IRealtimeNotif
 
         await notifier.TableChanged(table.Id, ct);
 
-        return new TableDto(table.Id, table.Number, table.Capacity, table.Status.ToString());
+        return new TableDto(table.Id, table.Number, table.Capacity, table.Status.ToString(), table.IsVip, table.VipAmount);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken ct = default)

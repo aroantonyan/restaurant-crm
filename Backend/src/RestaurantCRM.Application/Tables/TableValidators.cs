@@ -8,6 +8,9 @@ public class CreateTableRequestValidator : AbstractValidator<CreateTableRequest>
     {
         RuleFor(x => x.Number).GreaterThan(0);
         RuleFor(x => x.Capacity).InclusiveBetween(1, 50);
+        RuleFor(x => x.VipAmount).GreaterThanOrEqualTo(0).LessThan(100_000_000);
+        RuleFor(x => x.VipAmount).GreaterThan(0).When(x => x.IsVip)
+            .WithMessage("A VIP table needs an amount greater than zero.");
     }
 }
 
@@ -17,6 +20,9 @@ public class UpdateTableRequestValidator : AbstractValidator<UpdateTableRequest>
     {
         RuleFor(x => x.Number).GreaterThan(0);
         RuleFor(x => x.Capacity).InclusiveBetween(1, 50);
+        RuleFor(x => x.VipAmount).GreaterThanOrEqualTo(0).LessThan(100_000_000);
+        RuleFor(x => x.VipAmount).GreaterThan(0).When(x => x.IsVip)
+            .WithMessage("A VIP table needs an amount greater than zero.");
     }
 }
 

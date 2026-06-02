@@ -145,6 +145,7 @@ Every endpoint requires `[Authorize]` AND a `[RequirePermission(PermissionType.X
 ### Table : BaseEntity, ITenantEntity
 - `Number` (int), `Capacity` (int, default 4)
 - `Status`: `TableStatus` — Free | Occupied | Reserved
+- `IsVip` (bool) + `VipAmount` (decimal 18,2) — VIP tables add a flat surcharge to the bill at close (rolled into `BillPreviewDto.VipSurcharge` + the charged total). 0 for normal tables.
 - Unique index on (RestaurantId, Number)
 
 ### Order : BaseEntity, ITenantEntity
