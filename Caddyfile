@@ -13,7 +13,7 @@
 #     email you@example.com
 # }
 
-13.60.70.209.nip.io {
+51.20.249.92.nip.io {
     encode zstd gzip
     reverse_proxy web:8080
 }
