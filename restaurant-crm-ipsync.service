@@ -1,0 +1,14 @@
+[Unit]
+Description=Sync Caddyfile to current EC2 public IP and restart Caddy
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/ec2-user/restaurant-crm
+ExecStart=/home/ec2-user/restaurant-crm/sync-caddy-ip.sh
+User=ec2-user
+
+[Install]
+WantedBy=multi-user.target
