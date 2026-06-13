@@ -91,7 +91,14 @@ try
     // Apply any pending EF Core migrations on startup.
     // Safe for single-replica deployments; avoids the manual `dotnet ef database update` step in Docker.
     using (var scope = app.Services.CreateScope())
-        scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
+    {
+        var ctx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        ctx.Database.Migrate();
+
+        // Idempotent: seeds a realistic demo restaurant only if it isn't there yet.
+        var seedLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DemoDataSeeder");
+        RestaurantCRM.Infrastructure.Persistence.DemoDataSeeder.SeedAsync(ctx, seedLogger).GetAwaiter().GetResult();
+    }
 
     if (app.Environment.IsDevelopment())
         app.MapOpenApi();
