@@ -259,7 +259,9 @@
       "loadFailed": "Couldn't load reservations",
       "saveFailed": "Couldn't save reservation",
       "deleteFailed": "Couldn't delete reservation",
-      "statusFailed": "Couldn't update status"
+      "statusFailed": "Couldn't update status",
+      "overCapacity": "This table seats up to {{capacity}}",
+      "pastTime": "Pick a time in the future"
     }
   },
   "reports": {

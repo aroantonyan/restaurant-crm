@@ -57,7 +57,7 @@ public class ReservationService(AppDbContext db, ITenantContext tenant, IRealtim
         var startAt = EnsureUtc(request.StartAt);
         var endAt = startAt.AddMinutes(request.DurationMinutes);
 
-        await EnsureNoConflictAsync(table.Id, startAt, endAt, excludeId: null, ct);
+        await EnsureBookableAsync(table, request.GuestCount, startAt, endAt, excludeId: null, enforceFuture: true, ct);
 
         var reservation = new Reservation
         {
@@ -115,7 +115,10 @@ public class ReservationService(AppDbContext db, ITenantContext tenant, IRealtim
         var startAt = EnsureUtc(request.StartAt);
         var endAt = startAt.AddMinutes(request.DurationMinutes);
 
-        await EnsureNoConflictAsync(reservation.TableId, startAt, endAt, excludeId: reservation.Id, ct);
+        // Only force a future time when the slot is actually being moved — editing
+        // notes/guests on an in-progress or just-passed reservation must still work.
+        var movedTime = startAt != reservation.StartAt;
+        await EnsureBookableAsync(reservation.Table, request.GuestCount, startAt, endAt, excludeId: reservation.Id, enforceFuture: movedTime, ct);
 
         reservation.GuestName = request.GuestName.Trim();
         reservation.GuestPhone = string.IsNullOrWhiteSpace(request.GuestPhone) ? null : request.GuestPhone.Trim();
@@ -149,7 +152,7 @@ public class ReservationService(AppDbContext db, ITenantContext tenant, IRealtim
 
         if (isRestoreToConfirmed)
         {
-            await EnsureNoConflictAsync(reservation.TableId, reservation.StartAt, reservation.EndAt, excludeId: reservation.Id, ct);
+            await EnsureBookableAsync(reservation.Table, reservation.GuestCount, reservation.StartAt, reservation.EndAt, excludeId: reservation.Id, enforceFuture: false, ct);
         }
 
         reservation.Status = request.Status;
@@ -190,17 +193,34 @@ public class ReservationService(AppDbContext db, ITenantContext tenant, IRealtim
 
     // ---- helpers ----
 
-    private async Task EnsureNoConflictAsync(Guid tableId, DateTime startAt, DateTime endAt, Guid? excludeId, CancellationToken ct)
+    // Single gate for every write path (create / edit / restore): seat count,
+    // future time, one-booking-per-day, and a defensive time-overlap check.
+    private async Task EnsureBookableAsync(
+        Table table, int guestCount, DateTime startAt, DateTime endAt,
+        Guid? excludeId, bool enforceFuture, CancellationToken ct)
     {
-        // A reservation A overlaps candidate slot B iff A.start < B.end AND A.end > B.start.
-        // Deleted rows never block new bookings.
-        var conflict = await db.Reservations
-            .Where(r => r.TableId == tableId)
-            .Where(r => r.Status == ReservationStatus.Confirmed || r.Status == ReservationStatus.Seated)
-            .Where(r => excludeId == null || r.Id != excludeId.Value)
-            .AnyAsync(r => r.StartAt < endAt && r.StartAt.AddMinutes(r.DurationMinutes) > startAt, ct);
+        if (guestCount > table.Capacity)
+            throw new InvalidOperationException(
+                $"Table {table.Number} seats up to {table.Capacity} — this booking is for {guestCount}.");
 
-        if (conflict)
+        if (enforceFuture && startAt <= DateTime.UtcNow)
+            throw new InvalidOperationException("Reservation time must be in the future.");
+
+        // Active = blocks a slot. Soft-deleted rows are filtered out globally.
+        var active = db.Reservations
+            .Where(r => r.TableId == table.Id)
+            .Where(r => r.Status == ReservationStatus.Confirmed || r.Status == ReservationStatus.Seated)
+            .Where(r => excludeId == null || r.Id != excludeId.Value);
+
+        // One active reservation per table per calendar day (UTC).
+        var dayStart = new DateTime(startAt.Year, startAt.Month, startAt.Day, 0, 0, 0, DateTimeKind.Utc);
+        var dayEnd = dayStart.AddDays(1);
+        if (await active.AnyAsync(r => r.StartAt >= dayStart && r.StartAt < dayEnd, ct))
+            throw new InvalidOperationException("This table already has a reservation on that day.");
+
+        // Defensive: catches cross-midnight overlaps the per-day rule can't see
+        // (A overlaps B iff A.start < B.end AND A.end > B.start).
+        if (await active.AnyAsync(r => r.StartAt < endAt && r.StartAt.AddMinutes(r.DurationMinutes) > startAt, ct))
             throw new InvalidOperationException("This table is already reserved during the selected time.");
     }
 

@@ -143,6 +143,22 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
     startAtLocal: z.string().min(1, t('auth.errors.required')),
     durationMinutes: z.number().int().min(15).max(600),
     notes: z.string().max(500, t('auth.errors.tooLong')).optional(),
+  }).superRefine((data, ctx) => {
+    // Party must fit the chosen table (server enforces this too).
+    const table = tables.find(tb => tb.id === data.tableId)
+    if (table && data.guestCount > table.capacity) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom, path: ['guestCount'],
+        message: t('reservations.errors.overCapacity', { capacity: table.capacity }),
+      })
+    }
+    // New bookings must be in the future; editing a current/past one is allowed.
+    if (!isEdit && data.startAtLocal && new Date(data.startAtLocal).getTime() <= Date.now()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom, path: ['startAtLocal'],
+        message: t('reservations.errors.pastTime'),
+      })
+    }
   })
   type FormData = z.infer<typeof schema>
 
@@ -314,6 +330,7 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
             type="datetime-local"
             enterKeyHint="next"
             disabled={!editable}
+            min={!isEdit ? dateToLocalInput(new Date()) : undefined}
             {...register('startAtLocal')}
             error={errors.startAtLocal?.message}
           />
