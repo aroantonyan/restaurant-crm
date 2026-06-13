@@ -5,8 +5,6 @@ import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../lib/api'
-import { getTelegram } from '../lib/telegram'
-import { useBackButton } from '../hooks/useBackButton'
 import { usePermissions } from '../hooks/usePermissions'
 import Field from '../components/Field'
 import Select from '../components/Select'
@@ -27,7 +25,6 @@ export default function SettingsPage() {
   const navigate = useNavigate()
   const perm = usePermissions()
   const canEdit = perm.has('ManageRestaurantSettings')
-  useBackButton('/dashboard')
 
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -72,7 +69,6 @@ export default function SettingsPage() {
         address:   data.address?.trim() || undefined,
         phone:     data.phone?.trim() || undefined,
       })
-      getTelegram()?.HapticFeedback?.notificationOccurred('success')
       setSaved(true)
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('settings.errors.saveFailed'))

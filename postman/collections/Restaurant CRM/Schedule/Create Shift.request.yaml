@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/api/schedule"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "userId": "00000000-0000-0000-0000-000000000000",
+      "startAt": "2026-06-05T09:00:00Z",
+      "endAt": "2026-06-05T17:00:00Z",
+      "roleForShift": "Waiter",
+      "notes": null
+    }
+order: 3000

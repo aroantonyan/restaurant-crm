@@ -47,9 +47,6 @@ services:
       JwtSettings__Issuer:      ${JWT_ISSUER:-RestaurantCRM}
       JwtSettings__Audience:    ${JWT_AUDIENCE:-RestaurantCRM}
       JwtSettings__ExpiryHours: ${JWT_EXPIRY_HOURS:-12}
-      Telegram__Enforce:        ${TELEGRAM_ENFORCE:-false}
-      Telegram__BotToken:       ${TELEGRAM_BOT_TOKEN:-}
-      Telegram__MaxAgeMinutes:  ${TELEGRAM_MAX_AGE_MINUTES:-1440}
     volumes:
       - api-logs:/app/logs
     healthcheck:

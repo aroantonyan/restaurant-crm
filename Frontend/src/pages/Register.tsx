@@ -6,7 +6,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '../lib/api'
 import { auth } from '../lib/auth'
-import { getTelegram } from '../lib/telegram'
 import Field from '../components/Field'
 import SubmitButton from '../components/SubmitButton'
 import LanguageSwitcher from '../components/LanguageSwitcher'
@@ -34,12 +33,7 @@ export default function Register() {
     setServerError(null)
     try {
       const res = await api.auth.register(data)
-      auth.set(res.token, {
-        userId: res.userId, restaurantId: res.restaurantId, restaurantName: res.restaurantName,
-        currency: res.currency, firstName: res.firstName, lastName: res.lastName,
-        roleName: res.roleName, permissions: res.permissions, status: res.status,
-      })
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
+      auth.setFromResponse(res)
       navigate('/dashboard', { replace: true })
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('auth.errors.registerFailed'))

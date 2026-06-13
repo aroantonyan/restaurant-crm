@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type OrderDto, type OrderItemDto } from '../../lib/api'
 import { formatPrice } from '../../lib/format'
-import { getTelegram } from '../../lib/telegram'
 import Sheet from '../../components/Sheet'
 import PrimaryButton from '../../components/PrimaryButton'
 
@@ -36,7 +35,6 @@ export default function OrderItemActionSheet({
     setError(null)
     try {
       const updated = await api.orders.updateItemStatus(orderId, item.id, status)
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       onUpdated(updated)
       onClose()
     } catch (e) {
@@ -52,7 +50,6 @@ export default function OrderItemActionSheet({
     setError(null)
     try {
       const updated = await api.orders.removeItem(orderId, item.id)
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       onUpdated(updated)
       onClose()
     } catch (e) {

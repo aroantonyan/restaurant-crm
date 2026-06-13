@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, type OrderDto } from '../../lib/api'
-import { useBackButton } from '../../hooks/useBackButton'
 import { usePermissions } from '../../hooks/usePermissions'
 import { useRealtimeEvent } from '../../hooks/useRealtimeEvent'
 import { formatPrice } from '../../lib/format'
@@ -19,7 +18,6 @@ export default function OrdersPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton('/dashboard')
 
   const [orders, setOrders] = useState<OrderDto[]>([])
   const [loading, setLoading] = useState(true)

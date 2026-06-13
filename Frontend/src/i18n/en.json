@@ -9,7 +9,8 @@
     "retry": "Retry",
     "back": "Back",
     "discard": "Discard",
-    "discardConfirm": "Tap again to discard"
+    "discardConfirm": "Tap again to discard",
+    "error": "Something went wrong"
   },
   "settings": {
     "subtitle": "Manage your restaurant profile",
@@ -525,7 +526,8 @@
     "errors": {
       "loadFailed": "Couldn't load warehouse",
       "saveFailed": "Couldn't save changes",
-      "positiveQty": "Quantity must be greater than zero"
+      "positiveQty": "Quantity must be greater than zero",
+      "wholeQty": "Quantity must be a whole number"
     }
   },
   "dashboard": {

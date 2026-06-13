@@ -7,9 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { api, ApiError, type ShiftDto, type StaffMember } from '../lib/api'
 import { auth } from '../lib/auth'
 import { usePermissions } from '../hooks/usePermissions'
-import { useBackButton } from '../hooks/useBackButton'
 import { useRealtimeEvent } from '../hooks/useRealtimeEvent'
-import { getTelegram } from '../lib/telegram'
 import Field from '../components/Field'
 import SubmitButton from '../components/SubmitButton'
 import AppHeader from '../components/AppHeader'
@@ -20,7 +18,7 @@ import PrimaryButton from '../components/PrimaryButton'
 //
 // Reviewed standard restaurant scheduling apps (7shifts, Deputy, Sling, Homebase,
 // When I Work). Their desktop view is a week grid: staff names down the left,
-// days across the top. That doesn't fit in a phone Telegram WebView. The common
+// days across the top. That doesn't fit on a phone screen. The common
 // mobile pattern they all share is a **vertical day list** — one card per day,
 // shifts listed inside.
 //
@@ -77,7 +75,6 @@ export default function SchedulePage() {
   const navigate = useNavigate()
   const perm = usePermissions()
   const session = auth.getSession()
-  useBackButton('/dashboard')
 
   const canManage = perm.has('ManageSchedules')
   const myUserId = session?.userId
@@ -415,7 +412,6 @@ function ShiftFormModal({ initial, staff, defaultUserId, onClose, onSaved }: Shi
       } else {
         await api.schedule.create(payload)
       }
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       onSaved()
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('schedule.errors.saveFailed'))

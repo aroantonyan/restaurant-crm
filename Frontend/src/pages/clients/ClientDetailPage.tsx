@@ -12,8 +12,6 @@ import {
   type ClientTransactionType,
 } from '../../lib/api'
 import { usePermissions } from '../../hooks/usePermissions'
-import { useBackButton } from '../../hooks/useBackButton'
-import { getTelegram } from '../../lib/telegram'
 import { formatPrice } from '../../lib/format'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
@@ -35,7 +33,6 @@ export default function ClientDetailPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton('/clients')
 
   const canManage = perm.has('ManageClients')
 
@@ -250,7 +247,6 @@ function BalanceOpModal({ client, mode, onClose, onSaved }: BalanceOpProps) {
       const payload = { amount: data.amount, method, reason: data.reason || null }
       if (mode === 'deposit') await api.clients.deposit(client.id, payload)
       else                    await api.clients.withdraw(client.id, payload)
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       onSaved()
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('clients.errors.saveFailed'))

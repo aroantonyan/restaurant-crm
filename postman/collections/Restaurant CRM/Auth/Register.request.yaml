@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "firstName": "Aro",
+      "lastName": "Antonyan",
+      "fatherName": "Sergeevich",
+      "email": "owner@mail.ru",
+      "password": "secret123",
+      "restaurantName": "My Restaurant"
+    }
+auth:
+  type: noauth
+order: 1000

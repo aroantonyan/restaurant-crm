@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type MenuCategoryDto } from '../../../lib/api'
-import { useBackButton } from '../../../hooks/useBackButton'
 import { useOrderDraft } from './OrderDraftContext'
 import { SkeletonRow } from '../../../components/Skeleton'
 import StepHeader from './StepHeader'
@@ -11,13 +10,20 @@ import CartBar from './CartBar'
 export default function OrderCategoriesPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const { id } = useParams<{ id?: string }>()
   const draft = useOrderDraft()
 
   // In add-mode (existing order), `:id` is in the URL and there's no table picker.
+  // The table number arrives via nav state from the order detail page; seed it
+  // into the draft so the header shows it across all add-item steps.
   const addMode = !!id
+  const navTableNumber = (location.state as { tableNumber?: number } | null)?.tableNumber
+  useEffect(() => {
+    if (navTableNumber != null && draft.tableNumber == null) draft.setTableNumber(navTableNumber)
+  }, [navTableNumber, draft])
+
   const backTarget = addMode ? `/orders/${id}` : '/orders/new'
-  useBackButton(backTarget)
 
   useEffect(() => {
     if (!addMode && !draft.table) navigate('/orders/new', { replace: true })
@@ -36,9 +42,7 @@ export default function OrderCategoriesPage() {
 
   if (!addMode && !draft.table) return null
 
-  const subtitle = addMode
-    ? t('orders.selectItems')
-    : `${t('orders.table')} ${draft.table!.number} · ${t('orders.step.pickItems')}`
+  const subtitle = addMode ? t('orders.selectItems') : t('orders.step.pickItems')
 
   const itemsRoute = (catId: string) =>
     addMode ? `/orders/${id}/add-items/menu/${catId}` : `/orders/new/menu/${catId}`
@@ -50,6 +54,7 @@ export default function OrderCategoriesPage() {
         subtitle={subtitle}
         addMode={addMode}
         backTo={backTarget}
+        tableNumber={draft.tableNumber ?? undefined}
       />
 
       <div className="px-5 flex flex-col gap-2">

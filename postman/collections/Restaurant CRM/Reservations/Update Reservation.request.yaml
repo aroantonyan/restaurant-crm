@@ -1,0 +1,21 @@
+$kind: http-request
+url: "{{baseUrl}}/api/reservations/:id"
+method: PUT
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "tableId": "00000000-0000-0000-0000-000000000000",
+      "guestName": "Anna",
+      "guestPhone": "+37410000000",
+      "guestCount": 3,
+      "startAt": "2026-06-10T20:00:00Z",
+      "durationMinutes": 90,
+      "notes": null,
+      "clientId": null
+    }
+order: 4000

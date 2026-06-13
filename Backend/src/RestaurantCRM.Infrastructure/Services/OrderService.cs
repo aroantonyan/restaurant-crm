@@ -124,17 +124,32 @@ public class OrderService(
         if (!menuItem.IsAvailable)
             throw new InvalidOperationException($"'{menuItem.Name}' is not available.");
 
-        var item = new OrderItem
+        // Merge into an existing pending line for the same item + same notes, so the
+        // kitchen sees one "Bozbash ×3" instead of three separate "×1" tickets. We
+        // only merge Pending lines (not yet started); anything already being prepared
+        // stays its own line. Notes must match — a "no onions" line is distinct.
+        var existing = order.Items.FirstOrDefault(i =>
+            i.MenuItemId == menuItem.Id
+            && i.Status == OrderItemStatus.Pending
+            && (i.Notes ?? "") == (request.Notes ?? ""));
+
+        if (existing is not null)
         {
-            RestaurantId = tenant.RestaurantId,
-            OrderId = order.Id,
-            MenuItemId = menuItem.Id,
-            MenuItemName = menuItem.Name,
-            Price = menuItem.Price,
-            Quantity = request.Quantity,
-            Notes = request.Notes,
-        };
-        db.OrderItems.Add(item);
+            existing.Quantity += request.Quantity;
+        }
+        else
+        {
+            db.OrderItems.Add(new OrderItem
+            {
+                RestaurantId = tenant.RestaurantId,
+                OrderId = order.Id,
+                MenuItemId = menuItem.Id,
+                MenuItemName = menuItem.Name,
+                Price = menuItem.Price,
+                Quantity = request.Quantity,
+                Notes = request.Notes,
+            });
+        }
         await db.SaveChangesAsync(ct);
 
         await notifier.OrderChanged(orderId, ct);

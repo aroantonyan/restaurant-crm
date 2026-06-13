@@ -1,0 +1,18 @@
+$kind: http-request
+url: "{{baseUrl}}/api/clients"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "fullName": "Davit Hakobyan",
+      "phone": "+37412345678",
+      "email": "davit@mail.ru",
+      "birthday": "1990-05-20",
+      "notes": "VIP regular",
+      "loyaltyType": "Cashback",
+      "loyaltyRate": 5
+    }
+order: 3000

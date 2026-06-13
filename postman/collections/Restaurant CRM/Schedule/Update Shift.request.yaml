@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/schedule/:id"
+method: PUT
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "userId": "00000000-0000-0000-0000-000000000000",
+      "startAt": "2026-06-05T10:00:00Z",
+      "endAt": "2026-06-05T18:00:00Z",
+      "roleForShift": "Waiter",
+      "notes": null,
+      "status": "Scheduled"
+    }
+order: 4000

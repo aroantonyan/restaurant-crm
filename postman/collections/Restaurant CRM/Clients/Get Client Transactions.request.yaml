@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/api/clients/:id/transactions?limit=50"
+method: GET
+queryParams:
+  limit: "50"
+pathVariables:
+  id: ""
+order: 6000

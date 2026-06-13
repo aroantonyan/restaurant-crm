@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { MenuItemDto } from '../../../lib/api'
 import { formatPrice } from '../../../lib/format'
-import { getTelegram } from '../../../lib/telegram'
 import { useOrderDraft, type OrderDraftItem } from './OrderDraftContext'
 import Sheet from '../../../components/Sheet'
 import PrimaryButton from '../../../components/PrimaryButton'
@@ -36,13 +35,11 @@ export default function ItemAddModal({ item, initial, onClose }: Props) {
       quantity,
       notes:      notes.trim() ? notes.trim() : undefined,
     })
-    getTelegram()?.HapticFeedback?.impactOccurred('light')
     onClose()
   }
 
   const handleRemove = () => {
     draft.removeItem(item.id)
-    getTelegram()?.HapticFeedback?.impactOccurred('light')
     onClose()
   }
 

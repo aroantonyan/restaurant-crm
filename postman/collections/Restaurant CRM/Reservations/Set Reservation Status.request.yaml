@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/api/reservations/:id/status"
+method: PATCH
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "status": "Seated"
+    }
+order: 5000

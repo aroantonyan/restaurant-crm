@@ -19,7 +19,6 @@ using RestaurantCRM.Application.Restaurants;
 using RestaurantCRM.Application.Schedule;
 using RestaurantCRM.Application.Staff;
 using RestaurantCRM.Application.Tables;
-using RestaurantCRM.Infrastructure.Auth;
 using RestaurantCRM.Infrastructure.Persistence;
 using RestaurantCRM.Infrastructure.Realtime;
 using RestaurantCRM.Infrastructure.Services;
@@ -35,9 +34,6 @@ public static class DependencyInjection
         services.AddHttpContextAccessor();
 
         services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
-        services.Configure<TelegramSettings>(configuration.GetSection("Telegram"));
-
-        services.AddSingleton<ITelegramInitDataValidator, TelegramInitDataValidator>();
 
         services.AddScoped<ITenantContext, TenantContext>();
         services.AddScoped<JwtService>();

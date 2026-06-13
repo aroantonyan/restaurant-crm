@@ -7,24 +7,33 @@ interface Props {
   subtitle?: string
   /** Adding items to an existing order — shows a 2-step bar instead of 3. */
   addMode?: boolean
-  /** Where the on-screen back chevron should navigate (mirrors useBackButton on each page). */
+  /** Where the on-screen back chevron should navigate. */
   backTo?: string
+  /** Table number — shown in the title on every step so context is never lost. */
+  tableNumber?: number
 }
 
 /**
  * Header for the multi-step new-order flow. Uses AppHeader for the title +
- * back chevron, and a small horizontal step rail underneath.
+ * back chevron, and a small horizontal step rail underneath. The title carries
+ * the table number on every step so the user always knows which table they're
+ * building an order for.
  */
-export default function StepHeader({ step, subtitle, addMode = false, backTo }: Props) {
+export default function StepHeader({ step, subtitle, addMode = false, backTo, tableNumber }: Props) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const totalSteps = addMode ? 2 : 3
+
+  const baseTitle = addMode ? t('orders.addItem') : t('orders.new')
+  const title = tableNumber != null
+    ? `${baseTitle} · ${t('orders.table')} ${tableNumber}`
+    : baseTitle
 
   return (
     <>
       <AppHeader
         onBack={backTo ? () => navigate(backTo) : undefined}
-        title={addMode ? t('orders.addItem') : t('orders.new')}
+        title={title}
         subtitle={subtitle || t('orders.step.of', { n: step })}
       />
       <div className="px-5 pb-3 flex gap-1.5">

@@ -1,0 +1,4 @@
+$kind: http-request
+url: "{{baseUrl}}/api/tables"
+method: GET
+order: 1000

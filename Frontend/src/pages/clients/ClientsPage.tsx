@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, type ClientDto } from '../../lib/api'
 import { usePermissions } from '../../hooks/usePermissions'
-import { useBackButton } from '../../hooks/useBackButton'
 import { formatPrice } from '../../lib/format'
 import AppHeader from '../../components/AppHeader'
 import { SkeletonRow } from '../../components/Skeleton'
@@ -14,7 +13,6 @@ export default function ClientsPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton('/dashboard')
 
   const canManage = perm.has('ManageClients')
 

@@ -1,29 +1,27 @@
 # CLAUDE.md — Frontend
 
-Telegram Mini App frontend for Restaurant CRM. Mobile-first, runs inside Telegram WebView.
+Mobile-first web frontend for Restaurant CRM. Designed for phone browsers (touch, on-screen keyboard, small screens) but works on any browser.
 
 ## Stack
 
 - **Vite 8 + React 19 + TypeScript** — modern default; Vite uses native ESM in dev (instant HMR)
-- **Tailwind CSS v4** — utility classes; theme via CSS vars wired to Telegram theme params
+- **Tailwind CSS v4** — utility classes; warm-neutral palette via CSS vars (light mode only)
 - **react-router-dom 7** — routing
 - **react-hook-form + Zod** — uncontrolled forms + a single schema for runtime validation and TS inference
-- **react-i18next + i18next-browser-languagedetector** — English (`en`) + Armenian (`hy`); detection order: localStorage → Telegram language_code → navigator
-- **Telegram WebApp SDK** — `window.Telegram.WebApp` injected by `<script src="https://telegram.org/js/telegram-web-app.js?57">` in `index.html`
+- **react-i18next + i18next-browser-languagedetector** — English (`en`) + Armenian (`hy`); detection order: localStorage → navigator
 
 ## Commands
 
 ```bash
-npm run dev          # Vite dev server at http://localhost:5173 (HMR, but slow inside Telegram)
+npm run dev          # Vite dev server at http://localhost:5173 (HMR — use while coding)
 npm run build        # tsc -b && vite build
-npm run start        # build + preview at http://localhost:5173 (fast — use this for Telegram testing)
+npm run start        # build + preview at http://localhost:5173 (bundled — use for phone testing)
 npm run preview      # serve dist/ (run after npm run build)
 npm run lint         # ESLint
-npm run tunnel       # ngrok http 5173 — public HTTPS for BotFather
 npm run gen:api      # regenerate src/lib/api-types.ts from backend OpenAPI doc
 ```
 
-**Use `npm run dev` for code editing**, `npm run start` for Telegram testing. Dev mode serves hundreds of unbundled modules over HTTP; preview serves one bundled file.
+**Use `npm run dev` for code editing**, `npm run start` to test the bundled build on a real phone. Dev mode serves hundreds of unbundled modules over HTTP; preview serves one bundled file.
 
 ## Containerization
 
@@ -40,13 +38,12 @@ Full deploy flow: root `DEPLOYMENT.md`.
 
 Sibling project: `../Backend/src/` (ASP.NET Core 9, port 5293). Contract source of truth.
 
-**API calls use a Vite proxy.** `VITE_API_BASE_URL` is intentionally empty in `.env`. All `/api/*` requests from the browser go to the same origin (localhost:5173 or ngrok), and Vite forwards them to `http://localhost:5293` on the server side. This avoids mixed-content blocking when the frontend is served over HTTPS (ngrok) while the backend is HTTP.
+**API calls use a Vite proxy.** `VITE_API_BASE_URL` is intentionally empty in `.env`. All `/api/*` requests from the browser go to the same origin (localhost:5173), and Vite forwards them to `http://localhost:5293` on the server side. This keeps the browser talking to one origin (no CORS) and mirrors the production nginx setup.
 
-**Never set `VITE_API_BASE_URL` to a localhost URL** — that breaks Telegram testing through ngrok (HTTPS page cannot call HTTP backend directly).
+**Never set `VITE_API_BASE_URL` to a localhost URL** — keep it empty so the bundle is origin-agnostic (it works behind nginx in production unchanged).
 
-**Every authenticated request sends two headers** (handled in `src/lib/api.ts`):
+**Authenticated requests send one header** (handled in `src/lib/api.ts`):
 - `Authorization: Bearer <jwt>` — restored from `localStorage.auth_token`
-- `X-Telegram-Init-Data: <window.Telegram.WebApp.initData>` — synchronous, no async cost (Telegram injects it before script execution); omitted when empty (local dev outside Telegram)
 
 **Error envelope:** backend returns `{ "error": "message" }`, parsed by `extractError()` in `api.ts`. The `ApiError` class carries `status` + `message`. Any exception that is NOT an `ApiError` (e.g., network failure) shows a generic i18n fallback — if you see the generic message, check browser DevTools Network tab for the real failure.
 
@@ -54,14 +51,14 @@ Sibling project: `../Backend/src/` (ASP.NET Core 9, port 5293). Contract source 
 
 ```
 src/
-  main.tsx                       ← entry: initTelegram() → i18n init → router
+  main.tsx                       ← entry: initViewport() → i18n init → router
   App.tsx                        ← routes + guards (RequireAuth / RedirectIfAuthed)
-  index.css                      ← Tailwind + Telegram theme CSS vars
+  index.css                      ← Tailwind + warm-neutral palette CSS vars
   lib/
-    api.ts                       ← typed fetch wrapper + auth/initData header injection + global 401 handler
+    api.ts                       ← typed fetch wrapper + auth header injection + global 401 handler
     auth.ts                      ← localStorage session (token + AuthSession with currency + restaurantName)
     format.ts                    ← formatPrice(amount, currency?) — drops decimals for AMD/JPY/KRW etc.
-    telegram.ts                  ← typed Telegram.WebApp wrapper, theme sync
+    viewport.ts                  ← visualViewport keyboard tracking + stable-height pinning
   i18n/
     index.ts, en.json, hy.json   ← i18next setup + translations (keep in sync)
   components/
@@ -71,7 +68,6 @@ src/
     RequireAuth.tsx
   hooks/
     usePermissions.ts            ← has(...) / hasAny(...) against session permissions
-    useBackButton.ts             ← wire Telegram BackButton → react-router navigate(-1)
   pages/
     Login.tsx, Register.tsx,
     Dashboard.tsx,               ← avatar header, icon nav cards, gear dropdown
@@ -132,23 +128,16 @@ When backend changes a constraint, update Zod schemas in the relevant page.
 
 `AuthResponse` includes the restaurant's `currency` (default `AMD`). It's stored in `AuthSession.currency` and read by `formatPrice(amount)` in `lib/format.ts`. Currencies that conventionally don't show decimals (AMD, JPY, KRW, HUF, CLP) drop trailing `.00`. The user's restaurant currency is the source of truth — when displaying any money amount on the frontend, use `formatPrice()`, never `.toFixed(2)`.
 
-## Telegram Mini App notes
-
-- `initData` is available synchronously as soon as the page loads — no roundtrip needed
-- It expires (`auth_date` field) — the backend rejects payloads older than `Telegram:MaxAgeMinutes` (default 24h) when enforcement is on
-- It's HMAC-signed with the bot token — the backend verifies it (`TelegramInitDataValidator`), enforced on protected `/api/*` when `Telegram:Enforce=true` (off in dev)
-- For local dev outside Telegram, `initData` is empty and the header is omitted; backend accepts JWT-only requests during development
-
 ## Theming
 
-`initTelegram()` reads `Telegram.WebApp.themeParams` and writes each value as a CSS variable (`--tg-theme-*`) on `document.documentElement`. Tailwind classes like `bg-tg-button`, `text-tg-hint`, `text-tg-destructive` etc. consume these vars. `data-theme` on `<body>` switches light/dark.
+The app uses a fixed warm-neutral palette (light mode only), defined as CSS variables in `index.css` and consumed by Tailwind classes (`bg-bg`, `text-fg`, `text-danger`, etc.). No runtime theme switching.
 
 ## Mobile-first rules (mandatory — never break these)
 
-This app runs exclusively in Telegram's mobile WebView. Every UI decision must account for touch interaction, on-screen keyboard, and small screens.
+This app is designed for phone browsers. Every UI decision must account for touch interaction, on-screen keyboard, and small screens.
 
 ### Keyboard / focus
-- **`--tg-stable-height`** is set once in `initTelegram()` from `viewportStableHeight` and applied as `height` on `html/body`. This variable NEVER changes when the keyboard opens — so the layout freezes and no reflow occurs. The keyboard just overlays on top; `#root` (the only scroll container) scrolls to bring the focused input into view automatically.
+- **`--app-stable-height`** is set in `initViewport()` (`lib/viewport.ts`) from the current viewport height and applied as `height` on `html/body`. It does NOT change when the keyboard opens — so the layout freezes and no reflow occurs. The keyboard just overlays on top; `#root` (the only scroll container) scrolls to bring the focused input into view automatically. `--keyboard-offset` (also from `lib/viewport.ts`, via `window.visualViewport`) lets sheets/sticky CTAs sit above the keyboard.
 - **Never use `height: 100vh` or `height: 100%` inside pages** — those values change with the keyboard. Use `min-h-full` inside `#root` which is already the stable scroll container.
 - **Input `font-size` must be ≥ 16px** (`text-base` or `max(16px, 1rem)` in global CSS). iOS Safari auto-zooms inputs smaller than 16px, which violently resizes the viewport and causes focus to jump to adjacent fields. This is enforced globally in `index.css`.
 - **Never put two inputs side-by-side in a grid on form pages.** Two touch targets next to each other cause accidental focus on the wrong field when the keyboard shifts the view. Use single-column layout for all form inputs.
@@ -167,8 +156,8 @@ This app runs exclusively in Telegram's mobile WebView. Every UI decision must a
 
 ### Scroll container architecture
 ```
-html/body  ← fixed height (--tg-stable-height), overflow: hidden
+html/body  ← fixed height (--app-stable-height), overflow: hidden
   #root    ← height: 100%, overflow-y: auto, -webkit-overflow-scrolling: touch
     <main> ← min-h-full, flex flex-col, px-5 pt-6 pb-10
 ```
-`pb-10` (40px) gives bottom breathing room above the Telegram home indicator on iPhone.
+`pb-10` (40px) gives bottom breathing room above the iPhone home indicator / browser chrome.

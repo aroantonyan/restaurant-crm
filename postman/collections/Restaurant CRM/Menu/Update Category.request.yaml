@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/api/menu/categories/:id"
+method: PUT
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "name": "Hot Drinks",
+      "sortOrder": 1
+    }
+order: 3000

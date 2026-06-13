@@ -18,11 +18,10 @@ interface Props {
  * spacers on each side keep the title optically centered even when only one
  * side has a control.
  *
- * Top safe area: Telegram's bar lives OUTSIDE the WebView, so the WebView
- * starts at y=0; `pt-3` (12px) is just a breathing margin.
+ * Top safe area: `pt-3` (12px) is a breathing margin below the device status
+ * bar / browser chrome.
  *
- * The back chevron mirrors Telegram's BackButton (wired via useBackButton in
- * pages) — both fire the same navigation.
+ * The back chevron calls the page's `onBack` handler (router navigation).
  */
 export default function AppHeader({ title, subtitle, onBack, trailing, titleLines = 1 }: Props) {
   return (

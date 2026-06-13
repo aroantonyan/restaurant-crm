@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/api/tables/:id/status"
+method: PATCH
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "status": "Occupied"
+    }
+order: 4000

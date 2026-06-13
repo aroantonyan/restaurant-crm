@@ -3,7 +3,6 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, type HourlyPointDto, type ReportSummaryDto, type TopItemDto, type TopServerDto, type RevenuePointDto } from '../lib/api'
 import { usePermissions } from '../hooks/usePermissions'
-import { useBackButton } from '../hooks/useBackButton'
 import { useRealtimeEvent } from '../hooks/useRealtimeEvent'
 import { formatPrice } from '../lib/format'
 import AppHeader from '../components/AppHeader'
@@ -43,7 +42,6 @@ export default function ReportsPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton('/dashboard')
 
   const canView = perm.has('ViewReports')
 

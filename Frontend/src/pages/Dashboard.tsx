@@ -5,7 +5,6 @@ import { auth } from '../lib/auth'
 import { api } from '../lib/api'
 import { formatPrice } from '../lib/format'
 import { disconnectRealtime } from '../lib/realtime'
-import { getTelegram } from '../lib/telegram'
 import { usePermissions, type Permission } from '../hooks/usePermissions'
 import { useRealtimeEvent } from '../hooks/useRealtimeEvent'
 import Portal from '../components/Portal'
@@ -151,7 +150,6 @@ export default function Dashboard() {
   const handleLogout = () => {
     auth.clear()
     disconnectRealtime()
-    getTelegram()?.HapticFeedback?.impactOccurred('light')
     navigate('/login', { replace: true })
   }
 
@@ -161,8 +159,7 @@ export default function Dashboard() {
 
   return (
     <main className="page-enter h-full overflow-y-auto pb-5">
-      {/* Greeting header — small top margin only; the Telegram chrome lives
-          outside the WebView so we don't need to clear a status bar. */}
+      {/* Greeting header — small top margin only. */}
       <div className="pt-3 px-5 pb-[18px]">
         <div className="flex items-center gap-3">
           <div className="w-[46px] h-[46px] rounded-[14px] bg-accent text-white flex items-center justify-center font-bold text-[18px] shrink-0"

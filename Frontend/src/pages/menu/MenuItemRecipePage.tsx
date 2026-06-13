@@ -3,13 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type ProductDto, type ProductUnit, type RecipeDto } from '../../lib/api'
 import { usePermissions } from '../../hooks/usePermissions'
-import { useBackButton } from '../../hooks/useBackButton'
-import { getTelegram } from '../../lib/telegram'
 import { formatQuantity } from '../../lib/format'
 import Portal from '../../components/Portal'
 import StickyActions from '../../components/StickyActions'
 import PrimaryButton from '../../components/PrimaryButton'
+import AppHeader from '../../components/AppHeader'
 import { Plus } from 'lucide-react'
+
+const DISCRETE_UNITS = new Set(['Piece', 'Gram', 'Milliliter'])
 
 // Local working row — what the user sees & edits before pressing Save.
 // Includes display fields the server would otherwise have to be re-fetched for.
@@ -25,13 +26,14 @@ export default function MenuItemRecipePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton() // omitting target → falls back to navigate(-1), which is what we want
 
   const canManage = perm.has('ManageMenu')
 
   const [recipe, setRecipe] = useState<RecipeDto | null>(null)
   const [products, setProducts] = useState<ProductDto[]>([])
   const [rows, setRows] = useState<EditableIngredient[]>([])
+  // Snapshot of the saved state, used to detect unsaved edits + power "Discard".
+  const [baseline, setBaseline] = useState<EditableIngredient[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -43,16 +45,23 @@ export default function MenuItemRecipePage() {
       .then(([r, ps]) => {
         setRecipe(r)
         setProducts(ps.filter(p => !p.isArchived))
-        setRows(r.ingredients.map(i => ({
+        const initial = r.ingredients.map(i => ({
           productId: i.productId,
           productName: i.productName,
           productUnit: i.productUnit as ProductUnit,
           quantity: i.quantity,
-        })))
+        }))
+        setRows(initial)
+        setBaseline(initial)
       })
       .catch(() => setError(t('menu.errors.loadFailed')))
       .finally(() => setLoading(false))
   }, [id, t])
+
+  const dirty = useMemo(
+    () => JSON.stringify(rows) !== JSON.stringify(baseline),
+    [rows, baseline]
+  )
 
   // Pickable products = full catalog minus products already in the recipe.
   const pickable = useMemo(() => {
@@ -94,7 +103,6 @@ export default function MenuItemRecipePage() {
         ingredients: rows.map(r => ({ productId: r.productId, quantity: r.quantity })),
       })
       setRecipe(updated)
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       navigate(-1)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : t('menu.errors.saveFailed'))
@@ -116,22 +124,15 @@ export default function MenuItemRecipePage() {
 
   return (
     <div className="relative h-full overflow-hidden">
-      <main className="page-enter h-full overflow-y-auto px-5 pt-4 pb-32">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          aria-label={t('common.back')}
-          className="w-9 h-9 -ml-1 mb-2 rounded-full bg-[rgba(15,15,16,0.05)] text-fg-2 flex items-center justify-center tappable"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <header className="mb-2">
-          <h1 className="text-2xl font-bold">{t('recipe.title')}</h1>
-          <p className="text-fg-3 text-sm mt-0.5 truncate">{recipe?.menuItemName}</p>
-        </header>
-        <p className="text-fg-3 text-xs mb-5">{t('recipe.hint')}</p>
+      <main className="page-enter h-full overflow-y-auto pb-32">
+        <AppHeader
+          onBack={() => navigate(-1)}
+          title={t('recipe.title')}
+          subtitle={recipe?.menuItemName}
+        />
+        <p className="text-fg-3 text-xs mb-5 px-5">{t('recipe.hint')}</p>
+
+        <div className="px-5">
 
         {rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 px-6 text-center rounded-2xl bg-card">
@@ -148,10 +149,12 @@ export default function MenuItemRecipePage() {
                 </div>
                 <input
                   type="number"
-                  inputMode="decimal"
-                  step="0.001"
+                  inputMode={DISCRETE_UNITS.has(r.productUnit) ? 'numeric' : 'decimal'}
+                  step={DISCRETE_UNITS.has(r.productUnit) ? '1' : '0.001'}
+                  min="0"
                   value={r.quantity}
                   onChange={e => updateQty(r.productId, parseFloat(e.target.value) || 0)}
+                  onWheel={e => e.currentTarget.blur()}
                   disabled={!canManage}
                   className="w-20 bg-bg text-fg rounded-xl px-3 py-2 text-base text-right tabular-nums outline-none focus:ring-2 focus:ring-accent"
                 />
@@ -180,15 +183,24 @@ export default function MenuItemRecipePage() {
             {t('recipe.addIngredient')}
           </button>
         )}
+        </div>
       </main>
 
       {/* Sticky Save bar — separated from the in-flow "Add ingredient" so the two
-          actions never collide, and the primary CTA stays in the thumb zone. */}
+          actions never collide, and the primary CTA stays in the thumb zone.
+          Discard appears only when there are unsaved edits. */}
       {canManage && (
         <StickyActions hint={error ? <span className="text-danger">{error}</span> : undefined}>
-          <PrimaryButton kind="primary" onClick={save} disabled={saving}>
-            {saving ? t('common.loading') : t('recipe.save')}
-          </PrimaryButton>
+          <div className="flex gap-2">
+            {dirty && (
+              <PrimaryButton kind="neutral" onClick={() => { setRows(baseline); setError(null) }} disabled={saving}>
+                {t('common.discard')}
+              </PrimaryButton>
+            )}
+            <PrimaryButton kind="primary" onClick={save} disabled={saving}>
+              {saving ? t('common.loading') : t('recipe.save')}
+            </PrimaryButton>
+          </div>
         </StickyActions>
       )}
 

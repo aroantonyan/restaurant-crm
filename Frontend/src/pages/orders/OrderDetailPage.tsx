@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Check, Banknote, CreditCard, Landmark, MoreHorizontal } from 'lucide-react'
 import { api, ApiError, type BillPreviewDto, type OrderDto, type OrderItemDto, type PaymentMethod } from '../../lib/api'
-import { useBackButton } from '../../hooks/useBackButton'
 import { usePermissions } from '../../hooks/usePermissions'
 import { useRealtimeEvent } from '../../hooks/useRealtimeEvent'
 import { formatPrice } from '../../lib/format'
@@ -43,7 +42,6 @@ export default function OrderDetailPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton('/orders')
 
   const [order, setOrder] = useState<OrderDto | null>(null)
   const [loading, setLoading] = useState(true)
@@ -305,7 +303,7 @@ export default function OrderDetailPage() {
             {canEdit && (
               <PrimaryButton
                 kind="neutral"
-                onClick={() => navigate(`/orders/${order.id}/add-items`)}
+                onClick={() => navigate(`/orders/${order.id}/add-items`, { state: { tableNumber: order.tableNumber } })}
                 icon={<PlusIconSmall />}
               >
                 {t('orders.addAction')}

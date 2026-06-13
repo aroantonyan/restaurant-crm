@@ -6,7 +6,6 @@ import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type MenuCategoryDto, type MenuItemDto } from '../../lib/api'
 import { usePermissions } from '../../hooks/usePermissions'
-import { useBackButton } from '../../hooks/useBackButton'
 import { formatPrice } from '../../lib/format'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
@@ -124,7 +123,7 @@ function ItemFormSheet({ categoryId, item, onClose, onSaved, onDeleted }: ItemFo
 
         {!isNew && perm.has('ViewWarehouse') && (
           <PrimaryButton
-            kind="neutral"
+            kind="soft"
             type="button"
             onClick={() => navigate(`/menu/items/${item.id}/recipe`)}
           >
@@ -221,7 +220,6 @@ export default function MenuCategoryPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton('/menu')
 
   const [category, setCategory] = useState<MenuCategoryDto | null>(null)
   const [loading, setLoading] = useState(true)

@@ -6,8 +6,6 @@ import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type ProductDto, type ProductUnit } from '../../lib/api'
 import { usePermissions } from '../../hooks/usePermissions'
-import { useBackButton } from '../../hooks/useBackButton'
-import { getTelegram } from '../../lib/telegram'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
 import PrimaryButton from '../../components/PrimaryButton'
@@ -21,7 +19,6 @@ export default function WarehouseEdit() {
   const navigate = useNavigate()
   const perm = usePermissions()
   const backTarget = `/warehouse/${id}`
-  useBackButton(backTarget)
 
   const canManage = perm.has('ManageWarehouse')
   const [product, setProduct] = useState<ProductDto | null>(null)
@@ -77,7 +74,6 @@ export default function WarehouseEdit() {
         lowStockThreshold: data.lowStockThreshold,
         notes: data.notes || null,
       })
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       navigate(`/warehouse/${product.id}`)
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('warehouse.errors.saveFailed'))

@@ -6,8 +6,6 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '../../lib/api'
 import type { Role } from '../../lib/api'
-import { getTelegram } from '../../lib/telegram'
-import { useBackButton } from '../../hooks/useBackButton'
 import { usePermissions } from '../../hooks/usePermissions'
 import Field from '../../components/Field'
 import Select from '../../components/Select'
@@ -20,7 +18,6 @@ export default function StaffCreate() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton('/staff')
   const [confirmDiscard, setConfirmDiscard] = useState(false)
 
   // The component must call all its hooks before any early return,
@@ -100,7 +97,6 @@ export default function StaffCreate() {
         // otherwise the new staff member inherits the role's defaults.
         permissions: canSetPermissions ? permissions : undefined,
       })
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       navigate(-1)
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('staff.errors.saveFailed'))

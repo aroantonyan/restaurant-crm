@@ -173,6 +173,10 @@ public class InventoryService(
         if (product.IsArchived)
             throw new InvalidOperationException("This product is archived and cannot accept new movements.");
 
+        // Discrete units (pieces, grams, ml) can't be fractional — reject 0.5 of a piece.
+        if (IsDiscreteUnit(product.Unit) && request.QuantityChange != Math.Truncate(request.QuantityChange))
+            throw new InvalidOperationException($"{product.Unit} quantities must be whole numbers.");
+
         var newStock = product.CurrentStock + request.QuantityChange;
         if (newStock < 0)
             throw new InvalidOperationException("Stock cannot go negative.");
@@ -244,6 +248,11 @@ public class InventoryService(
             .Select(p => p.Id)
             .ToList();
     }
+
+    // Whole-count units: a half piece / half gram / half ml is meaningless.
+    // Kg and Liter are the only divisible units.
+    private static bool IsDiscreteUnit(ProductUnit unit) =>
+        unit is ProductUnit.Piece or ProductUnit.Gram or ProductUnit.Milliliter;
 
     private static ProductDto ToDto(Product p) => new(
         p.Id,

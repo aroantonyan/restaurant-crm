@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/api/staff/:id/permissions"
+method: PUT
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "permissions": ["ViewOrders", "CreateOrder", "EditOrder"]
+    }
+order: 6000

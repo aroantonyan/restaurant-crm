@@ -1,3 +1,5 @@
+import type { AuthResponse } from './api'
+
 const TOKEN_KEY = 'auth_token'
 const SESSION_KEY = 'auth_session'
 
@@ -41,5 +43,20 @@ export const auth = {
   clear: (): void => {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(SESSION_KEY)
+  },
+  /** Persists a session from any auth response (login / register). */
+  setFromResponse: (res: AuthResponse): void => {
+    localStorage.setItem(TOKEN_KEY, res.token)
+    localStorage.setItem(SESSION_KEY, JSON.stringify({
+      userId:         res.userId,
+      restaurantId:   res.restaurantId,
+      restaurantName: res.restaurantName,
+      currency:       res.currency,
+      firstName:      res.firstName,
+      lastName:       res.lastName,
+      roleName:       res.roleName,
+      permissions:    res.permissions,
+      status:         res.status,
+    } satisfies AuthSession))
   },
 }

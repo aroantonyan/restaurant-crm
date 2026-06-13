@@ -6,15 +6,17 @@ import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type ProductDto, type StockMovementDto, type StockMovementType } from '../../lib/api'
 import { usePermissions } from '../../hooks/usePermissions'
-import { useBackButton } from '../../hooks/useBackButton'
 import { useRealtimeEvent } from '../../hooks/useRealtimeEvent'
-import { getTelegram } from '../../lib/telegram'
 import { formatQuantity } from '../../lib/format'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
 import Portal from '../../components/Portal'
+import AppHeader from '../../components/AppHeader'
 
 type MovementInput = 'Purchase' | 'Adjustment' | 'Wastage'
+
+// Units counted as whole, indivisible things — no fractional or zero quantities.
+const DISCRETE_UNITS = new Set(['Piece', 'Gram', 'Milliliter'])
 
 const MOVEMENT_STYLES: Record<StockMovementType, { dot: string; text: string }> = {
   Initial:    { dot: 'bg-fg-3',     text: 'text-fg-3'    },
@@ -42,10 +44,16 @@ function AddMovementModal({ product, onClose, onSaved }: MovementModalProps) {
   // Adjustment also supports a "remove" mode for shrinkage corrections.
   const [adjustmentDirection, setAdjustmentDirection] = useState<'add' | 'remove'>('add')
 
+  const isDiscrete = DISCRETE_UNITS.has(product.unit)
+
   const schema = z.object({
-    quantity: z
-      .number({ error: t('auth.errors.required') })
-      .positive({ error: t('warehouse.errors.positiveQty') }),
+    quantity: (() => {
+      // Always positive (sign is applied by movement type). Discrete units (pieces,
+      // grams, ml) must be whole numbers — you can't have 0.5 of a piece.
+      let n = z.number({ error: t('auth.errors.required') }).positive({ error: t('warehouse.errors.positiveQty') })
+      if (isDiscrete) n = n.int({ error: t('warehouse.errors.wholeQty') })
+      return n
+    })(),
     reason: z.string().max(500, { error: t('auth.errors.tooLong') }).optional().or(z.literal('')),
   })
   type FormData = z.infer<typeof schema>
@@ -67,7 +75,6 @@ function AddMovementModal({ product, onClose, onSaved }: MovementModalProps) {
         quantityChange: data.quantity * sign,
         reason: data.reason || null,
       })
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       onSaved()
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('warehouse.errors.saveFailed'))
@@ -129,8 +136,9 @@ function AddMovementModal({ product, onClose, onSaved }: MovementModalProps) {
           <Field
             label={`${t('warehouse.quantity')} (${formatQuantity(0, product.unit).split(' ')[1]})`}
             type="number"
-            inputMode="decimal"
-            step="0.001"
+            inputMode={isDiscrete ? 'numeric' : 'decimal'}
+            step={isDiscrete ? '1' : '0.001'}
+            min="0"
             enterKeyHint="next"
             autoFocus
             {...register('quantity', { valueAsNumber: true })}
@@ -165,7 +173,6 @@ export default function WarehouseProductDetail() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton('/warehouse')
 
   const canManage = perm.has('ManageWarehouse')
 
@@ -242,37 +249,23 @@ export default function WarehouseProductDetail() {
   }
 
   return (
-    <main className="page-enter h-full overflow-y-auto px-5 pt-4 pb-10">
-      <button
-        type="button"
-        onClick={() => navigate('/warehouse')}
-        aria-label={t('common.back')}
-        className="w-9 h-9 -ml-1 mb-2 rounded-full bg-[rgba(15,15,16,0.05)] text-fg-2 flex items-center justify-center tappable"
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
-      </button>
-      <header className="mb-4 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold truncate">{product.name}</h1>
-          <p className="text-fg-3 text-sm mt-0.5">
-            {product.category ?? t('warehouse.uncategorized')}
-            <span className="mx-1.5">·</span>
-            {t(`warehouse.units.${product.unit}`)}
-          </p>
-        </div>
-        {canManage && (
+    <main className="page-enter h-full overflow-y-auto pb-10">
+      <AppHeader
+        onBack={() => navigate('/warehouse')}
+        title={product.name}
+        subtitle={`${product.category ?? t('warehouse.uncategorized')} · ${t(`warehouse.units.${product.unit}`)}`}
+        trailing={canManage ? (
           <button
             type="button"
             onClick={() => navigate(`/warehouse/${product.id}/edit`)}
-            className="text-accent text-sm font-medium shrink-0 active:opacity-60 transition"
+            className="text-accent text-sm font-semibold shrink-0 active:opacity-60 transition px-1"
           >
             {t('warehouse.edit')}
           </button>
-        )}
-      </header>
+        ) : undefined}
+      />
 
+      <div className="px-5">
       {/* Stock summary card */}
       <div className="rounded-2xl bg-card px-5 py-4 mb-4">
         <p className="text-[11px] text-fg-3 uppercase tracking-wide font-medium">{t('warehouse.currentStock')}</p>
@@ -372,6 +365,7 @@ export default function WarehouseProductDetail() {
           )}
         </div>
       )}
+      </div>
 
       {addingMovement && (
         <AddMovementModal

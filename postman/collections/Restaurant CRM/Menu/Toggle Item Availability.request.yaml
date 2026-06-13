@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/menu/items/:id/toggle"
+method: PATCH
+pathVariables:
+  id: ""
+order: 7000

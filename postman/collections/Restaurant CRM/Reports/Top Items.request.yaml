@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/api/reports/top-items?from=2026-06-01T00:00:00Z&to=2026-06-30T23:59:59Z&limit=5"
+method: GET
+queryParams:
+  from: 2026-06-01T00:00:00Z
+  to: 2026-06-30T23:59:59Z
+  limit: "5"
+order: 2000

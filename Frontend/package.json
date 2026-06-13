@@ -9,13 +9,11 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "npm run build && npm run preview",
-    "tunnel": "ngrok http 5173",
     "gen:api": "openapi-typescript http://localhost:5000/openapi/v1.json -o src/lib/api-types.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@microsoft/signalr": "^10.0.0",
-    "@telegram-apps/sdk-react": "^3.3.9",
     "i18next": "^26.0.8",
     "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^1.17.0",

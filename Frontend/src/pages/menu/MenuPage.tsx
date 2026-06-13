@@ -6,7 +6,6 @@ import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type MenuCategoryDto } from '../../lib/api'
 import { usePermissions } from '../../hooks/usePermissions'
-import { useBackButton } from '../../hooks/useBackButton'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
 import AppHeader from '../../components/AppHeader'
@@ -66,7 +65,6 @@ export default function MenuPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton('/dashboard')
 
   const [categories, setCategories] = useState<MenuCategoryDto[]>([])
   const [loading, setLoading] = useState(true)

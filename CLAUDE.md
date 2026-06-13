@@ -1,6 +1,6 @@
 # CLAUDE.md — Restaurant CRM (root)
 
-Monorepo for a Telegram Mini App restaurant management system targeting the Armenian market.
+Monorepo for a mobile-first web restaurant management system targeting the Armenian market.
 
 ## Working principle — research before implementing
 
@@ -17,7 +17,7 @@ Apply this even to features that look familiar. "How the industry does this" bea
 ```
 Restaurant  CRM/
 ├── Backend/src/          ← ASP.NET Core 9 + PostgreSQL (see Backend/src/CLAUDE.md)
-├── Frontend/             ← Vite + React 19 + TypeScript + Telegram WebApp (see Frontend/CLAUDE.md)
+├── Frontend/             ← Vite + React 19 + TypeScript, mobile-first PWA-style (see Frontend/CLAUDE.md)
 └── Restaurant management system.docx  ← original requirements
 ```
 
@@ -31,19 +31,15 @@ cd "Backend/src" && dotnet run --project RestaurantCRM.API
 # → http://localhost:5293, OpenAPI at /openapi/v1.json
 
 # Terminal 2 — frontend (choose ONE)
-cd "Frontend" && npm run dev      # dev server with HMR (port 5173) — slow inside Telegram
-cd "Frontend" && npm run start    # build + preview (port 5173) — fast inside Telegram
-
-# Terminal 3 — Telegram tunnel (only when testing inside Telegram)
-cd "Frontend" && npm run tunnel
-# → public HTTPS URL on port 5173 → give to @BotFather
+cd "Frontend" && npm run dev      # dev server with HMR (port 5173) — use while coding
+cd "Frontend" && npm run start    # build + preview (port 5173) — bundled, use for phone testing
 ```
 
-**Why `npm run start` for Telegram testing:** dev mode serves hundreds of unbundled ES modules over HTTP. Each page navigation triggers 50–100+ HTTP requests, making the app feel slow inside Telegram's WebView. `npm run start` runs `vite build && vite preview` — one bundled 130 KB gzipped file. Instant page transitions.
+**Why `npm run start` for testing on a real phone:** dev mode serves hundreds of unbundled ES modules over HTTP, so a phone on the LAN makes 50–100+ requests per navigation. `npm run start` runs `vite build && vite preview` — one bundled ~130 KB gzipped file. Instant page transitions.
 
 ## API proxy (important)
 
-When testing through Telegram (ngrok = HTTPS), the frontend **cannot** call the backend directly over plain HTTP — browsers block this as mixed content. Vite (dev or preview) proxies all `/api/*` requests to `http://localhost:5293` on the server side, bypassing the restriction. `VITE_API_BASE_URL` is intentionally empty in `.env`; never set it to a localhost URL.
+Vite (dev or preview) proxies all `/api/*` requests to `http://localhost:5293` on the server side, so the browser only ever talks to one origin (no CORS, no mixed-content). This mirrors the production nginx setup. `VITE_API_BASE_URL` is intentionally empty in `.env`; never set it to a localhost URL.
 
 ## Contract sync
 
@@ -143,13 +139,7 @@ GitHub Actions secrets.
 - `IRealtimeNotifier` emits id-only events (`orderChanged`, `tableChanged`, `reservationChanged`, `productChanged`, `menuItemChanged`, `scheduleChanged`) from the services after each mutation. Clients refetch via REST on receipt — payloads never carry data, so auth filters stay authoritative.
 - Frontend: `lib/realtime.ts` (singleton connection, opened in `RequireAuth`, closed on logout) + `useRealtimeEvent(name, handler)` hook. Subscribed on Dashboard, Orders, OrderDetail, Tables, Reservations, CashRegister, Schedule, Reports, Warehouse, and the order-create flow.
 
-### Telegram initData verification — implemented (opt-in)
-- `TelegramInitDataValidator` (Infrastructure/Auth) verifies the HMAC-SHA256 signature per Telegram's spec + an `auth_date` freshness window.
-- `TelegramInitDataMiddleware` (API/Auth) enforces a valid `X-Telegram-Init-Data` header on protected `/api/*` routes **only when `Telegram:Enforce=true`** and a bot token is configured. Skips `/api/auth/*`, `/health`, preflight, and non-API paths. Off by default → local dev / non-Telegram browsers stay JWT-only.
-- Config: `Telegram:{Enforce,BotToken,MaxAgeMinutes}` (env: `TELEGRAM_ENFORCE`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_MAX_AGE_MINUTES`).
-
 ### Not yet implemented
-- Persisting `User.TelegramUserId` (validator extracts it, but no login-linking flow yet)
 - Refresh tokens (JWT is single 12h token, no rotation)
 
 > The feature tables above are kept high-level. The authoritative, always-current
@@ -169,7 +159,6 @@ GitHub Actions secrets.
 - `POST /api/auth/register` — atomically creates Restaurant + 6 default Roles + Admin User. Returns JWT + permissions + `restaurantName` + `currency`.
 - `POST /api/auth/login` — single query that joins User → Restaurant → Role → RolePermissions (no N+1).
 - `POST /api/auth/change-password` — `[Authorize]`, verifies current password, sets status → `Active`.
-- Telegram `initData` is sent on every request (`X-Telegram-Init-Data` header) but HMAC verification is **not yet implemented**.
 
 ## Multi-tenancy
 

@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/api/products?category=&lowStockOnly=false&includeArchived=false"
+method: GET
+queryParams:
+  category: ""
+  lowStockOnly: "false"
+  includeArchived: "false"
+order: 1000

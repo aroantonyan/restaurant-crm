@@ -1,7 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { House, ReceiptText, BookOpen, Armchair, type LucideIcon } from 'lucide-react'
-import { getTelegram } from '../lib/telegram'
 
 interface Tab {
   key: string
@@ -32,7 +31,6 @@ export default function BottomTabBar() {
 
   const go = (path: string) => {
     if (pathname === path) return
-    getTelegram()?.HapticFeedback?.impactOccurred('light')
     navigate(path)
   }
 

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type TableDto } from '../../../lib/api'
-import { useBackButton } from '../../../hooks/useBackButton'
 import { useOrderDraft } from './OrderDraftContext'
 import StatusPill from '../../../components/StatusPill'
 import StepHeader from './StepHeader'
@@ -20,7 +19,6 @@ export default function SelectTablePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const draft = useOrderDraft()
-  useBackButton('/orders')
 
   const [tables, setTables] = useState<TableDto[]>([])
   const [loading, setLoading] = useState(true)

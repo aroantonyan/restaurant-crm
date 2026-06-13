@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '../../lib/api'
 import type { StaffMember, UserStatus } from '../../lib/api'
-import { useBackButton } from '../../hooks/useBackButton'
 import { usePermissions } from '../../hooks/usePermissions'
 import AppHeader from '../../components/AppHeader'
 import StatusPill from '../../components/StatusPill'
@@ -26,7 +25,6 @@ export default function StaffTab() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useBackButton('/dashboard')
 
   useEffect(() => {
     api.staff.getAll()

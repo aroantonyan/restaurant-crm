@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/staff"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "firstName": "Lili",
+      "lastName": "Sargsyan",
+      "fatherName": "Arменовна",
+      "email": "lili@mail.ru",
+      "temporaryPassword": "lili123",
+      "roleId": "00000000-0000-0000-0000-000000000000",
+      "phone": "+37411111111",
+      "permissions": ["ViewOrders", "CreateOrder"]
+    }
+order: 4000

@@ -109,12 +109,6 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
 
-    // Second factor for the Telegram Mini App: when Telegram:Enforce is on, every
-    // protected /api call must carry a valid, fresh, HMAC-signed initData header.
-    // No-op when disabled (local dev / non-Telegram browsers). Runs after auth so
-    // it only guards already-authenticated routes.
-    app.UseMiddleware<RestaurantCRM.API.Auth.TelegramInitDataMiddleware>();
-
     app.MapControllers();
     app.MapHub<RestaurantCRM.Infrastructure.Realtime.OrderHub>("/hubs/orders");
 

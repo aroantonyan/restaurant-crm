@@ -118,7 +118,6 @@ Every endpoint requires `[Authorize]` AND a `[RequirePermission(PermissionType.X
 - `Email` [max 256, required, globally unique index]
 - `PasswordHash` [required]
 - `Phone?` [max 30]
-- `TelegramUserId?` [long, scaffolded for future Telegram auth]
 - `Status`: `UserStatus` — Active | Inactive | PendingPasswordChange
 
 ### Restaurant : BaseEntity (NOT ITenantEntity — it IS the tenant)
@@ -248,11 +247,6 @@ MapHealthChecks("/health")
 - `OrderHub` (`Infrastructure/Realtime/`, mapped at `/hubs/orders`) — `[Authorize]`, each connection auto-joins its tenant group (`OrderHub.GroupName(restaurantId)`). JWT is passed as `?access_token=` because browser WebSockets can't set the `Authorization` header (wired in `DependencyInjection`'s `JwtBearerEvents.OnMessageReceived`).
 - `IRealtimeNotifier` (Application interface, `RealtimeNotifier` impl) emits **id-only** events — `orderChanged`, `tableChanged`, `reservationChanged`, `productChanged`, `menuItemChanged`, `scheduleChanged`. Services (Order, Table, Reservation, Inventory, Schedule) call it **after** `SaveChangesAsync`. Clients refetch via REST, so push payloads never bypass auth/permission filters.
 - **New mutation → emit the matching event** so the relevant frontend page refreshes live. Keep payloads id-only.
-
-### Telegram initData verification (opt-in)
-- `ITelegramInitDataValidator` (Application) / `TelegramInitDataValidator` (Infrastructure/Auth) — HMAC-SHA256 verification per Telegram's spec, `secret = HMAC("WebAppData", botToken)`, constant-time hash compare, `auth_date` freshness check, extracts the Telegram user id.
-- `TelegramInitDataMiddleware` (API/Auth, registered after `UseAuthorization`) enforces `X-Telegram-Init-Data` on protected `/api/*` **only when `Telegram:Enforce=true`**. Skips `/api/auth/*`, `/health`, OPTIONS, non-API paths. Returns the standard `{ "error": ... }` envelope (401) on failure.
-- Config section `Telegram` → `TelegramSettings { Enforce, BotToken, MaxAgeMinutes }`. Off by default; never commit a real bot token (env-only).
 
 ## Common pitfalls
 

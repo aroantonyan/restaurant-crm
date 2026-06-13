@@ -7,8 +7,6 @@ import { useTranslation } from 'react-i18next'
 import { Navigate } from 'react-router-dom'
 import { api, ApiError, type ProductUnit } from '../../lib/api'
 import { usePermissions } from '../../hooks/usePermissions'
-import { useBackButton } from '../../hooks/useBackButton'
-import { getTelegram } from '../../lib/telegram'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
 import PrimaryButton from '../../components/PrimaryButton'
@@ -20,7 +18,6 @@ export default function WarehouseCreate() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton('/warehouse')
 
   const canManage = perm.has('ManageWarehouse')
   const [serverError, setServerError] = useState<string | null>(null)
@@ -60,7 +57,6 @@ export default function WarehouseCreate() {
         lowStockThreshold: data.lowStockThreshold,
         notes: data.notes || null,
       })
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       navigate('/warehouse')
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('warehouse.errors.saveFailed'))

@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/menu/categories"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Drinks",
+      "sortOrder": 0
+    }
+order: 2000

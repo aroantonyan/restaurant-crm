@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type MenuCategoryDto, type MenuItemDto } from '../../../lib/api'
-import { useBackButton } from '../../../hooks/useBackButton'
 import { useRealtimeEvent } from '../../../hooks/useRealtimeEvent'
 import { useOrderDraft } from './OrderDraftContext'
 import { formatPrice } from '../../../lib/format'
@@ -19,7 +18,6 @@ export default function OrderCategoryItemsPage() {
 
   const addMode = !!id
   const backTarget = addMode ? `/orders/${id}/add-items` : '/orders/new/menu'
-  useBackButton(backTarget)
 
   useEffect(() => {
     if (!addMode && !draft.table) navigate('/orders/new', { replace: true })
@@ -56,6 +54,7 @@ export default function OrderCategoryItemsPage() {
         addMode={addMode}
         subtitle={category ? category.name : t('common.loading')}
         backTo={backTarget}
+        tableNumber={draft.tableNumber ?? undefined}
       />
 
       <div className="px-5 flex flex-col gap-2">
@@ -78,7 +77,7 @@ export default function OrderCategoryItemsPage() {
                 onClick={() => setModalItem(item)}
                 className="tappable item-enter w-full bg-card border-0 rounded-[18px] py-3 px-3.5 flex items-start gap-3 text-left"
                 style={{
-                  animationDelay: `${idx * 30}ms`,
+                  animationDelay: `${idx * 35}ms`,
                   boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
                 }}
               >

@@ -1,0 +1,17 @@
+$kind: http-request
+url: "{{baseUrl}}/api/products"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Coffee beans",
+      "category": "Dry goods",
+      "unit": "Kg",
+      "initialStock": 25,
+      "lowStockThreshold": 5,
+      "notes": null
+    }
+order: 4000

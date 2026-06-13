@@ -27,7 +27,7 @@ interface Props {
  *
  * Keyboard handling: the outer container has `padding-bottom:
  * var(--keyboard-offset)`, which is updated globally from window.visualViewport
- * (see lib/telegram.ts). When the keyboard opens INSIDE a sheet, the sheet is
+ * (see lib/viewport.ts). When the keyboard opens INSIDE a sheet, the sheet is
  * lifted above the keyboard rather than half-hidden behind it.
  *
  * Sizing: `dvh` (dynamic viewport height) shrinks with the keyboard on

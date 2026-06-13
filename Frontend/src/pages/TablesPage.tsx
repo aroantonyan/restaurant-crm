@@ -5,10 +5,8 @@ import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type TableDto, type TableStatus } from '../lib/api'
 import { usePermissions } from '../hooks/usePermissions'
-import { useBackButton } from '../hooks/useBackButton'
 import { useRealtimeEvent } from '../hooks/useRealtimeEvent'
 import { formatPrice } from '../lib/format'
-import { getTelegram } from '../lib/telegram'
 import Field from '../components/Field'
 import SubmitButton from '../components/SubmitButton'
 import AppHeader from '../components/AppHeader'
@@ -56,7 +54,6 @@ function TableFormSheet({ state, onClose, onSaved, onDeleted }: ModalProps) {
     setServerError(null)
     try {
       await api.tables.setStatus(state.id, next)
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
     } catch (e) {
       setStatus(prev)            // rollback
       setServerError(e instanceof ApiError ? e.message : t('tables.errors.saveFailed'))
@@ -96,7 +93,6 @@ function TableFormSheet({ state, onClose, onSaved, onDeleted }: ModalProps) {
       }
       if (isEdit) await api.tables.update(state.id, payload)
       else await api.tables.create(payload)
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       onSaved()
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('tables.errors.saveFailed'))
@@ -109,7 +105,6 @@ function TableFormSheet({ state, onClose, onSaved, onDeleted }: ModalProps) {
     setServerError(null)
     try {
       await api.tables.delete(state.id)
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       onDeleted()
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('tables.errors.deleteFailed'))
@@ -226,7 +221,6 @@ function TableFormSheet({ state, onClose, onSaved, onDeleted }: ModalProps) {
 export default function TablesPage() {
   const { t } = useTranslation()
   const perm = usePermissions()
-  useBackButton('/dashboard')
 
   const [tables, setTables] = useState<TableDto[]>([])
   const [loading, setLoading] = useState(true)

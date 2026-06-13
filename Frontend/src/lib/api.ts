@@ -1,6 +1,5 @@
 import { auth } from './auth'
 import { disconnectRealtime } from './realtime'
-import { getTelegram } from './telegram'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
@@ -469,9 +468,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   const token = auth.getToken()
   if (token) headers.set('Authorization', `Bearer ${token}`)
-
-  const initData = getTelegram()?.initData
-  if (initData) headers.set('X-Telegram-Init-Data', initData)
 
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers })
 

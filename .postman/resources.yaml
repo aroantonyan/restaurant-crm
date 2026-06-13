@@ -1,0 +1,31 @@
+# Use this workspace to collaborate
+workspace:
+  id: a20f5c3b-fab7-4bc0-85fb-fcc1efc31256
+
+localResources:
+  docs:
+    - ../design_handoff_crm copy/screens/12-clients.md
+    - ../design_handoff_crm copy/screens/15-schedule.md
+    - ../design_handoff_crm copy/screens/16-settings.md
+    - ../design_handoff_crm copy/CLAUDE_CODE_PROMPT.md
+    - ../design_handoff_crm copy/screens/14-staff.md
+    - ../design_handoff_crm copy/screens/13-activity-log.md
+    - ../design_handoff_crm copy/screens/11-warehouse.md
+    - ../design_handoff_crm copy/screens/10-cash.md
+    - ../design_handoff_crm copy/screens/09-reports.md
+    - ../design_handoff_crm copy/screens/08-reservations.md
+    - ../Backend/src/CLAUDE.md
+    - ../design_handoff_crm copy/screens/07-tables.md
+    - ../design_handoff_crm copy/screens/06-menu-category.md
+    - ../design_handoff_crm copy/screens/05-menu.md
+    - ../design_handoff_crm copy/screens/04-new-order-flow.md
+    - ../design_handoff_crm copy/screens/03-order-detail.md
+    - ../design_handoff_crm copy/screens/02-orders-list.md
+    - ../design_handoff_crm copy/screens/01-dashboard.md
+    - ../design_handoff_crm copy/screens/00-login.md
+    - ../Frontend/README.md
+    - ../Frontend/CLAUDE.md
+    - ../design_handoff_crm copy/design-tokens.md
+    - ../design_handoff_crm copy/README.md
+    - ../DEPLOYMENT.md
+    - ../CLAUDE.md

@@ -6,8 +6,6 @@ import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type ClientDto, type LoyaltyType } from '../../lib/api'
 import { usePermissions } from '../../hooks/usePermissions'
-import { useBackButton } from '../../hooks/useBackButton'
-import { getTelegram } from '../../lib/telegram'
 import Field from '../../components/Field'
 import SubmitButton from '../../components/SubmitButton'
 import PrimaryButton from '../../components/PrimaryButton'
@@ -24,7 +22,6 @@ export default function ClientForm({ mode }: Props) {
   const navigate = useNavigate()
   const perm = usePermissions()
   const backTarget = mode === 'create' ? '/clients' : `/clients/${id}`
-  useBackButton(backTarget)
 
   const canManage = perm.has('ManageClients')
   const [serverError, setServerError] = useState<string | null>(null)
@@ -93,7 +90,6 @@ export default function ClientForm({ mode }: Props) {
       }
       if (mode === 'create') await api.clients.create(payload)
       else if (id)         await api.clients.update(id, payload as any)
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       navigate(mode === 'create' ? '/clients' : `/clients/${id}`)
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('clients.errors.saveFailed'))

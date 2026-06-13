@@ -28,7 +28,7 @@ COPY . .
 
 # `VITE_API_BASE_URL` must stay empty so the bundled JS calls /api/* on the
 # same origin — nginx proxies them to the API container. (Setting this to
-# a localhost URL would break Telegram WebView's mixed-content rules.)
+# a localhost URL would break same-origin / mixed-content rules.)
 ENV NODE_ENV=production
 RUN npm run build
 

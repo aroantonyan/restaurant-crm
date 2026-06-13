@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/menu/items/:id"
+method: PUT
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "categoryId": "00000000-0000-0000-0000-000000000000",
+      "name": "Espresso",
+      "description": "Double shot",
+      "price": 900,
+      "photoUrl": null,
+      "isAvailable": true
+    }
+order: 6000

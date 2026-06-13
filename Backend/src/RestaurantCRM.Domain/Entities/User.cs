@@ -14,7 +14,6 @@ public class User : BaseEntity, ITenantEntity
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public string? Phone { get; set; }
-    public long? TelegramUserId { get; set; }
     public UserStatus Status { get; set; } = UserStatus.Active;
 
     public string FullName => $"{FirstName} {LastName} {FatherName}".Trim();

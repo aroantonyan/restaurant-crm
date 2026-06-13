@@ -96,15 +96,28 @@ public class AuthService(AppDbContext db, JwtService jwt, ILogger<AuthService> l
             throw new UnauthorizedAccessException("Account is inactive.");
 
         // User-level permissions override the role when present (custom permission set).
-        var permissions = user.UserPermissions.Count > 0
+        var permissions = ResolvePermissions(user);
+        var token = jwt.GenerateToken(user, user.Role.Name, permissions);
+
+        await TryLogAuthAsync(user, "Login", $"{user.Email} signed in", ct);
+
+        return BuildResponse(user, token, permissions);
+    }
+
+    private static List<string> ResolvePermissions(User user) =>
+        user.UserPermissions.Count > 0
             ? user.UserPermissions.Select(p => p.Permission.ToString()).ToList()
             : user.Role.RolePermissions.Select(p => p.Permission.ToString()).ToList();
 
-        var token = jwt.GenerateToken(user, user.Role.Name, permissions);
+    private static AuthResponse BuildResponse(User user, string token, IReadOnlyList<string> permissions) =>
+        new(token, user.Id, user.RestaurantId, user.Restaurant.Name, user.Restaurant.Currency,
+            user.FirstName, user.LastName, user.Role.Name, permissions, user.Status.ToString());
 
-        // Write the audit row directly — at this point we know RestaurantId, but the
-        // request's TenantContext is still empty (JWT not yet applied), so ActivityLogService
-        // would short-circuit. Best-effort: swallow errors so login never fails over logging.
+    // Auth audit rows are written directly: at login time the request's TenantContext
+    // is still empty (JWT not yet applied), so ActivityLogService would short-circuit.
+    // Best-effort — never fail auth over a logging hiccup.
+    private async Task TryLogAuthAsync(User user, string action, string description, CancellationToken ct)
+    {
         try
         {
             db.ActivityLogEntries.Add(new ActivityLogEntry
@@ -113,19 +126,16 @@ public class AuthService(AppDbContext db, JwtService jwt, ILogger<AuthService> l
                 UserId = user.Id,
                 UserName = user.FullName,
                 Category = ActivityCategory.Auth,
-                Action = "Login",
+                Action = action,
                 EntityType = nameof(User),
                 EntityId = user.Id,
-                Description = $"{user.Email} signed in",
+                Description = description,
             });
             await db.SaveChangesAsync(ct);
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to write Auth/Login activity-log entry for {Email}", request.Email);
+            logger.LogWarning(ex, "Failed to write Auth/{Action} activity-log entry for {Email}", action, user.Email);
         }
-
-        return new AuthResponse(token, user.Id, user.RestaurantId, user.Restaurant.Name, user.Restaurant.Currency,
-            user.FirstName, user.LastName, user.Role.Name, permissions, user.Status.ToString());
     }
 }

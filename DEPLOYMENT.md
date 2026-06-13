@@ -112,11 +112,6 @@ JWT_SECRET=$(openssl rand -base64 48)
 JWT_ISSUER=RestaurantCRM
 JWT_AUDIENCE=RestaurantCRM
 JWT_EXPIRY_HOURS=12
-# Telegram Mini App initData check — leave off until you have a bot token.
-# To enable: TELEGRAM_ENFORCE=true and set the @BotFather token.
-TELEGRAM_ENFORCE=false
-TELEGRAM_BOT_TOKEN=
-TELEGRAM_MAX_AGE_MINUTES=1440
 EOF
 
 chmod 600 .env

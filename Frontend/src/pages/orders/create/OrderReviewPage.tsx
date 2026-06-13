@@ -2,11 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type MenuItemDto } from '../../../lib/api'
-import { useBackButton } from '../../../hooks/useBackButton'
 import { usePermissions } from '../../../hooks/usePermissions'
 import { useOrderDraft, type OrderDraftItem } from './OrderDraftContext'
 import { formatPrice } from '../../../lib/format'
-import { getTelegram } from '../../../lib/telegram'
 import StickyActions from '../../../components/StickyActions'
 import PrimaryButton from '../../../components/PrimaryButton'
 import ClientPickerSheet from '../../../components/ClientPickerSheet'
@@ -22,7 +20,6 @@ export default function OrderReviewPage() {
 
   const addMode = !!id
   const menuRoute = addMode ? `/orders/${id}/add-items` : '/orders/new/menu'
-  useBackButton(menuRoute)
 
   useEffect(() => {
     if (!addMode && !draft.table) navigate('/orders/new', { replace: true })
@@ -62,7 +59,6 @@ export default function OrderReviewPage() {
             notes:      item.notes,
           })
         }
-        getTelegram()?.HapticFeedback?.impactOccurred('light')
         draft.clear()
         navigate(`/orders/${id}`, { replace: true })
       } else if (draft.table) {
@@ -75,7 +71,6 @@ export default function OrderReviewPage() {
             notes:      i.notes,
           })),
         })
-        getTelegram()?.HapticFeedback?.impactOccurred('light')
         draft.clear()
         navigate(`/orders/${order.id}`, { replace: true })
       }
@@ -87,9 +82,7 @@ export default function OrderReviewPage() {
 
   if (!addMode && !draft.table) return null
 
-  const subtitle = addMode
-    ? t('orders.reviewBeforeAdding')
-    : `${t('orders.table')} ${draft.table!.number} · ${t('orders.step.review')}`
+  const subtitle = addMode ? t('orders.reviewBeforeAdding') : t('orders.step.review')
 
   const totalItemsCount = draft.items.reduce((s, i) => s + i.quantity, 0)
 
@@ -101,6 +94,7 @@ export default function OrderReviewPage() {
           addMode={addMode}
           subtitle={subtitle}
           backTo={menuRoute}
+          tableNumber={draft.tableNumber ?? undefined}
         />
 
         {/* Assign a customer before the order goes to the kitchen, so loyalty /

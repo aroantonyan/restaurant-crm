@@ -11,10 +11,8 @@ import {
   type CashTransactionType,
 } from '../lib/api'
 import { usePermissions } from '../hooks/usePermissions'
-import { useBackButton } from '../hooks/useBackButton'
 import { useRealtimeEvent } from '../hooks/useRealtimeEvent'
 import { formatPrice } from '../lib/format'
-import { getTelegram } from '../lib/telegram'
 import Field from '../components/Field'
 import SubmitButton from '../components/SubmitButton'
 import AppHeader from '../components/AppHeader'
@@ -49,7 +47,6 @@ export default function CashRegisterPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton('/dashboard')
 
   const canView   = perm.has('ViewCashRegister')
   const canManage = perm.has('ManageCashRegister')
@@ -242,7 +239,6 @@ function ManualOpSheet({ onClose, onSaved }: ManualOpProps) {
     setServerError(null)
     try {
       await api.cashRegister.recordManual({ type, amount: data.amount, reason: data.reason })
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       onSaved()
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('cash.errors.saveFailed'))

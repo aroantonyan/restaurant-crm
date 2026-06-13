@@ -6,7 +6,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '../lib/api'
 import { auth } from '../lib/auth'
-import { getTelegram } from '../lib/telegram'
 import { UtensilsCrossed } from 'lucide-react'
 import Field from '../components/Field'
 import SubmitButton from '../components/SubmitButton'
@@ -16,6 +15,9 @@ export default function Login() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [serverError, setServerError] = useState<string | null>(null)
+
+  const goAfterAuth = (status: string) =>
+    navigate(status === 'PendingPasswordChange' ? '/change-password' : '/dashboard', { replace: true })
 
   const schema = z.object({
     email:    z.email({ error: t('auth.errors.invalidEmail') }).max(256, { error: t('auth.errors.tooLong') }),
@@ -31,19 +33,8 @@ export default function Login() {
     setServerError(null)
     try {
       const res = await api.auth.login(data)
-      auth.set(res.token, {
-        userId:         res.userId,
-        restaurantId:   res.restaurantId,
-        restaurantName: res.restaurantName,
-        currency:       res.currency,
-        firstName:      res.firstName,
-        lastName:       res.lastName,
-        roleName:       res.roleName,
-        permissions:    res.permissions,
-        status:         res.status,
-      })
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
-      navigate(res.status === 'PendingPasswordChange' ? '/change-password' : '/dashboard', { replace: true })
+      auth.setFromResponse(res)
+      goAfterAuth(res.status)
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('auth.errors.loginFailed'))
     }

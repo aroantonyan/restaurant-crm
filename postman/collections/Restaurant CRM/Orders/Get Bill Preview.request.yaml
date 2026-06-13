@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/orders/:id/bill"
+method: GET
+pathVariables:
+  id: ""
+order: 10000

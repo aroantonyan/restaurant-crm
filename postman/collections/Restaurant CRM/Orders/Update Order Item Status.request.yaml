@@ -1,0 +1,15 @@
+$kind: http-request
+url: "{{baseUrl}}/api/orders/:id/items/:itemId/status"
+method: PATCH
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: ""
+  itemId: ""
+body:
+  type: json
+  content: |-
+    {
+      "status": "Ready"
+    }
+order: 8000

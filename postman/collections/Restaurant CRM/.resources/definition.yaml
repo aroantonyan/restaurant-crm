@@ -1,0 +1,19 @@
+$kind: collection
+name: Restaurant CRM
+description: |-
+  Telegram Mini App restaurant management system. ASP.NET Core 9 API.
+
+  Usage:
+  1. Run `Auth > Login` (or Register) — copy the `token` from the response into the collection variable `token`.
+  2. All other requests inherit Bearer auth from the collection.
+
+  Variables: `baseUrl` (default http://localhost:5293), `token`.
+variables:
+  baseUrl: http://localhost:5293
+  token: ""
+auth:
+  - id: fd9dafea-a192-45a4-bb68-81b0a51fe4fc
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{token}}"

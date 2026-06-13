@@ -3,7 +3,6 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, type ActivityCategory, type ActivityLogEntryDto } from '../lib/api'
 import { usePermissions } from '../hooks/usePermissions'
-import { useBackButton } from '../hooks/useBackButton'
 import AppHeader from '../components/AppHeader'
 import Chip from '../components/Chip'
 import { SkeletonRow } from '../components/Skeleton'
@@ -65,7 +64,6 @@ export default function ActivityLogPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton('/dashboard')
 
   const canView = perm.has('ViewActivityLog')
 

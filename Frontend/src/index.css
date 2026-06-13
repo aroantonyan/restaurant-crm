@@ -43,10 +43,10 @@
 }
 
 /* ─── Base ───────────────────────────────────────────────────── */
-/* `--tg-stable-height` is set from JS (lib/telegram.ts) to Telegram's
-   `viewportStableHeight`. It does NOT shrink when the on-screen keyboard
-   opens, so the layout stays frozen and the keyboard simply overlays the
-   bottom of the page. Falls back to 100% for local browser dev.
+/* `--app-stable-height` is set from JS (lib/viewport.ts) to the current
+   viewport height. It does NOT shrink when the on-screen keyboard opens, so
+   the layout stays frozen and the keyboard simply overlays the bottom of the
+   page. Falls back to 100% before the script runs.
 
    CRITICAL: html and body are `overflow: hidden`. Neither can ever scroll.
    This is what keeps the bottom tab bar locked to the bottom of the viewport
@@ -54,7 +54,7 @@
    column INSIDE the body) would scroll up with it. Every page mounts its own
    `<main className="overflow-y-auto">` as the only scroll container. */
 html, body, #root {
-  height: var(--tg-stable-height, 100%);
+  height: var(--app-stable-height, 100%);
   width: 100%;
   overflow: hidden;
 }
@@ -79,8 +79,7 @@ body {
 
 /* Apply iOS momentum scroll + bounded over-scroll to every page-level scroll
    container. Each <main className="page-enter ... overflow-y-auto"> owns its
-   own scroll; without these properties the scroll feels stiff on iOS Safari /
-   Telegram WebView. */
+   own scroll; without these properties the scroll feels stiff on iOS Safari. */
 main {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
@@ -94,17 +93,18 @@ input, button, select, textarea {
 input, select, textarea { font-size: max(16px, 1rem); }
 
 /* ─── Motion ─────────────────────────────────────────────────── */
+/* Apple "decelerate" ease-out — used for content/page entrances. */
 @keyframes page-enter {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.page-enter { animation: page-enter 260ms cubic-bezier(0.16,1,0.3,1) both; }
+.page-enter { animation: page-enter 260ms cubic-bezier(0.25,0.46,0.45,0.94) both; }
 
 @keyframes item-enter {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.item-enter { animation: item-enter 360ms cubic-bezier(0.16,1,0.3,1) both; }
+.item-enter { animation: item-enter 260ms cubic-bezier(0.25,0.46,0.45,0.94) both; }
 
 @keyframes sheet-in {
   from { transform: translateY(100%); }
@@ -145,6 +145,15 @@ input, select, textarea { font-size: max(16px, 1rem); }
 /* Tap feedback (replaces all the active:scale-[0.98] inline usage) */
 .tappable { transition: transform .14s cubic-bezier(0.32,0.72,0.2,1); }
 .tappable:active { transform: scale(0.985); }
+
+/* Honor the OS "reduce motion" setting: drop entrance/transform animation so
+   content appears at its resting state instantly, no slide or fade. */
+@media (prefers-reduced-motion: reduce) {
+  .page-enter, .item-enter, .sheet-in, .backdrop-in, .tick, .pop {
+    animation: none !important;
+  }
+  .tappable { transition: none; }
+}
 
 /* Line clamps */
 .clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }

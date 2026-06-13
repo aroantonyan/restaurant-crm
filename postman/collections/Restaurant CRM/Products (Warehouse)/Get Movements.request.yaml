@@ -1,0 +1,8 @@
+$kind: http-request
+url: "{{baseUrl}}/api/products/:id/movements?limit=50"
+method: GET
+queryParams:
+  limit: "50"
+pathVariables:
+  id: ""
+order: 7000

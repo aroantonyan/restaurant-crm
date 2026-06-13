@@ -18,10 +18,14 @@ export interface DraftClient {
 interface OrderDraft {
   table: TableDto | null
   client: DraftClient | null
+  // Table number for header context. Derived from `table` on the new-order path;
+  // set explicitly in add-mode (where the table isn't in the draft).
+  tableNumber: number | null
   items: OrderDraftItem[]
   total: number
   totalItemsCount: number
   setTable: (table: TableDto) => void
+  setTableNumber: (n: number) => void
   setClient: (client: ClientDto | DraftClient | null) => void
   /**
    * Insert or replace an item. If quantity ≤ 0 the item is removed.
@@ -41,9 +45,15 @@ const OrderDraftCtx = createContext<OrderDraft | null>(null)
 export function OrderDraftProvider({ children }: { children: ReactNode }) {
   const [table, setTableState] = useState<TableDto | null>(null)
   const [client, setClientState] = useState<DraftClient | null>(null)
+  const [tableNumberState, setTableNumberState] = useState<number | null>(null)
   const [items, setItems] = useState<OrderDraftItem[]>([])
 
-  const setTable = useCallback((t: TableDto) => setTableState(t), [])
+  const setTable = useCallback((t: TableDto) => {
+    setTableState(t)
+    setTableNumberState(t.number)
+  }, [])
+
+  const setTableNumber = useCallback((n: number) => setTableNumberState(n), [])
 
   const setClient = useCallback((c: ClientDto | DraftClient | null) => {
     setClientState(c ? { id: c.id, fullName: c.fullName } : null)
@@ -91,6 +101,7 @@ export function OrderDraftProvider({ children }: { children: ReactNode }) {
   const clear = useCallback(() => {
     setTableState(null)
     setClientState(null)
+    setTableNumberState(null)
     setItems([])
   }, [])
 
@@ -105,8 +116,8 @@ export function OrderDraftProvider({ children }: { children: ReactNode }) {
   )
 
   const value: OrderDraft = {
-    table, client, items, total, totalItemsCount,
-    setTable, setClient, upsertItem, incrementItem, removeItem, getItem, getQty, clear,
+    table, client, tableNumber: tableNumberState, items, total, totalItemsCount,
+    setTable, setTableNumber, setClient, upsertItem, incrementItem, removeItem, getItem, getQty, clear,
   }
 
   return <OrderDraftCtx.Provider value={value}>{children}</OrderDraftCtx.Provider>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '../lib/api'
 import { auth } from '../lib/auth'
-import { getTelegram } from '../lib/telegram'
 import Field from '../components/Field'
 import SubmitButton from '../components/SubmitButton'
 import AppHeader from '../components/AppHeader'
@@ -15,8 +14,6 @@ export default function ChangePassword() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [serverError, setServerError] = useState<string | null>(null)
-
-  useEffect(() => { getTelegram()?.BackButton?.hide() }, [])
 
   const schema = z
     .object({
@@ -39,7 +36,6 @@ export default function ChangePassword() {
     try {
       await api.auth.changePassword({ currentPassword: data.currentPassword, newPassword: data.newPassword })
       auth.setStatus('Active')
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       navigate('/dashboard', { replace: true })
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('auth.changePassword.errors.failed'))

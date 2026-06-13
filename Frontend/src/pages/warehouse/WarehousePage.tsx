@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, type ProductDto } from '../../lib/api'
 import { usePermissions } from '../../hooks/usePermissions'
-import { useBackButton } from '../../hooks/useBackButton'
 import { useRealtimeEvent } from '../../hooks/useRealtimeEvent'
 import { formatQuantity } from '../../lib/format'
 import AppHeader from '../../components/AppHeader'
@@ -19,7 +18,6 @@ export default function WarehousePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const perm = usePermissions()
-  useBackButton('/dashboard')
 
   const canManage = perm.has('ManageWarehouse')
 

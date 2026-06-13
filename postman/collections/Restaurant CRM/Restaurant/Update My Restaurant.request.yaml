@@ -1,0 +1,16 @@
+$kind: http-request
+url: "{{baseUrl}}/api/restaurants/me"
+method: PUT
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "My Restaurant",
+      "legalName": "My Restaurant LLC",
+      "currency": "AMD",
+      "address": "1 Abovyan St, Yerevan",
+      "phone": "+37410000000"
+    }
+order: 2000

@@ -6,8 +6,6 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError } from '../../lib/api'
 import type { Role, StaffMember } from '../../lib/api'
-import { getTelegram } from '../../lib/telegram'
-import { useBackButton } from '../../hooks/useBackButton'
 import { usePermissions } from '../../hooks/usePermissions'
 import Field from '../../components/Field'
 import Select from '../../components/Select'
@@ -21,7 +19,6 @@ export default function StaffEdit() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const perm = usePermissions()
-  useBackButton('/staff')
   const [confirmDiscard, setConfirmDiscard] = useState(false)
 
   // Two tiers: ManageStaff for profile/role, ManageRoles for the permission grid.
@@ -98,7 +95,6 @@ export default function StaffEdit() {
         calls.push(api.staff.setPermissions(id, permissions))
       }
       await Promise.all(calls)
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       navigate(-1)
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('staff.errors.saveFailed'))
@@ -110,7 +106,6 @@ export default function StaffEdit() {
     setDeactivating(true)
     try {
       await api.staff.deactivate(id)
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       navigate(-1)
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('staff.errors.deactivateFailed'))

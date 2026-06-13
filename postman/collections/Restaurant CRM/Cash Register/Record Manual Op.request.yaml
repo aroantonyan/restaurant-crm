@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/api/cash-register/manual"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "type": "ManualExpense",
+      "amount": 3000,
+      "reason": "Cleaning supplies"
+    }
+order: 3000

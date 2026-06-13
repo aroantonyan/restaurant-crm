@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/tables/:id"
+method: DELETE
+pathVariables:
+  id: ""
+order: 5000

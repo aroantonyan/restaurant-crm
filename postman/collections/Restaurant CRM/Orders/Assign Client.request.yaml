@@ -1,0 +1,14 @@
+$kind: http-request
+url: "{{baseUrl}}/api/orders/:id/client"
+method: PATCH
+headers:
+  Content-Type: application/json
+pathVariables:
+  id: ""
+body:
+  type: json
+  content: |-
+    {
+      "clientId": "00000000-0000-0000-0000-000000000000"
+    }
+order: 9000

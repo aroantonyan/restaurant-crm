@@ -1,0 +1,6 @@
+$kind: http-request
+url: "{{baseUrl}}/api/menu/items/:id/recipe"
+method: GET
+pathVariables:
+  id: ""
+order: 9000

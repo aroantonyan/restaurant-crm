@@ -1,0 +1,19 @@
+$kind: http-request
+url: "{{baseUrl}}/api/reservations"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "tableId": "00000000-0000-0000-0000-000000000000",
+      "guestName": "Anna",
+      "guestPhone": "+37410000000",
+      "guestCount": 2,
+      "startAt": "2026-06-10T19:00:00Z",
+      "durationMinutes": 120,
+      "notes": "Window seat",
+      "clientId": null
+    }
+order: 3000

@@ -5,9 +5,7 @@ import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
 import { api, ApiError, type ClientDto, type ReservationDto, type ReservationStatus, type TableDto } from '../../lib/api'
 import { usePermissions } from '../../hooks/usePermissions'
-import { useBackButton } from '../../hooks/useBackButton'
 import { useRealtimeEvent } from '../../hooks/useRealtimeEvent'
-import { getTelegram } from '../../lib/telegram'
 import Field from '../../components/Field'
 import Select from '../../components/Select'
 import SubmitButton from '../../components/SubmitButton'
@@ -186,7 +184,6 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
     try {
       if (isEdit) await api.reservations.update(state.id, payload)
       else        await api.reservations.create(payload)
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       onSaved()
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('reservations.errors.saveFailed'))
@@ -199,7 +196,6 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
     setServerError(null)
     try {
       await api.reservations.setStatus(state.id, next)
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       onSaved()
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('reservations.errors.statusFailed'))
@@ -214,7 +210,6 @@ function ReservationFormModal({ state, tables, onClose, onSaved }: ModalProps) {
     setServerError(null)
     try {
       await api.reservations.delete(state.id)
-      getTelegram()?.HapticFeedback?.impactOccurred('light')
       onSaved()
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('reservations.errors.deleteFailed'))
@@ -578,7 +573,6 @@ function roundToNextHalfHour(d: Date): Date {
 export default function ReservationsPage() {
   const { t, i18n } = useTranslation()
   const perm = usePermissions()
-  useBackButton('/dashboard')
 
   const [reservations, setReservations] = useState<ReservationDto[]>([])
   const [tables, setTables] = useState<TableDto[]>([])

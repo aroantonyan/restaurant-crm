@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{baseUrl}}/api/tables"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "number": 1,
+      "capacity": 4
+    }
+order: 2000
