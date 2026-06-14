@@ -8,6 +8,13 @@ namespace RestaurantCRM.Infrastructure.Persistence;
 public class AppDbContext(DbContextOptions<AppDbContext> options, ITenantContext tenantContext)
     : DbContext(options)
 {
+    // Tenant scope for query filters. MUST be read through the DbContext instance
+    // (not the injected ITenantContext directly) so EF Core parameterizes it and
+    // re-evaluates per query. Rooting the filter at an external service instead
+    // makes EF bake the value into the compiled-query cache — freezing the tenant
+    // to whoever first queried each entity after startup.
+    public Guid CurrentRestaurantId => tenantContext.RestaurantId;
+
     public DbSet<Restaurant> Restaurants => Set<Restaurant>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Role> Roles => Set<Role>();
@@ -41,7 +48,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ITenantContext
         // Re-evaluated per query, so tenantContext.RestaurantId reflects the current request.
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
-            modelBuilder.Entity(entityType.ClrType).ApplyDefaultFilters(tenantContext);
+            modelBuilder.Entity(entityType.ClrType).ApplyDefaultFilters(this);
         }
     }
 

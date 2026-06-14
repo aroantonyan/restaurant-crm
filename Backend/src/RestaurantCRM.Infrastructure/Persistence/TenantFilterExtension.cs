@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using RestaurantCRM.Application.Common.Interfaces;
 using RestaurantCRM.Domain.Common;
 
 namespace RestaurantCRM.Infrastructure.Persistence;
@@ -14,8 +13,13 @@ internal static class QueryFilterExtensions
     ///
     /// EF Core allows ONE HasQueryFilter per entity, so both predicates must be
     /// combined into a single lambda. Use IgnoreQueryFilters() to opt out.
+    ///
+    /// The tenant value is rooted at the DbContext (db.CurrentRestaurantId), NOT
+    /// the ITenantContext service. EF Core only re-evaluates query-filter values
+    /// that reference the DbContext instance; an external constant gets baked into
+    /// the compiled-query cache and freezes to the first caller's tenant.
     /// </summary>
-    internal static void ApplyDefaultFilters(this EntityTypeBuilder builder, ITenantContext tenantContext)
+    internal static void ApplyDefaultFilters(this EntityTypeBuilder builder, AppDbContext db)
     {
         var clrType = builder.Metadata.ClrType;
         var isTenant = typeof(ITenantEntity).IsAssignableFrom(clrType);
@@ -27,11 +31,11 @@ internal static class QueryFilterExtensions
 
         if (isTenant)
         {
-            // e.RestaurantId == tenantContext.RestaurantId   (re-evaluated per query)
+            // e.RestaurantId == db.CurrentRestaurantId   (re-evaluated per query)
             var restaurantIdProp = Expression.Property(param, nameof(ITenantEntity.RestaurantId));
             var tenantIdExpr = Expression.Property(
-                Expression.Constant(tenantContext),
-                nameof(ITenantContext.RestaurantId));
+                Expression.Constant(db),
+                nameof(AppDbContext.CurrentRestaurantId));
             body = Expression.Equal(restaurantIdProp, tenantIdExpr);
         }
 
