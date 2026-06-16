@@ -468,6 +468,36 @@ public class OrderService(
             BalanceAfterDeposit: balanceAfterDeposit);
     }
 
+    /// <summary>
+    /// Kitchen-display queue: every item across every Open order in the tenant
+    /// whose status is on the kitchen side of the pipeline (Pending / Preparing
+    /// / Ready). Served items drop off — the waiter has taken them out. Oldest
+    /// first, because that is the canonical KDS FIFO. The elapsed-time badge
+    /// (color: green / yellow / red as time grows) is rendered client-side from
+    /// CreatedAt so we don't poll the API every second.
+    /// </summary>
+    public async Task<List<KitchenQueueItemDto>> GetKitchenQueueAsync(CancellationToken ct = default)
+    {
+        return await db.OrderItems
+            .AsNoTracking()
+            .Where(i => i.Order.Status == OrderStatus.Open
+                     && (i.Status == OrderItemStatus.Pending
+                      || i.Status == OrderItemStatus.Preparing
+                      || i.Status == OrderItemStatus.Ready))
+            .OrderBy(i => i.CreatedAt)
+            .Select(i => new KitchenQueueItemDto(
+                i.Id,
+                i.OrderId,
+                i.MenuItemName,
+                i.Quantity,
+                i.Notes,
+                i.Status.ToString(),
+                i.Order.Table.Number,
+                i.Order.TableId,
+                i.CreatedAt))
+            .ToListAsync(ct);
+    }
+
     private static OrderDto ToDto(Order o) => new(
         o.Id,
         o.TableId,

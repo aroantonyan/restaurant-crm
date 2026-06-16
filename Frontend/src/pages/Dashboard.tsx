@@ -12,6 +12,7 @@ import {
   ReceiptText, BookOpen, Armchair, CalendarDays,
   Banknote, ChartColumn, Package, UserRound, UsersRound,
   CalendarClock, Settings, History, LogOut, Settings2,
+  ChefHat,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -75,6 +76,7 @@ const TODAY: readonly TodayItem[] = [
 ]
 
 const MORE: readonly MoreItem[] = [
+  { key: 'kitchen',  permission: 'MoveOrderItems'           as Permission, labelKey: 'dashboard.tabs.kitchen',            path: '/kitchen',        icon: ChefHat,       tint: 'orange' },
   { key: 'cash',     permission: 'ViewCashRegister'         as Permission, labelKey: 'dashboard.tabs.cash',               path: '/cash-register',  icon: Banknote,      tint: 'green'  },
   { key: 'reports',  permission: 'ViewReports'              as Permission, labelKey: 'dashboard.tabs.reports',            path: '/reports',        icon: ChartColumn,   tint: 'blue'   },
   { key: 'stock',    permission: 'ViewWarehouse'            as Permission, labelKey: 'dashboard.tabs.warehouse',          path: '/warehouse',      icon: Package,       tint: 'amber'  },

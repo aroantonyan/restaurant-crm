@@ -38,6 +38,10 @@ public static class DefaultRolePermissions
         ["Cook"] =
         [
             PermissionType.ViewOrders, PermissionType.EditOrder,
+            // Advancing item status (Pending → Preparing → Ready) on the kitchen
+            // display is the cook's primary action — without this they can see
+            // orders but can't drive them through the prep pipeline.
+            PermissionType.MoveOrderItems,
             PermissionType.ViewMenu,
             PermissionType.ViewSchedules,
         ],
@@ -45,6 +49,9 @@ public static class DefaultRolePermissions
         ["Bartender"] =
         [
             PermissionType.ViewOrders, PermissionType.EditOrder,
+            // Same as Cook — drinks have their own prep pipeline on the kitchen
+            // display and the bartender needs to bump them through it.
+            PermissionType.MoveOrderItems,
             PermissionType.ViewMenu,
             PermissionType.CreateOrder,
             PermissionType.ViewSchedules,

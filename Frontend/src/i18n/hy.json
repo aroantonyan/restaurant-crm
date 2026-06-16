@@ -547,6 +547,7 @@
       "reports": "Հաշվետվություններ",
       "reservations": "Ամրագրումներ",
       "schedule": "Ժամանակացույց",
+      "kitchen": "Խոհանոց",
       "warehouse": "Պահեստ",
       "cash": "Կասսա",
       "clients": "Հաճախորդներ",
@@ -701,6 +702,42 @@
       "tooLong": "Չափազանց երկար է",
       "loginFailed": "Մուտքը ձախողվեց",
       "registerFailed": "Գրանցումը ձախողվեց"
+    }
+  },
+  "kitchen": {
+    "title": "Խոհանոցի ցուցադրում",
+    "itemCount_one": "{{count}} ապրանք",
+    "itemCount_other": "{{count}} ապրանք",
+    "empty": "Ամեն ինչ պատրաստ է",
+    "emptyHint": "Նոր պատվերները կհայտնվեն այստեղ, երբ մատուցողը ուղարկի։",
+    "emptyFilterHint": "Այս փուլում ոչինչ չկա։",
+    "permissionHint": "Խնդրեք ադմինիստրատորին տալ «Փոխել պատվերի կարգավիճակ» իրավունքը։",
+    "tablePrefix": "Սեղան №",
+    "justNow": "հենց հիմա",
+    "minAgo_one": "{{count}} ր",
+    "minAgo_other": "{{count}} ր",
+    "hAgo_one": "{{count}} ժ",
+    "hAgo_other": "{{count}} ժ",
+    "filter": {
+      "all": "Բոլորը",
+      "Pending": "Սպասում է",
+      "Preparing": "Պատրաստվում է",
+      "Ready": "Պատրաստ է"
+    },
+    "status": {
+      "Pending": "Սպասում է",
+      "Preparing": "Պատրաստվում է",
+      "Ready": "Պատրաստ է",
+      "Served": "Մատուցված է"
+    },
+    "advance": {
+      "Preparing": "Սկսել պատրաստումը",
+      "Ready": "Նշել «պատրաստ»",
+      "Served": "Նշել «մատուցված»"
+    },
+    "errors": {
+      "loadFailed": "Չհաջողվեց բեռնել խոհանոցի հերթը",
+      "advanceFailed": "Չհաջողվեց փոխել ապրանքի կարգավիճակը"
     }
   }
 }
