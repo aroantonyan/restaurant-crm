@@ -316,6 +316,10 @@ export default function MenuCategoryPage() {
           ) : undefined}
         />
 
+        {category.description && (
+          <p className="m-0 mb-3 px-5 text-[13px] leading-snug text-fg-3">{category.description}</p>
+        )}
+
         <div className="px-5">
           {category.items.length === 0 ? (
             <div className="flex flex-col items-center text-center pt-12 px-4 gap-2">
