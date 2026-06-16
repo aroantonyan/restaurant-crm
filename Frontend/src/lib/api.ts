@@ -16,6 +16,7 @@ export interface AuthResponse {
   roleName: string
   permissions: string[]
   status: UserStatus
+  refreshToken: string
 }
 
 export interface RegisterRequest {
@@ -463,7 +464,38 @@ export class ApiError extends Error {
 
 // ---- Core ----
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+// Endpoints that mint/rotate tokens themselves — never run the refresh-retry on
+// these, or a failed login would loop.
+const NO_REFRESH = new Set(['/api/auth/login', '/api/auth/register', '/api/auth/refresh'])
+
+// Single-flight refresh: many requests can 401 at once when the access token
+// expires; they all await the same rotation instead of stampeding /auth/refresh.
+let refreshInFlight: Promise<boolean> | null = null
+
+function tryRefresh(): Promise<boolean> {
+  if (refreshInFlight) return refreshInFlight
+  const refreshToken = auth.getRefreshToken()
+  if (!refreshToken) return Promise.resolve(false)
+
+  refreshInFlight = (async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      })
+      if (!res.ok) return false
+      auth.setFromResponse(await res.json() as AuthResponse)
+      return true
+    } catch {
+      return false
+    }
+  })()
+  refreshInFlight.finally(() => { refreshInFlight = null })
+  return refreshInFlight
+}
+
+async function request<T>(path: string, init?: RequestInit, retried = false): Promise<T> {
   const headers = new Headers(init?.headers)
   headers.set('Content-Type', 'application/json')
 
@@ -473,6 +505,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, { ...init, headers })
 
   if (!res.ok) {
+    // Access token expired → silently rotate via the refresh token and replay the
+    // request once. Only fall back to logout when refresh itself fails.
+    if (res.status === 401 && token && !retried && !NO_REFRESH.has(path)) {
+      if (await tryRefresh()) return request<T>(path, init, true)
+    }
     if (res.status === 401 && auth.getToken()) {
       auth.clear()
       disconnectRealtime()
@@ -506,6 +543,10 @@ export const api = {
 
     changePassword: (data: { currentPassword: string; newPassword: string }) =>
       request<void>('/api/auth/change-password', { method: 'POST', body: JSON.stringify(data) }),
+
+    // Revokes the refresh token server-side so it can't be rotated after logout.
+    logout: (refreshToken: string) =>
+      request<void>('/api/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken }) }),
   },
 
   staff: {

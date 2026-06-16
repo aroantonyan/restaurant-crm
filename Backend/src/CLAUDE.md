@@ -181,7 +181,7 @@ Every endpoint requires `[Authorize]` AND a `[RequirePermission(PermissionType.X
 - Self-signup: Restaurant + 6 Roles + Admin User in one `SaveChangesAsync`
 - Staff creation: temp password, status = `PendingPasswordChange`
 - JWT claims: `sub`, `email`, `jti`, `userId`, `restaurantId`, `role`, `permissions` (comma-joined)
-- JWT lifetime: 12h (configurable in `appsettings.json` → `JwtSettings.ExpiryHours`), no refresh
+- Access-token lifetime: 60 min (`JwtSettings.AccessTokenMinutes`); rotating refresh token: 14 days (`JwtSettings.RefreshTokenDays`). `POST /api/auth/refresh` rotates + reuse-detects; `POST /api/auth/logout` revokes. Refresh tokens are stored hashed (SHA-256) in the `RefreshTokens` table
 
 ### Validation (FluentValidation)
 - Every request DTO has an `AbstractValidator<T>` in the Application layer

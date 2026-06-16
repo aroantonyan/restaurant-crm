@@ -72,6 +72,9 @@ public static class DependencyInjection
                     ValidAudience = jwtSettings.Audience,
                     IssuerSigningKey = new SymmetricSecurityKey(
                         Encoding.UTF8.GetBytes(jwtSettings.Secret)),
+                    // Default is 5 min — too loose for a short-lived access token.
+                    // Tighten so expiry (and the refresh flow) kicks in on time.
+                    ClockSkew = TimeSpan.FromSeconds(30),
                 };
 
                 // SignalR WebSockets can't send custom Authorization headers from the browser,

@@ -34,6 +34,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options, ITenantContext
     public DbSet<ClientTransaction> ClientTransactions => Set<ClientTransaction>();
     public DbSet<ActivityLogEntry> ActivityLogEntries => Set<ActivityLogEntry>();
     public DbSet<Shift> Shifts => Set<Shift>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
