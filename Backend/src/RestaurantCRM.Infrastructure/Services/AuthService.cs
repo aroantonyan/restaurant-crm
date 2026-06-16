@@ -151,6 +151,7 @@ public class AuthService(AppDbContext db, JwtService jwt, IOptions<JwtSettings> 
             ExpiresAt = DateTime.UtcNow.AddDays(_jwt.RefreshTokenDays),
         });
         await db.SaveChangesAsync(ct);
+        await PruneExpiredAsync(user.Id, ct);
 
         var permissions = ResolvePermissions(user);
         var token = jwt.GenerateToken(user, user.Role.Name, permissions);
@@ -172,6 +173,7 @@ public class AuthService(AppDbContext db, JwtService jwt, IOptions<JwtSettings> 
 
     private async Task<string> IssueRefreshTokenAsync(Guid userId, CancellationToken ct)
     {
+        await PruneExpiredAsync(userId, ct);
         var raw = GenerateRawToken();
         db.RefreshTokens.Add(new RefreshToken
         {
@@ -182,6 +184,15 @@ public class AuthService(AppDbContext db, JwtService jwt, IOptions<JwtSettings> 
         await db.SaveChangesAsync(ct);
         return raw;
     }
+
+    // Sweep the user's past-expiry tokens so the table stays bounded (no background
+    // job needed — it self-cleans on each login/refresh). Expired rows are useless
+    // for both auth AND reuse-detection, so only ExpiresAt is checked: a revoked
+    // but not-yet-expired token is kept so a replay still triggers a family revoke.
+    private Task PruneExpiredAsync(Guid userId, CancellationToken ct) =>
+        db.RefreshTokens
+            .Where(rt => rt.UserId == userId && rt.ExpiresAt < DateTime.UtcNow)
+            .ExecuteDeleteAsync(ct);
 
     private async Task RevokeAllForUserAsync(Guid userId, CancellationToken ct)
     {
