@@ -12,6 +12,13 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(o => o.Status).HasConversion<string>().HasMaxLength(20);
         builder.Property(o => o.PaymentMethod).HasConversion<string>().HasMaxLength(20);
 
+        // Optimistic concurrency via Postgres' xmin (system row-version, no extra
+        // column). Two concurrent Pay/Cancel requests on the same Order both load
+        // Status=Open; the second SaveChanges fails fast with
+        // DbUpdateConcurrencyException, preventing duplicate payments and stock
+        // double-deductions (audit C1).
+        builder.Property<uint>("xmin").IsRowVersion().HasColumnName("xmin");
+
         builder.HasMany(o => o.Items)
             .WithOne(i => i.Order)
             .HasForeignKey(i => i.OrderId)

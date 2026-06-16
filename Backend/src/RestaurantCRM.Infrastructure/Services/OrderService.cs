@@ -26,14 +26,26 @@ public class OrderService(
         // to the last 7 days. Without this, the list grows unbounded over time and
         // every page load pulls the entire history.
         var cutoff = DateTime.UtcNow.AddDays(-7);
+        // Projection straight into the DTO so EF generates a tight SELECT and skips
+        // change-tracking on the read path. The shape mirrors ToDto() — kept inline
+        // because ToDto() is a regular method EF can't translate to SQL.
         return await db.Orders
-            .Include(o => o.Table)
-            .Include(o => o.CreatedBy)
-            .Include(o => o.Items)
-            .Include(o => o.Client)
+            .AsNoTracking()
             .Where(o => o.Status == OrderStatus.Open || o.CreatedAt >= cutoff)
             .OrderByDescending(o => o.CreatedAt)
-            .Select(o => ToDto(o))
+            .Select(o => new OrderDto(
+                o.Id,
+                o.TableId,
+                o.Table.Number,
+                o.Status.ToString(),
+                o.CreatedBy.FirstName + " " + o.CreatedBy.LastName,
+                o.CreatedAt,
+                o.Items.Select(i => new OrderItemDto(
+                    i.Id, i.MenuItemId, i.MenuItemName, i.Price, i.Quantity, i.Status.ToString(), i.Notes)).ToList(),
+                o.Items.Sum(i => i.Price * i.Quantity),
+                o.PaymentMethod != null ? o.PaymentMethod.ToString() : null,
+                o.ClientId,
+                o.Client != null ? o.Client.FullName : null))
             .ToListAsync(ct);
     }
 
@@ -55,7 +67,10 @@ public class OrderService(
             ?? throw new KeyNotFoundException("Table not found.");
 
         var menuItemIds = request.Items.Select(i => i.MenuItemId).ToList();
+        // Read-only lookup; the MenuItem rows themselves are never mutated here —
+        // only their Name/Price/Id are snapshotted into the new OrderItem.
         var menuItems = await db.MenuItems
+            .AsNoTracking()
             .Where(m => menuItemIds.Contains(m.Id))
             .ToListAsync(ct);
 
@@ -70,7 +85,9 @@ public class OrderService(
         // so loyalty/deposit billing is ready when the bill is closed.
         if (request.ClientId is not null)
         {
-            var clientExists = await db.Clients.AnyAsync(c => c.Id == request.ClientId.Value && !c.IsArchived, ct);
+            var clientExists = await db.Clients
+                .AsNoTracking()
+                .AnyAsync(c => c.Id == request.ClientId.Value && !c.IsArchived, ct);
             if (!clientExists) throw new KeyNotFoundException("Client not found.");
         }
 
@@ -361,9 +378,11 @@ public class OrderService(
             }
         }
 
-        // Realtime fan-out so warehouse + menu pages refresh. Notifications happen
-        // after the outer SaveChangesAsync committed the deductions; doing them here
-        // is fine — clients refetch via REST, so an early ping is at worst a no-op.
+        // Realtime fan-out so warehouse + menu pages refresh. These pings fire
+        // BEFORE the outer SaveChangesAsync commits — safe because the events
+        // carry only ids and clients refetch via REST. If the outer transaction
+        // rolls back, the refetch returns the pre-deduction state and the UI
+        // self-heals; over-firing a notification is never worse than no-op.
         foreach (var productId in deductions.Select(d => d.ProductId).Distinct())
             await notifier.ProductChanged(productId, ct);
 

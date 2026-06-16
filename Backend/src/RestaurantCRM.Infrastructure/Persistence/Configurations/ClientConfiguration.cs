@@ -22,6 +22,12 @@ public class ClientConfiguration : IEntityTypeConfiguration<Client>
 
         builder.Property(c => c.IsArchived).HasDefaultValue(false);
 
+        // Optimistic concurrency via Postgres' xmin — DepositBalance is a
+        // denormalized cache of the ledger sum; without this two concurrent
+        // ops (payment + deposit, or two paid orders) lose updates and the
+        // cache drifts from SUM(ClientTransactions.Amount) (audit H2).
+        builder.Property<uint>("xmin").IsRowVersion().HasColumnName("xmin");
+
         builder.HasMany(c => c.Transactions)
             .WithOne(t => t.Client)
             .HasForeignKey(t => t.ClientId)

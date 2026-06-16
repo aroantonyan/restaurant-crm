@@ -18,6 +18,11 @@ public class RestaurantConfiguration : IEntityTypeConfiguration<Restaurant>
         builder.Property(r => r.LogoUrl).HasMaxLength(1000);
         builder.Property(r => r.CashBalance).HasPrecision(18, 2).HasDefaultValue(0m);
 
+        // Optimistic concurrency via Postgres' xmin — CashBalance is a
+        // denormalized cache; same lost-update risk as Client.DepositBalance
+        // when two cash ops commit in parallel (audit H2).
+        builder.Property<uint>("xmin").IsRowVersion().HasColumnName("xmin");
+
         builder.HasMany(r => r.Users)
             .WithOne(u => u.Restaurant)
             .HasForeignKey(u => u.RestaurantId)
