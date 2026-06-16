@@ -60,6 +60,7 @@ public class MenuService(AppDbContext db, ITenantContext tenant, IActivityLogSer
         {
             RestaurantId = tenant.RestaurantId,
             Name = request.Name,
+            Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim(),
             SortOrder = request.SortOrder,
         };
         db.MenuCategories.Add(category);
@@ -75,6 +76,7 @@ public class MenuService(AppDbContext db, ITenantContext tenant, IActivityLogSer
             ?? throw new KeyNotFoundException("Category not found.");
 
         category.Name = request.Name;
+        category.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
         category.SortOrder = request.SortOrder;
         await db.SaveChangesAsync(ct);
         return ToDto(category);
@@ -243,7 +245,7 @@ public class MenuService(AppDbContext db, ITenantContext tenant, IActivityLogSer
     // ---- helpers ----
 
     private static MenuCategoryDto ToDto(MenuCategory c, IReadOnlyDictionary<Guid, bool>? canFulfillByItemId = null) =>
-        new(c.Id, c.Name, c.SortOrder, c.Items.Select(i => ToItemDto(i, canFulfillByItemId)).ToList());
+        new(c.Id, c.Name, c.Description, c.SortOrder, c.Items.Select(i => ToItemDto(i, canFulfillByItemId)).ToList());
 
     private static MenuItemDto ToItemDto(MenuItem i, IReadOnlyDictionary<Guid, bool>? canFulfillByItemId = null)
     {

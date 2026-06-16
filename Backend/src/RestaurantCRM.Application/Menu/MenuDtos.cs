@@ -3,6 +3,7 @@ namespace RestaurantCRM.Application.Menu;
 public record MenuCategoryDto(
     Guid Id,
     string Name,
+    string? Description,
     int SortOrder,
     List<MenuItemDto> Items
 );
@@ -21,9 +22,9 @@ public record MenuItemDto(
     bool CanFulfill = true
 );
 
-public record CreateCategoryRequest(string Name, int SortOrder = 0);
+public record CreateCategoryRequest(string Name, string? Description = null, int SortOrder = 0);
 
-public record UpdateCategoryRequest(string Name, int SortOrder);
+public record UpdateCategoryRequest(string Name, string? Description, int SortOrder);
 
 public record CreateMenuItemRequest(
     Guid CategoryId,

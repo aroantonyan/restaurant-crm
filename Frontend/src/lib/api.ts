@@ -112,12 +112,13 @@ export interface MenuItemDto {
 export interface MenuCategoryDto {
   id: string
   name: string
+  description?: string | null
   sortOrder: number
   items: MenuItemDto[]
 }
 
-export interface CreateCategoryRequest { name: string; sortOrder?: number }
-export interface UpdateCategoryRequest { name: string; sortOrder: number }
+export interface CreateCategoryRequest { name: string; description?: string; sortOrder?: number }
+export interface UpdateCategoryRequest { name: string; description?: string; sortOrder: number }
 export interface CreateMenuItemRequest { categoryId: string; name: string; description?: string; price: number; photoUrl?: string; isAvailable?: boolean }
 export interface UpdateMenuItemRequest { categoryId: string; name: string; description?: string; price: number; photoUrl?: string; isAvailable: boolean }
 

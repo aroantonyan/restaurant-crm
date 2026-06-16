@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -56,7 +56,14 @@ export default function StaffEdit() {
     handleSubmit,
     formState: { errors, isSubmitting, isDirty },
     reset,
+    watch,
   } = useForm<FormData>({ resolver: zodResolver(schema) })
+
+  // The member's original role, captured on load. Lets us tell a real user-driven
+  // role change apart from the initial form population (which must NOT clobber the
+  // member's saved — possibly customized — permissions).
+  const initialRoleId = useRef<string | null>(null)
+  const selectedRoleId = watch('roleId')
 
   const handleDiscard = () => {
     if (isDirty && !confirmDiscard) { setConfirmDiscard(true); return }
@@ -70,6 +77,7 @@ export default function StaffEdit() {
         setMember(m)
         setRoles(r)
         setPermissions(m.permissions ?? [])
+        initialRoleId.current = m.roleId
         reset({
           firstName: m.firstName,
           lastName: m.lastName,
@@ -80,6 +88,19 @@ export default function StaffEdit() {
       })
       .catch(() => setLoadError(t('staff.errors.loadFailed')))
   }, [id, reset, t])
+
+  // When the admin switches the role, pre-fill the permission grid with that
+  // role's defaults. Picking the original role back restores the member's own
+  // (possibly customized) permissions. No effect during the initial load.
+  useEffect(() => {
+    if (initialRoleId.current === null || !selectedRoleId || roles.length === 0) return
+    if (selectedRoleId === initialRoleId.current) {
+      setPermissions(member?.permissions ?? [])
+      return
+    }
+    const role = roles.find(r => r.id === selectedRoleId)
+    if (role) setPermissions(role.permissions)
+  }, [selectedRoleId, roles, member])
 
   const onSubmit = async (data: FormData) => {
     if (!id) return

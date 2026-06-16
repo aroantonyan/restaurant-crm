@@ -160,18 +160,23 @@ function CategoryEditSheet({ category, onClose, onSaved, onDeleted }: CategoryEd
 
   const schema = z.object({
     name: z.string().min(1, { error: t('auth.errors.required') }).max(100, { error: t('auth.errors.tooLong') }),
+    description: z.string().max(500, { error: t('auth.errors.tooLong') }).optional(),
   })
   type FormData = z.infer<typeof schema>
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { name: category.name },
+    defaultValues: { name: category.name, description: category.description ?? '' },
   })
 
   const onSubmit = async (data: FormData) => {
     setServerError(null)
     try {
-      await api.menu.updateCategory(category.id, { name: data.name, sortOrder: category.sortOrder })
+      await api.menu.updateCategory(category.id, {
+        name: data.name,
+        description: data.description?.trim() || undefined,
+        sortOrder: category.sortOrder,
+      })
       onSaved()
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('menu.errors.saveFailed'))
@@ -192,10 +197,16 @@ function CategoryEditSheet({ category, onClose, onSaved, onDeleted }: CategoryEd
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <Field
           label={t('menu.categoryName')}
-          enterKeyHint="done"
+          enterKeyHint="next"
           autoFocus
           {...register('name')}
           error={errors.name?.message}
+        />
+        <Field
+          label={t('menu.categoryDescription')}
+          enterKeyHint="done"
+          {...register('description')}
+          error={errors.description?.message}
         />
         {serverError && <p className="m-0 text-sm text-danger text-center">{serverError}</p>}
         <SubmitButton loading={isSubmitting}>{t('common.submit')}</SubmitButton>

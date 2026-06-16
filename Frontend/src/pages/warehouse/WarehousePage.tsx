@@ -25,7 +25,9 @@ export default function WarehousePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<Filter>('all')
-  const [category, setCategory] = useState<string | null>(null)
+  // Two-level navigation (like the Menu): a list of category cards, then the
+  // products inside the one the user taps.
+  const [openCategory, setOpenCategory] = useState<string | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -42,37 +44,49 @@ export default function WarehousePage() {
   useEffect(() => { load() }, [])
   useRealtimeEvent('productChanged', () => { load() })
 
-  const categories = useMemo(
-    () => Array.from(new Set(products.map(p => p.category).filter((c): c is string => !!c))).sort(),
-    [products],
-  )
+  const uncategorized = t('warehouse.uncategorized')
+  const keyOf = (p: ProductDto) => p.category ?? uncategorized
 
-  const visible = useMemo(() => {
-    let list = products
-    if (filter === 'low') list = list.filter(p => p.isLowStock)
-    if (category)         list = list.filter(p => p.category === category)
-    return list
-  }, [products, filter, category])
-
-  const grouped = useMemo(() => {
-    const map = new Map<string, ProductDto[]>()
-    for (const p of visible) {
-      const key = p.category ?? t('warehouse.uncategorized')
-      const arr = map.get(key) ?? []
-      arr.push(p)
-      map.set(key, arr)
+  // One card per category, with its item count and how many are running low.
+  const categories = useMemo(() => {
+    const map = new Map<string, { count: number; low: number }>()
+    for (const p of products) {
+      const k = keyOf(p)
+      const e = map.get(k) ?? { count: 0, low: 0 }
+      e.count++
+      if (p.isLowStock) e.low++
+      map.set(k, e)
     }
-    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b))
-  }, [visible, t])
+    return [...map.entries()]
+      .map(([name, v]) => ({ name, ...v }))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [products, uncategorized])
+
+  // Products shown inside the opened category, or — in "Low stock" mode — the
+  // flat cross-category reorder list.
+  const visible = useMemo(() => {
+    if (filter === 'low') return products.filter(p => p.isLowStock)
+    if (openCategory) return products.filter(p => keyOf(p) === openCategory)
+    return []
+  }, [products, filter, openCategory])
 
   const lowStockCount = products.filter(p => p.isLowStock).length
+  const inCategory = filter === 'all' && openCategory !== null
+  const showCards = filter === 'all' && openCategory === null
+
+  const handleBack = () => {
+    if (inCategory) { setOpenCategory(null); return }
+    navigate('/dashboard')
+  }
 
   return (
     <main className="page-enter h-full overflow-y-auto pb-7">
       <AppHeader
-        onBack={() => navigate('/dashboard')}
-        title={t('warehouse.title')}
-        subtitle={t('warehouse.productCount', { count: products.length })}
+        onBack={handleBack}
+        title={inCategory ? openCategory! : t('warehouse.title')}
+        subtitle={inCategory
+          ? t('warehouse.productCount', { count: visible.length })
+          : t('warehouse.productCount', { count: products.length })}
         trailing={canManage ? (
           <button
             type="button"
@@ -85,7 +99,7 @@ export default function WarehousePage() {
         ) : undefined}
       />
 
-      {lowStockCount > 0 && (
+      {lowStockCount > 0 && !inCategory && (
         <div className="mx-5 mb-2 rounded-2xl bg-warn-soft px-3.5 py-2.5 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-warn shrink-0" />
           <p className="m-0 text-sm font-semibold text-warn">
@@ -94,17 +108,11 @@ export default function WarehousePage() {
         </div>
       )}
 
-      <div className="flex gap-2 px-5 pt-2 pb-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-        <Chip active={filter === 'all'} onClick={() => setFilter('all')}>{t('warehouse.filter.all')}</Chip>
-        <Chip active={filter === 'low'} onClick={() => setFilter('low')}>{t('warehouse.filter.low')}</Chip>
-      </div>
-
-      {categories.length > 0 && (
-        <div className="flex gap-2 px-5 pb-3 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          <Chip active={category === null} onClick={() => setCategory(null)}>{t('warehouse.allCategories')}</Chip>
-          {categories.map(c => (
-            <Chip key={c} active={category === c} onClick={() => setCategory(c)}>{c}</Chip>
-          ))}
+      {/* Top filter — All / Low stock. Hidden while drilled into a category. */}
+      {!inCategory && (
+        <div className="flex gap-2 px-5 pt-2 pb-3" style={{ scrollbarWidth: 'none' }}>
+          <Chip active={filter === 'all'} onClick={() => setFilter('all')}>{t('warehouse.filter.all')}</Chip>
+          <Chip active={filter === 'low'} onClick={() => { setFilter('low'); setOpenCategory(null) }}>{t('warehouse.filter.low')}</Chip>
         </div>
       )}
 
@@ -121,54 +129,49 @@ export default function WarehousePage() {
               {t('common.retry')}
             </button>
           </div>
+        ) : showCards ? (
+          categories.length === 0 ? (
+            <EmptyState icon={Package} title={t('warehouse.empty')} hint={t('warehouse.emptyHint')} />
+          ) : (
+            <div className="flex flex-col gap-2">
+              {categories.map((c, idx) => (
+                <button
+                  key={c.name}
+                  type="button"
+                  onClick={() => setOpenCategory(c.name)}
+                  className="tappable item-enter w-full bg-card border-0 rounded-[18px] py-3.5 px-3.5 flex items-center gap-3 text-left"
+                  style={{
+                    animationDelay: `${idx * 35}ms`,
+                    boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
+                  }}
+                >
+                  <div className="w-[46px] h-[46px] rounded-[14px] bg-bg flex items-center justify-center text-fg-3 shrink-0">
+                    <Package size={22} strokeWidth={1.9} aria-hidden />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="m-0 text-[15.5px] font-semibold truncate" style={{ letterSpacing: '-0.005em' }}>
+                      {c.name}
+                    </p>
+                    <p className="m-0 mt-0.5 text-[12.5px] text-fg-3">
+                      {t('warehouse.productCount', { count: c.count })}
+                      {c.low > 0 && (
+                        <span className="text-warn ml-1.5">· {t('warehouse.lowStockCount', { count: c.low })}</span>
+                      )}
+                    </p>
+                  </div>
+                  <span className="text-fg-4 shrink-0"><ChevronIcon /></span>
+                </button>
+              ))}
+            </div>
+          )
         ) : visible.length === 0 ? (
-          <EmptyState icon={Package} title={t('warehouse.empty')} hint={t('warehouse.emptyHint')} />
+          filter === 'low'
+            ? <EmptyState icon={Package} title={t('warehouse.allStocked')} hint={t('warehouse.allStockedHint')} />
+            : <EmptyState icon={Package} title={t('warehouse.empty')} hint={t('warehouse.emptyHint')} />
         ) : (
-          <div className="flex flex-col gap-5">
-            {grouped.map(([cat, items]) => (
-              <section key={cat}>
-                <p className="m-0 mb-2 px-1 text-[11.5px] font-bold uppercase text-fg-3" style={{ letterSpacing: '0.06em' }}>
-                  {cat}
-                </p>
-                <div className="flex flex-col gap-2">
-                  {items.map((p, idx) => {
-                    const ratio = p.lowStockThreshold > 0
-                      ? Math.min(1, p.currentStock / (p.lowStockThreshold * 2))
-                      : 1
-                    const barColor = p.isLowStock ? 'bg-warn' : 'bg-ok'
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => navigate(`/warehouse/${p.id}`)}
-                        className="tappable item-enter w-full bg-card border-0 rounded-[18px] py-3 px-3.5 flex flex-col gap-2 text-left"
-                        style={{
-                          animationDelay: `${idx * 30}ms`,
-                          boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
-                        }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <p className="m-0 flex-1 min-w-0 text-[15px] font-semibold truncate"
-                             style={{ letterSpacing: '-0.005em' }}>
-                            {p.name}
-                          </p>
-                          {p.isLowStock && (
-                            <StatusPill kind="warn" size="sm">{t('warehouse.low')}</StatusPill>
-                          )}
-                        </div>
-                        <p className="m-0 text-[12.5px] text-fg-3 tabular-nums">
-                          {formatQuantity(p.currentStock, p.unit)}
-                          <span className="mx-1.5">·</span>
-                          {t('warehouse.minLabel')} {formatQuantity(p.lowStockThreshold, p.unit)}
-                        </p>
-                        <div className="h-1 rounded-full bg-muted overflow-hidden">
-                          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${ratio * 100}%` }} />
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              </section>
+          <div className="flex flex-col gap-2">
+            {visible.map((p, idx) => (
+              <ProductRow key={p.id} product={p} idx={idx} onClick={() => navigate(`/warehouse/${p.id}`)} />
             ))}
           </div>
         )}
@@ -177,11 +180,51 @@ export default function WarehousePage() {
   )
 }
 
+function ProductRow({ product: p, idx, onClick }: { product: ProductDto; idx: number; onClick: () => void }) {
+  const { t } = useTranslation()
+  const ratio = p.lowStockThreshold > 0 ? Math.min(1, p.currentStock / (p.lowStockThreshold * 2)) : 1
+  const barColor = p.isLowStock ? 'bg-warn' : 'bg-ok'
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="tappable item-enter w-full bg-card border-0 rounded-[18px] py-3 px-3.5 flex flex-col gap-2 text-left"
+      style={{
+        animationDelay: `${idx * 30}ms`,
+        boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <p className="m-0 flex-1 min-w-0 text-[15px] font-semibold truncate" style={{ letterSpacing: '-0.005em' }}>
+          {p.name}
+        </p>
+        {p.isLowStock && <StatusPill kind="warn" size="sm">{t('warehouse.low')}</StatusPill>}
+      </div>
+      <p className="m-0 text-[12.5px] text-fg-3 tabular-nums">
+        {formatQuantity(p.currentStock, p.unit)}
+        <span className="mx-1.5">·</span>
+        {t('warehouse.minLabel')} {formatQuantity(p.lowStockThreshold, p.unit)}
+      </p>
+      <div className="h-1 rounded-full bg-muted overflow-hidden">
+        <div className={`h-full rounded-full ${barColor}`} style={{ width: `${ratio * 100}%` }} />
+      </div>
+    </button>
+  )
+}
+
 function PlusIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  )
+}
+
+function ChevronIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
     </svg>
   )
 }

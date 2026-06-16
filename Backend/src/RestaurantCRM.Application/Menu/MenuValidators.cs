@@ -7,6 +7,7 @@ public class CreateCategoryRequestValidator : AbstractValidator<CreateCategoryRe
     public CreateCategoryRequestValidator()
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.Description).MaximumLength(500).When(x => x.Description is not null);
         RuleFor(x => x.SortOrder).GreaterThanOrEqualTo(0);
     }
 }
@@ -16,6 +17,7 @@ public class UpdateCategoryRequestValidator : AbstractValidator<UpdateCategoryRe
     public UpdateCategoryRequestValidator()
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.Description).MaximumLength(500).When(x => x.Description is not null);
         RuleFor(x => x.SortOrder).GreaterThanOrEqualTo(0);
     }
 }

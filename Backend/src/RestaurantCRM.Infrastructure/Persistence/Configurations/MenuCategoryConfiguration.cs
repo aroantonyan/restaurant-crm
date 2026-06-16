@@ -10,6 +10,7 @@ public class MenuCategoryConfiguration : IEntityTypeConfiguration<MenuCategory>
     {
         builder.HasKey(c => c.Id);
         builder.Property(c => c.Name).IsRequired().HasMaxLength(100);
+        builder.Property(c => c.Description).HasMaxLength(500);
 
         builder.HasMany(c => c.Items)
             .WithOne(i => i.Category)

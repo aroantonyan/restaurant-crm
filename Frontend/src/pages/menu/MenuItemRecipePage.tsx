@@ -147,16 +147,11 @@ export default function MenuItemRecipePage() {
                   <p className="m-0 text-sm font-medium truncate">{r.productName}</p>
                   <p className="m-0 text-[11px] text-fg-3 mt-0.5">{t(`warehouse.units.${r.productUnit}`)}</p>
                 </div>
-                <input
-                  type="number"
-                  inputMode={DISCRETE_UNITS.has(r.productUnit) ? 'numeric' : 'decimal'}
-                  step={DISCRETE_UNITS.has(r.productUnit) ? '1' : '0.001'}
-                  min="0"
+                <QtyInput
                   value={r.quantity}
-                  onChange={e => updateQty(r.productId, parseFloat(e.target.value) || 0)}
-                  onWheel={e => e.currentTarget.blur()}
+                  decimal={!DISCRETE_UNITS.has(r.productUnit)}
                   disabled={!canManage}
-                  className="w-20 bg-bg text-fg rounded-xl px-3 py-2 text-base text-right tabular-nums outline-none focus:ring-2 focus:ring-accent"
+                  onChange={q => updateQty(r.productId, q)}
                 />
                 {canManage && (
                   <button
@@ -213,6 +208,45 @@ export default function MenuItemRecipePage() {
         />
       )}
     </div>
+  )
+}
+
+// ---- Quantity input ----
+// Plain text field (not type="number") so it never adjusts on scroll/spinner —
+// you just type. A local string buffer lets partial input ("1.", "") feel smooth
+// while the parent keeps a clean numeric value.
+function QtyInput({ value, decimal, disabled, onChange }: {
+  value: number
+  decimal: boolean
+  disabled?: boolean
+  onChange: (n: number) => void
+}) {
+  const [text, setText] = useState(value === 0 ? '' : String(value))
+  const [focused, setFocused] = useState(false)
+
+  useEffect(() => {
+    if (!focused) setText(value === 0 ? '' : String(value))
+  }, [value, focused])
+
+  const handle = (raw: string) => {
+    const cleaned = raw.replace(',', '.').replace(decimal ? /[^0-9.]/g : /[^0-9]/g, '')
+    setText(cleaned)
+    const n = parseFloat(cleaned)
+    onChange(Number.isFinite(n) ? n : 0)
+  }
+
+  return (
+    <input
+      type="text"
+      inputMode={decimal ? 'decimal' : 'numeric'}
+      value={text}
+      disabled={disabled}
+      placeholder="0"
+      onFocus={e => { setFocused(true); e.currentTarget.select() }}
+      onBlur={() => { setFocused(false); setText(value === 0 ? '' : String(value)) }}
+      onChange={e => handle(e.target.value)}
+      className="w-24 bg-bg text-fg rounded-xl px-3 py-2 text-base text-right tabular-nums outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
+    />
   )
 }
 

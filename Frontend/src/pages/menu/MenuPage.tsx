@@ -26,18 +26,23 @@ function CategoryFormSheet({ onClose, onSaved, nextSortOrder }: CategoryFormProp
 
   const schema = z.object({
     name: z.string().min(1, { error: t('auth.errors.required') }).max(100, { error: t('auth.errors.tooLong') }),
+    description: z.string().max(500, { error: t('auth.errors.tooLong') }).optional(),
   })
   type FormData = z.infer<typeof schema>
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { name: '' },
+    defaultValues: { name: '', description: '' },
   })
 
   const onSubmit = async (data: FormData) => {
     setServerError(null)
     try {
-      await api.menu.createCategory({ name: data.name, sortOrder: nextSortOrder })
+      await api.menu.createCategory({
+        name: data.name,
+        description: data.description?.trim() || undefined,
+        sortOrder: nextSortOrder,
+      })
       onSaved()
     } catch (e) {
       setServerError(e instanceof ApiError ? e.message : t('menu.errors.saveFailed'))
@@ -49,10 +54,16 @@ function CategoryFormSheet({ onClose, onSaved, nextSortOrder }: CategoryFormProp
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
         <Field
           label={t('menu.categoryName')}
-          enterKeyHint="done"
+          enterKeyHint="next"
           autoFocus
           {...register('name')}
           error={errors.name?.message}
+        />
+        <Field
+          label={t('menu.categoryDescription')}
+          enterKeyHint="done"
+          {...register('description')}
+          error={errors.description?.message}
         />
         {serverError && <p className="m-0 text-sm text-danger text-center">{serverError}</p>}
         <SubmitButton loading={isSubmitting}>{t('menu.addCategory')}</SubmitButton>
@@ -137,6 +148,9 @@ export default function MenuPage() {
                      style={{ letterSpacing: '-0.005em' }}>
                     {cat.name}
                   </p>
+                  {cat.description && (
+                    <p className="m-0 mt-0.5 text-[12.5px] text-fg-3 truncate">{cat.description}</p>
+                  )}
                   <p className="m-0 mt-0.5 text-[12.5px] text-fg-3">
                     {t('menu.itemCount', { count: total })}
                     {unavailable > 0 && (
