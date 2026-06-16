@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -38,6 +38,11 @@ export default function WarehouseCreate() {
     resolver: zodResolver(schema),
     defaultValues: { unit: 'Piece', initialStock: 0, lowStockThreshold: 0 },
   })
+
+  // Existing categories power the type-ahead so products land in consistent
+  // buckets (no "Meat" vs "meat" drift that would fragment the category cards).
+  const [categories, setCategories] = useState<string[]>([])
+  useEffect(() => { api.products.getCategories().then(setCategories).catch(() => {}) }, [])
 
   const handleDiscard = () => {
     if (isDirty && !confirmDiscard) { setConfirmDiscard(true); return }
@@ -80,9 +85,14 @@ export default function WarehouseCreate() {
           label={t('warehouse.category')}
           enterKeyHint="next"
           placeholder={t('warehouse.categoryPlaceholder')}
+          list="warehouse-category-options"
+          autoComplete="off"
           {...register('category')}
           error={errors.category?.message}
         />
+        <datalist id="warehouse-category-options">
+          {categories.map(c => <option key={c} value={c} />)}
+        </datalist>
 
         <div className="flex flex-col gap-1.5">
           <span className="text-[13px] text-fg-3 uppercase tracking-wide px-1">{t('warehouse.unit')}</span>

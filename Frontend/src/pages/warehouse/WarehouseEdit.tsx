@@ -25,6 +25,7 @@ export default function WarehouseEdit() {
   const [loading, setLoading] = useState(true)
   const [serverError, setServerError] = useState<string | null>(null)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const [categories, setCategories] = useState<string[]>([])
 
   const schema = z.object({
     name: z.string().min(1, { error: t('auth.errors.required') }).max(200, { error: t('auth.errors.tooLong') }),
@@ -60,6 +61,9 @@ export default function WarehouseEdit() {
       .catch(() => setServerError(t('warehouse.errors.loadFailed')))
       .finally(() => setLoading(false))
   }, [id, reset, t])
+
+  // Suggest existing categories so edits keep the buckets consistent.
+  useEffect(() => { api.products.getCategories().then(setCategories).catch(() => {}) }, [])
 
   if (!canManage) return <Navigate to="/warehouse" replace />
 
@@ -106,9 +110,15 @@ export default function WarehouseEdit() {
         <Field
           label={t('warehouse.category')}
           enterKeyHint="next"
+          placeholder={t('warehouse.categoryPlaceholder')}
+          list="warehouse-category-options"
+          autoComplete="off"
           {...register('category')}
           error={errors.category?.message}
         />
+        <datalist id="warehouse-category-options">
+          {categories.map(c => <option key={c} value={c} />)}
+        </datalist>
 
         <div className="flex flex-col gap-1.5">
           <span className="text-[13px] text-fg-3 uppercase tracking-wide px-1">{t('warehouse.unit')}</span>
