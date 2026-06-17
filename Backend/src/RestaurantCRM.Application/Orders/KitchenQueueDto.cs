@@ -17,5 +17,8 @@ public record KitchenQueueItemDto(
     string Status,
     int TableNumber,
     Guid TableId,
+    // First name of the waiter who opened the order — shown on the ticket so the
+    // kitchen knows who to call when the food is up (standard KDS affordance).
+    string ServerName,
     DateTime CreatedAt
 );

@@ -31,19 +31,29 @@ import { ChefHat, Check } from 'lucide-react'
 const STATUS_ORDER: OrderItemStatus[] = ['Pending', 'Preparing', 'Ready', 'Served']
 type Filter = 'all' | 'Pending' | 'Preparing' | 'Ready'
 
+// Urgency tiers tuned to restaurant prep times (Square/Toast defaults).
+const WARN_AFTER_SECONDS = 5 * 60
+const LATE_AFTER_SECONDS = 10 * 60
+
+// The age badge renders minute-granularity ("82 min"), so a 1-second tick would
+// re-render the whole board 60× more often than the display can change. 20s keeps
+// the minute rollover (and the 5/10-min colour change) accurate to within 20s —
+// imperceptible on a kitchen board — for a fraction of the render churn.
+const CLOCK_INTERVAL_MS = 20_000
+
 interface Ticket {
   orderId: string
   tableNumber: number
+  serverName: string
   items: KitchenQueueItemDto[]
   oldestMs: number       // start of the oldest item's clock — the ticket's age
   allReady: boolean      // every item is Ready → kitchen done, awaiting pickup
 }
 
-// Urgency tiers tuned to restaurant prep times (Square/Toast defaults: 5 / 10 min).
 function urgencyClasses(elapsedSeconds: number): { ring: string; badge: string } {
-  if (elapsedSeconds < 300) return { ring: 'border-l-ok',     badge: 'bg-ok-soft text-ok'       }
-  if (elapsedSeconds < 600) return { ring: 'border-l-warn',   badge: 'bg-warn-soft text-warn'   }
-  return                         { ring: 'border-l-danger', badge: 'bg-danger-soft text-danger' }
+  if (elapsedSeconds < WARN_AFTER_SECONDS) return { ring: 'border-l-ok',     badge: 'bg-ok-soft text-ok'       }
+  if (elapsedSeconds < LATE_AFTER_SECONDS) return { ring: 'border-l-warn',   badge: 'bg-warn-soft text-warn'   }
+  return                                        { ring: 'border-l-danger', badge: 'bg-danger-soft text-danger' }
 }
 
 function nextStatus(s: OrderItemStatus): OrderItemStatus | null {
@@ -89,7 +99,7 @@ export default function KitchenPage() {
   useRealtimeEvent('orderChanged', () => { void load() })
 
   useEffect(() => {
-    const handle = window.setInterval(() => setTick(n => n + 1), 1000)
+    const handle = window.setInterval(() => setTick(n => n + 1), CLOCK_INTERVAL_MS)
     return () => window.clearInterval(handle)
   }, [])
 
@@ -156,6 +166,7 @@ export default function KitchenPage() {
       result.push({
         orderId,
         tableNumber: list[0].tableNumber,
+        serverName: list[0].serverName,
         items: list,
         oldestMs: Math.min(...list.map(i => new Date(i.createdAt).getTime())),
         allReady: list.every(i => i.status === 'Ready'),
@@ -231,11 +242,16 @@ export default function KitchenPage() {
                     boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
                   }}
                 >
-                  {/* Ticket header — table + age + ready badge */}
+                  {/* Ticket header — table + server + age + ready badge */}
                   <div className="flex items-center gap-2 px-3.5 pt-3 pb-2">
-                    <p className="m-0 flex-1 text-[15.5px] font-bold" style={{ letterSpacing: '-0.01em' }}>
-                      {t('kitchen.table', { number: ticket.tableNumber })}
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <p className="m-0 text-[15.5px] font-bold leading-tight" style={{ letterSpacing: '-0.01em' }}>
+                        {t('kitchen.table', { number: ticket.tableNumber })}
+                      </p>
+                      {ticket.serverName && (
+                        <p className="m-0 text-[12px] text-fg-3 truncate">{ticket.serverName}</p>
+                      )}
+                    </div>
                     {ticket.allReady ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold uppercase bg-ok-soft text-ok"
                             style={{ letterSpacing: '0.04em' }}>

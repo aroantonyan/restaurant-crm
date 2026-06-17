@@ -146,6 +146,7 @@ export interface KitchenQueueItemDto {
   status: OrderItemStatus
   tableNumber: number
   tableId: string
+  serverName: string
   createdAt: string
 }
 

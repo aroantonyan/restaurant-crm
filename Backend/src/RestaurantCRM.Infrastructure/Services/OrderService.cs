@@ -494,6 +494,7 @@ public class OrderService(
                 i.Status.ToString(),
                 i.Order.Table.Number,
                 i.Order.TableId,
+                i.Order.CreatedBy.FirstName,
                 i.CreatedAt))
             .ToListAsync(ct);
     }
