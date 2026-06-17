@@ -22,4 +22,15 @@ public class KitchenController(IOrderService orderService) : BaseController
         var result = await orderService.GetKitchenQueueAsync(ct);
         return Ok(result);
     }
+
+    public record BumpRequest(string Status);
+
+    // Bump every kitchen-side item on a ticket to Ready (or Served) in one shot.
+    [HttpPost("orders/{orderId:guid}/bump")]
+    [RequirePermission(PermissionType.MoveOrderItems)]
+    public async Task<IActionResult> Bump(Guid orderId, BumpRequest request, CancellationToken ct)
+    {
+        var result = await orderService.BumpOrderItemsAsync(orderId, request.Status, ct);
+        return Ok(result);
+    }
 }

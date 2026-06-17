@@ -621,6 +621,9 @@ export const api = {
   kitchen: {
     // Cross-order queue of items in Pending / Preparing / Ready status, oldest first.
     queue: () => request<KitchenQueueItemDto[]>('/api/kitchen/queue'),
+    // Atomically advance every kitchen-side item on a ticket to Ready or Served.
+    bump: (orderId: string, status: 'Ready' | 'Served') =>
+      request<OrderDto>(`/api/kitchen/orders/${orderId}/bump`, { method: 'POST', body: JSON.stringify({ status }) }),
   },
 
   reports: {

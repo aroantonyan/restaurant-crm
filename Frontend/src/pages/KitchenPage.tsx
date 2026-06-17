@@ -8,38 +8,39 @@ import AppHeader from '../components/AppHeader'
 import Chip from '../components/Chip'
 import EmptyState from '../components/EmptyState'
 import { SkeletonRow } from '../components/Skeleton'
-import { ChefHat } from 'lucide-react'
+import { ChefHat, Check } from 'lucide-react'
 
 /**
- * Kitchen Display System — single-tablet flat queue, FIFO (oldest first).
+ * Kitchen Display System — grouped by ticket (order), the layout every mature KDS
+ * (Toast, Square, TouchBistro) uses: a table's dishes stay together so the kitchen
+ * fires and the expo plates them as one. Within a ticket the cook can advance a
+ * single item, or bump the whole ticket in one tap.
  *
- * Industry reference: this matches Square Restaurants KDS — one screen, all
- * items, color-coded urgency (green → yellow → red as time grows), one-tap
- * advance to the next status. Items that reach Served drop off automatically.
+ *   • Ticket card per open order, FIFO (oldest order first).
+ *   • Colour-coded urgency on the ticket age (green <5 min, yellow <10, red 10+),
+ *     recomputed client-side every second — no API polling.
+ *   • Per-item advance (Pending → Preparing → Ready → Served) and two ticket-level
+ *     actions: "All ready" (→ Ready) and, once everything's ready, "Clear ticket"
+ *     (→ Served, drops it off the board).
+ *   • Realtime: `orderChanged` → refetch, so waiters adding items / cashiers
+ *     closing orders / other cooks all reflect live.
  *
- * Realtime: subscribes to `orderChanged`. Any mutation anywhere in the order
- * pipeline (create, item add/remove, status flip, pay/cancel) → refetch.
- *
- * Permission: `MoveOrderItems` — cooks and bartenders by default. The status
- * advance buttons call the existing PATCH /orders/{id}/items/{itemId}/status
- * endpoint, so the audit trail and realtime fan-out keep working.
+ * Permission: `MoveOrderItems` (cooks + bartenders by default).
  */
 
-// Status colour palette + ordering. Pending/Preparing/Ready are the kitchen-side
-// statuses we show; Served drops off the queue (the waiter has taken it out).
 const STATUS_ORDER: OrderItemStatus[] = ['Pending', 'Preparing', 'Ready', 'Served']
-
 type Filter = 'all' | 'Pending' | 'Preparing' | 'Ready'
 
-interface UrgencyClasses {
-  ring: string         // left border + accent
-  badge: string        // elapsed-time pill
+interface Ticket {
+  orderId: string
+  tableNumber: number
+  items: KitchenQueueItemDto[]
+  oldestMs: number       // start of the oldest item's clock — the ticket's age
+  allReady: boolean      // every item is Ready → kitchen done, awaiting pickup
 }
 
-// Industry-standard KDS urgency tiers; tuned for restaurant prep times.
-// Green = fresh, yellow = warning, red = overdue. Boundaries from observation
-// of Square / Toast defaults (5 min, 10 min) — sensible for restaurant prep.
-function urgencyFor(elapsedSeconds: number): UrgencyClasses {
+// Urgency tiers tuned to restaurant prep times (Square/Toast defaults: 5 / 10 min).
+function urgencyClasses(elapsedSeconds: number): { ring: string; badge: string } {
   if (elapsedSeconds < 300) return { ring: 'border-l-ok',     badge: 'bg-ok-soft text-ok'       }
   if (elapsedSeconds < 600) return { ring: 'border-l-warn',   badge: 'bg-warn-soft text-warn'   }
   return                         { ring: 'border-l-danger', badge: 'bg-danger-soft text-danger' }
@@ -47,16 +48,14 @@ function urgencyFor(elapsedSeconds: number): UrgencyClasses {
 
 function nextStatus(s: OrderItemStatus): OrderItemStatus | null {
   const i = STATUS_ORDER.indexOf(s)
-  if (i < 0 || i >= STATUS_ORDER.length - 1) return null
-  return STATUS_ORDER[i + 1]
+  return i < 0 || i >= STATUS_ORDER.length - 1 ? null : STATUS_ORDER[i + 1]
 }
 
 function formatElapsed(secs: number, t: (k: string, opts?: Record<string, unknown>) => string): string {
   if (secs < 60) return t('kitchen.justNow')
   const mins = Math.floor(secs / 60)
   if (mins < 60) return t('kitchen.minAgo', { count: mins })
-  const hrs = Math.floor(mins / 60)
-  return t('kitchen.hAgo', { count: hrs })
+  return t('kitchen.hAgo', { count: Math.floor(mins / 60) })
 }
 
 export default function KitchenPage() {
@@ -69,11 +68,10 @@ export default function KitchenPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState<Filter>('all')
-  // A monotonically-ticking value so each card's elapsed-time badge re-renders
-  // every second without re-fetching the API.
+  // Ticking clock so the elapsed badges + urgency colours refresh every second
+  // without re-fetching the API.
   const [tick, setTick] = useState(0)
-  // Set of item ids that are mid-flight to avoid a double-tap creating duplicate
-  // PATCH requests (and the cosmetic flicker of the button reappearing for a moment).
+  // Tickets / items mid-flight, so a double-tap can't fire duplicate requests.
   const [busy, setBusy] = useState<Set<string>>(new Set())
 
   const load = async () => {
@@ -95,30 +93,49 @@ export default function KitchenPage() {
     return () => window.clearInterval(handle)
   }, [])
 
-  const advance = async (item: KitchenQueueItemDto) => {
+  const markBusy = (key: string, on: boolean) =>
+    setBusy(s => { const n = new Set(s); on ? n.add(key) : n.delete(key); return n })
+
+  // Advance a single item one step. Optimistic; a Served item drops off the board.
+  const advanceItem = async (item: KitchenQueueItemDto) => {
     const next = nextStatus(item.status)
     if (!next) return
-    setBusy(s => new Set(s).add(item.id))
-    // Optimistic: reflect the new status immediately so the cook sees the click
-    // land; a failure rolls it back and surfaces the API error. Even if the
-    // realtime refetch arrives first, the server-side state is authoritative.
-    setItems(prev => prev.map(i => i.id === item.id ? { ...i, status: next } : i))
+    markBusy(item.id, true)
+    const prev = items
+    setItems(cur => cur.flatMap(i =>
+      i.id !== item.id ? [i] : next === 'Served' ? [] : [{ ...i, status: next }]))
     try {
       await api.orders.updateItemStatus(item.orderId, item.id, next)
     } catch (e) {
-      setItems(prev => prev.map(i => i.id === item.id ? { ...i, status: item.status } : i))
+      setItems(prev)
       setError(e instanceof ApiError ? e.message : t('kitchen.errors.advanceFailed'))
     } finally {
-      setBusy(s => { const n = new Set(s); n.delete(item.id); return n })
+      markBusy(item.id, false)
     }
   }
 
-  const filtered = useMemo(() => {
-    if (filter === 'all') return items
-    return items.filter(i => i.status === filter)
-  }, [items, filter])
+  // Bump every kitchen-side item on a ticket at once (atomic on the server).
+  const bumpTicket = async (orderId: string, target: 'Ready' | 'Served') => {
+    markBusy(orderId, true)
+    const prev = items
+    setItems(cur => cur.flatMap(i => {
+      if (i.orderId !== orderId) return [i]
+      if (target === 'Served') return []                                   // clears the ticket
+      return i.status === 'Pending' || i.status === 'Preparing'
+        ? [{ ...i, status: 'Ready' as OrderItemStatus }]
+        : [i]
+    }))
+    try {
+      await api.kitchen.bump(orderId, target)
+    } catch (e) {
+      setItems(prev)
+      setError(e instanceof ApiError ? e.message : t('kitchen.errors.advanceFailed'))
+    } finally {
+      markBusy(orderId, false)
+    }
+  }
 
-  // Counts for the chips. Live — recomputed when items change.
+  // Per-status counts for the chips (across every item, ignoring the active filter).
   const counts = useMemo(() => ({
     all: items.length,
     Pending:   items.filter(i => i.status === 'Pending').length,
@@ -126,20 +143,33 @@ export default function KitchenPage() {
     Ready:     items.filter(i => i.status === 'Ready').length,
   }), [items])
 
-  // Need this hook regardless of permission — must be before any early return.
-  // The tick dep is intentional: re-derive elapsed seconds every second so the
-  // urgency colour and badge text both refresh.
-  const decorated = useMemo(() => {
-    const now = Date.now()
-    return filtered.map(i => {
-      const elapsed = Math.max(0, Math.floor((now - new Date(i.createdAt).getTime()) / 1000))
-      return { item: i, elapsed, urgency: urgencyFor(elapsed) }
-    })
-  }, [filtered, tick])  // eslint-disable-line react-hooks/exhaustive-deps
+  // Group into tickets. The filter selects which tickets show (a ticket with ≥1
+  // matching item), but the whole ticket renders — keeping the table's dishes
+  // together is the entire point.
+  const tickets = useMemo<Ticket[]>(() => {
+    const byOrder = new Map<string, KitchenQueueItemDto[]>()
+    for (const i of items) (byOrder.get(i.orderId) ?? byOrder.set(i.orderId, []).get(i.orderId)!).push(i)
+
+    const result: Ticket[] = []
+    for (const [orderId, list] of byOrder) {
+      if (filter !== 'all' && !list.some(i => i.status === filter)) continue
+      result.push({
+        orderId,
+        tableNumber: list[0].tableNumber,
+        items: list,
+        oldestMs: Math.min(...list.map(i => new Date(i.createdAt).getTime())),
+        allReady: list.every(i => i.status === 'Ready'),
+      })
+    }
+    // FIFO: oldest ticket first.
+    return result.sort((a, b) => a.oldestMs - b.oldestMs)
+  }, [items, filter])
+
+  // Re-derive elapsed/urgency every second. `tick` is an intentional dep.
+  const now = Date.now()
+  void tick
 
   if (!canMove) {
-    // Defence in depth — the dashboard already hides the tile, but a direct URL
-    // typing wouldn't.
     return (
       <main className="page-enter h-full overflow-y-auto pb-7">
         <AppHeader onBack={() => navigate('/dashboard')} title={t('kitchen.title')} />
@@ -179,60 +209,102 @@ export default function KitchenPage() {
               {t('common.retry')}
             </button>
           </div>
-        ) : decorated.length === 0 ? (
+        ) : tickets.length === 0 ? (
           <EmptyState icon={ChefHat}
                       title={t('kitchen.empty')}
                       hint={filter === 'all' ? t('kitchen.emptyHint') : t('kitchen.emptyFilterHint')} />
         ) : (
-          <div className="flex flex-col gap-2">
-            {decorated.map(({ item, elapsed, urgency }, idx) => {
-              const next = nextStatus(item.status)
-              const isBusy = busy.has(item.id)
+          <div className="flex flex-col gap-3">
+            {tickets.map((ticket, idx) => {
+              const elapsed = Math.max(0, Math.floor((now - ticket.oldestMs) / 1000))
+              const urgency = ticket.allReady
+                ? { ring: 'border-l-ok', badge: 'bg-ok-soft text-ok' }
+                : urgencyClasses(elapsed)
+              const ticketBusy = busy.has(ticket.orderId)
+
               return (
-                <div
-                  key={item.id}
-                  className={`item-enter bg-card rounded-[18px] py-3 px-3.5 flex flex-col gap-2 border-l-4 ${urgency.ring}`}
+                <section
+                  key={ticket.orderId}
+                  className={`item-enter bg-card rounded-[18px] border-l-4 ${urgency.ring} overflow-hidden`}
                   style={{
                     animationDelay: `${Math.min(idx, 6) * 30}ms`,
                     boxShadow: '0 1px 0 rgba(15,15,16,.04), 0 1px 3px rgba(15,15,16,.05)',
                   }}
                 >
-                  <div className="flex items-start gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="m-0 text-[15.5px] font-semibold leading-tight" style={{ letterSpacing: '-0.005em' }}>
-                        <span className="tabular-nums mr-1.5">×{item.quantity}</span>
-                        {item.menuItemName}
-                      </p>
-                      <p className="m-0 mt-0.5 text-[12.5px] text-fg-3">
-                        {t('kitchen.tablePrefix')}{item.tableNumber}
-                        <span className="mx-1.5">·</span>
-                        <span className={`inline-flex px-1.5 py-0.5 rounded-md font-semibold tabular-nums ${urgency.badge}`}>
-                          {formatElapsed(elapsed, t)}
-                        </span>
-                      </p>
-                      {item.notes && (
-                        <p className="m-0 mt-1 text-[12.5px] text-accent-press italic truncate">
-                          “{item.notes}”
-                        </p>
-                      )}
-                    </div>
-                    <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold uppercase bg-bg text-fg-2"
-                          style={{ letterSpacing: '0.04em' }}>
-                      {t(`kitchen.status.${item.status}`)}
-                    </span>
+                  {/* Ticket header — table + age + ready badge */}
+                  <div className="flex items-center gap-2 px-3.5 pt-3 pb-2">
+                    <p className="m-0 flex-1 text-[15.5px] font-bold" style={{ letterSpacing: '-0.01em' }}>
+                      {t('kitchen.table', { number: ticket.tableNumber })}
+                    </p>
+                    {ticket.allReady ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold uppercase bg-ok-soft text-ok"
+                            style={{ letterSpacing: '0.04em' }}>
+                        <Check size={12} strokeWidth={3} aria-hidden /> {t('kitchen.readyBadge')}
+                      </span>
+                    ) : (
+                      <span className={`inline-flex px-2 py-0.5 rounded-md text-[12px] font-bold tabular-nums ${urgency.badge}`}>
+                        {formatElapsed(elapsed, t)}
+                      </span>
+                    )}
                   </div>
 
-                  {next && (
-                    <button
-                      type="button"
-                      onClick={() => advance(item)}
-                      disabled={isBusy}
-                      className="tappable w-full py-2.5 rounded-xl bg-accent text-white text-sm font-semibold border-0 disabled:opacity-50"
-                    >
-                      {t(`kitchen.advance.${next}`)}
-                    </button>
-                  )}
-                </div>
+                  {/* Item rows */}
+                  <ul className="m-0 px-3.5 pb-2 list-none flex flex-col gap-1.5">
+                    {ticket.items.map(item => {
+                      const next = nextStatus(item.status)
+                      const showAdvance = next === 'Preparing' || next === 'Ready'
+                      return (
+                        <li key={item.id} className="flex items-center gap-2.5">
+                          <div className="flex-1 min-w-0">
+                            <p className="m-0 text-[14.5px] font-semibold leading-tight" style={{ letterSpacing: '-0.005em' }}>
+                              <span className="tabular-nums mr-1">×{item.quantity}</span>{item.menuItemName}
+                            </p>
+                            {item.notes && (
+                              <p className="m-0 text-[12px] text-accent-press italic truncate">“{item.notes}”</p>
+                            )}
+                          </div>
+                          <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase bg-bg text-fg-3"
+                                style={{ letterSpacing: '0.04em' }}>
+                            {t(`kitchen.status.${item.status}`)}
+                          </span>
+                          {showAdvance && (
+                            <button
+                              type="button"
+                              onClick={() => advanceItem(item)}
+                              disabled={busy.has(item.id) || ticketBusy}
+                              className="tappable shrink-0 px-2.5 py-1.5 rounded-lg bg-bg text-accent text-[12.5px] font-semibold border-0 disabled:opacity-50"
+                            >
+                              {t(`kitchen.advance.${next}`)}
+                            </button>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+
+                  {/* Ticket-level action */}
+                  <div className="px-3.5 pb-3 pt-1">
+                    {ticket.allReady ? (
+                      <button
+                        type="button"
+                        onClick={() => bumpTicket(ticket.orderId, 'Served')}
+                        disabled={ticketBusy}
+                        className="tappable w-full py-2.5 rounded-xl bg-ok text-white text-sm font-semibold border-0 disabled:opacity-50"
+                      >
+                        {t('kitchen.clearTicket')}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => bumpTicket(ticket.orderId, 'Ready')}
+                        disabled={ticketBusy}
+                        className="tappable w-full py-2.5 rounded-xl bg-accent text-white text-sm font-semibold border-0 disabled:opacity-50"
+                      >
+                        {t('kitchen.allReady')}
+                      </button>
+                    )}
+                  </div>
+                </section>
               )
             })}
           </div>
