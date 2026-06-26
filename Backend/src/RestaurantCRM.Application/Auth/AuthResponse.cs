@@ -10,5 +10,8 @@ public record AuthResponse(
     string LastName,
     string RoleName,
     IReadOnlyList<string> Permissions,
-    string Status
+    string Status,
+    // Opaque rotating credential — the client stores it and calls /auth/refresh
+    // to mint a new access token when the current one expires.
+    string RefreshToken
 );

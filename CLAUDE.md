@@ -110,7 +110,7 @@ GitHub Actions secrets.
 | `/change-password` | Set new password (first login flow) |
 
 ### Auth & permissions
-- **JWT 12h**, no refresh. Includes `permissions` claim (comma-separated `PermissionType` values).
+- **Short-lived access JWT (60 min) + rotating refresh token (14 days).** Access token includes the `permissions` claim (comma-separated `PermissionType` values). On a 401 the frontend silently calls `POST /api/auth/refresh` (single-flight) and replays the request; refresh tokens rotate on every use, reuse of a rotated token revokes the whole family, and logout revokes server-side.
 - Login/Register response includes `permissions: string[]`, `restaurantName`, and `currency` — all stored in localStorage session.
 - `usePermissions()` hook: `has(...perms)`, `hasAny(...perms)`.
 - `RequireAuth` (frontend) checks localStorage session before render.
@@ -140,7 +140,7 @@ GitHub Actions secrets.
 - Frontend: `lib/realtime.ts` (singleton connection, opened in `RequireAuth`, closed on logout) + `useRealtimeEvent(name, handler)` hook. Subscribed on Dashboard, Orders, OrderDetail, Tables, Reservations, CashRegister, Schedule, Reports, Warehouse, and the order-create flow.
 
 ### Not yet implemented
-- Refresh tokens (JWT is single 12h token, no rotation)
+- (refresh tokens shipped — rotating, reuse-detecting, 60-min access + 14-day refresh)
 
 > The feature tables above are kept high-level. The authoritative, always-current
 > endpoint list is the controllers in `Backend/src/RestaurantCRM.API/Controllers/`

@@ -21,6 +21,20 @@ public class AuthController(IAuthService authService) : BaseController
         return Ok(response);
     }
 
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh(RefreshTokenRequest request, CancellationToken ct)
+    {
+        var response = await authService.RefreshAsync(request.RefreshToken, ct);
+        return Ok(response);
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout(RefreshTokenRequest request, CancellationToken ct)
+    {
+        await authService.LogoutAsync(request.RefreshToken, ct);
+        return NoContent();
+    }
+
     [Authorize]
     [HttpPost("change-password")]
     public async Task<IActionResult> ChangePassword(ChangePasswordRequest request, CancellationToken ct)

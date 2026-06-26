@@ -2,6 +2,7 @@ import type { AuthResponse } from './api'
 
 const TOKEN_KEY = 'auth_token'
 const SESSION_KEY = 'auth_session'
+const REFRESH_KEY = 'auth_refresh'
 
 export type UserStatus = 'Active' | 'Inactive' | 'PendingPasswordChange'
 
@@ -19,6 +20,7 @@ export interface AuthSession {
 
 export const auth = {
   getToken: (): string | null => localStorage.getItem(TOKEN_KEY),
+  getRefreshToken: (): string | null => localStorage.getItem(REFRESH_KEY),
   getSession: (): AuthSession | null => {
     const raw = localStorage.getItem(SESSION_KEY)
     if (!raw) return null
@@ -43,10 +45,12 @@ export const auth = {
   clear: (): void => {
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(SESSION_KEY)
+    localStorage.removeItem(REFRESH_KEY)
   },
-  /** Persists a session from any auth response (login / register). */
+  /** Persists a session from any auth response (login / register / refresh). */
   setFromResponse: (res: AuthResponse): void => {
     localStorage.setItem(TOKEN_KEY, res.token)
+    localStorage.setItem(REFRESH_KEY, res.refreshToken)
     localStorage.setItem(SESSION_KEY, JSON.stringify({
       userId:         res.userId,
       restaurantId:   res.restaurantId,

@@ -150,6 +150,10 @@ export default function Dashboard() {
   const visibleMore = MORE.filter(it => perm.has(it.permission))
 
   const handleLogout = () => {
+    // Best-effort server-side revoke so the refresh token dies with the session;
+    // never block the UI logout on it.
+    const refreshToken = auth.getRefreshToken()
+    if (refreshToken) void api.auth.logout(refreshToken).catch(() => {})
     auth.clear()
     disconnectRealtime()
     navigate('/login', { replace: true })
