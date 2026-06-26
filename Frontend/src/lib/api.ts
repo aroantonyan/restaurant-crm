@@ -136,6 +136,20 @@ export interface OrderDto { id: string; tableId: string; tableNumber: number; st
 export interface CreateOrderRequest { tableId: string; items: Array<{ menuItemId: string; quantity: number; notes?: string }>; clientId?: string | null }
 export interface AddOrderItemRequest { menuItemId: string; quantity: number; notes?: string }
 
+export type OrderItemStatus = 'Pending' | 'Preparing' | 'Ready' | 'Served'
+export interface KitchenQueueItemDto {
+  id: string
+  orderId: string
+  menuItemName: string
+  quantity: number
+  notes: string | null
+  status: OrderItemStatus
+  tableNumber: number
+  tableId: string
+  serverName: string
+  createdAt: string
+}
+
 export interface BillPreviewDto {
   subtotal: number
   vipSurcharge: number
@@ -603,6 +617,14 @@ export const api = {
     getBill: (id: string) => request<BillPreviewDto>(`/api/orders/${id}/bill`),
     cancel: (id: string) => request<OrderDto>(`/api/orders/${id}/cancel`, { method: 'PATCH' }),
     updateItemStatus: (orderId: string, itemId: string, status: string) => request<OrderDto>(`/api/orders/${orderId}/items/${itemId}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+  },
+
+  kitchen: {
+    // Cross-order queue of items in Pending / Preparing / Ready status, oldest first.
+    queue: () => request<KitchenQueueItemDto[]>('/api/kitchen/queue'),
+    // Atomically advance every kitchen-side item on a ticket to Ready or Served.
+    bump: (orderId: string, status: 'Ready' | 'Served') =>
+      request<OrderDto>(`/api/kitchen/orders/${orderId}/bump`, { method: 'POST', body: JSON.stringify({ status }) }),
   },
 
   reports: {

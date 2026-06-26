@@ -17,6 +17,7 @@ import TablesPage from './pages/TablesPage'
 import ReportsPage from './pages/ReportsPage'
 import ReservationsPage from './pages/reservations/ReservationsPage'
 import OrdersPage from './pages/orders/OrdersPage'
+import KitchenPage from './pages/KitchenPage'
 import OrderDetailPage from './pages/orders/OrderDetailPage'
 import CreateOrderLayout from './pages/orders/create/CreateOrderLayout'
 import SelectTablePage from './pages/orders/create/SelectTablePage'
@@ -217,6 +218,14 @@ export default function App() {
         element={
           <RequireAuth>
             <OrdersPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/kitchen"
+        element={
+          <RequireAuth>
+            <KitchenPage />
           </RequireAuth>
         }
       />

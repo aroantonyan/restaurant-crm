@@ -468,6 +468,73 @@ public class OrderService(
             BalanceAfterDeposit: balanceAfterDeposit);
     }
 
+    /// <summary>
+    /// Kitchen-display queue: every item across every Open order in the tenant
+    /// whose status is on the kitchen side of the pipeline (Pending / Preparing
+    /// / Ready). Served items drop off — the waiter has taken them out. Oldest
+    /// first, because that is the canonical KDS FIFO. The elapsed-time badge
+    /// (color: green / yellow / red as time grows) is rendered client-side from
+    /// CreatedAt so we don't poll the API every second.
+    /// </summary>
+    public async Task<List<KitchenQueueItemDto>> GetKitchenQueueAsync(CancellationToken ct = default)
+    {
+        return await db.OrderItems
+            .AsNoTracking()
+            .Where(i => i.Order.Status == OrderStatus.Open
+                     && (i.Status == OrderItemStatus.Pending
+                      || i.Status == OrderItemStatus.Preparing
+                      || i.Status == OrderItemStatus.Ready))
+            .OrderBy(i => i.CreatedAt)
+            .Select(i => new KitchenQueueItemDto(
+                i.Id,
+                i.OrderId,
+                i.MenuItemName,
+                i.Quantity,
+                i.Notes,
+                i.Status.ToString(),
+                i.Order.Table.Number,
+                i.Order.TableId,
+                i.Order.CreatedBy.FirstName,
+                i.CreatedAt))
+            .ToListAsync(ct);
+    }
+
+    /// <summary>
+    /// Advances every kitchen-side item on one order to <paramref name="targetStatus"/>
+    /// in a single transaction — the "bump the whole ticket" KDS action. Doing it
+    /// server-side beats N client PATCHes: one DB round-trip, one realtime event,
+    /// and the move is atomic (all items flip together or none do).
+    ///   • target Ready  → moves items still Pending/Preparing.
+    ///   • target Served → moves anything not already Served (clears the ticket).
+    /// Idempotent: items already at/beyond the target are left untouched.
+    /// </summary>
+    public async Task<OrderDto> BumpOrderItemsAsync(Guid orderId, string targetStatus, CancellationToken ct = default)
+    {
+        if (!Enum.TryParse<OrderItemStatus>(targetStatus, out var target)
+            || (target != OrderItemStatus.Ready && target != OrderItemStatus.Served))
+            throw new ArgumentException("Bump target must be Ready or Served.");
+
+        var order = await db.Orders.Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == orderId, ct)
+            ?? throw new KeyNotFoundException("Order not found.");
+
+        if (order.Status != OrderStatus.Open)
+            throw new InvalidOperationException("Only open orders can be bumped.");
+
+        var movable = order.Items.Where(i => target == OrderItemStatus.Ready
+            ? i.Status is OrderItemStatus.Pending or OrderItemStatus.Preparing
+            : i.Status != OrderItemStatus.Served).ToList();
+
+        // Idempotent no-op — nothing left to move (e.g. a double-tap or a stale view).
+        if (movable.Count == 0) return await GetByIdAsync(orderId, ct);
+
+        foreach (var i in movable) i.Status = target;
+        await db.SaveChangesAsync(ct);
+
+        await notifier.OrderChanged(orderId, ct);
+        return await GetByIdAsync(orderId, ct);
+    }
+
     private static OrderDto ToDto(Order o) => new(
         o.Id,
         o.TableId,

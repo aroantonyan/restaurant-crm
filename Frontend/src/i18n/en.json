@@ -547,6 +547,7 @@
       "reservations": "Reservations",
       "reports": "Reports",
       "schedule": "Schedule",
+      "kitchen": "Kitchen",
       "warehouse": "Warehouse",
       "cash": "Cash Register",
       "clients": "Customers",
@@ -701,6 +702,45 @@
       "tooLong": "Too long",
       "loginFailed": "Login failed",
       "registerFailed": "Registration failed"
+    }
+  },
+  "kitchen": {
+    "title": "Kitchen Display",
+    "itemCount_one": "{{count}} item",
+    "itemCount_other": "{{count}} items",
+    "empty": "All caught up",
+    "emptyHint": "New orders appear here as soon as the waiter sends them.",
+    "emptyFilterHint": "Nothing in this stage right now.",
+    "permissionHint": "Ask an admin to grant you the “Move order items” permission.",
+    "table": "Table №{{number}}",
+    "readyBadge": "Ready",
+    "allReady": "All ready",
+    "clearTicket": "Clear ticket · served",
+    "justNow": "just now",
+    "minAgo_one": "{{count}} min",
+    "minAgo_other": "{{count}} min",
+    "hAgo_one": "{{count}} h",
+    "hAgo_other": "{{count}} h",
+    "filter": {
+      "all": "All",
+      "Pending": "Pending",
+      "Preparing": "Preparing",
+      "Ready": "Ready"
+    },
+    "status": {
+      "Pending": "Pending",
+      "Preparing": "Preparing",
+      "Ready": "Ready",
+      "Served": "Served"
+    },
+    "advance": {
+      "Preparing": "Start preparing",
+      "Ready": "Mark ready",
+      "Served": "Mark served"
+    },
+    "errors": {
+      "loadFailed": "Couldn't load the kitchen queue",
+      "advanceFailed": "Couldn't update item status"
     }
   }
 }
