@@ -21,6 +21,11 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.Property(p => p.IsArchived).HasDefaultValue(false);
 
+        // Optimistic concurrency via Postgres' xmin — protects the read-modify-write
+        // on CurrentStock from lost updates when two paid orders deduct the same
+        // ingredient simultaneously (audit H1).
+        builder.Property<uint>("xmin").IsRowVersion().HasColumnName("xmin");
+
         builder.HasMany(p => p.Movements)
             .WithOne(m => m.Product)
             .HasForeignKey(m => m.ProductId)
